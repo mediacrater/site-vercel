@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Header } from '@/components/header';
+
+const RESEND_COOLDOWN_SECONDS = 60;
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -13,6 +15,20 @@ export default function SignupPage() {
   const [success, setSuccess] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false); // NEW
   const router = useRouter();
+
+  // NEW: resend verification state
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [resendError, setResendError] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  // NEW: cooldown ticker
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +70,34 @@ export default function SignupPage() {
     }
   };
 
+  // NEW: resend verification handler
+  const handleResendVerification = async () => {
+    if (resendCooldown > 0 || resendStatus === 'sending') return;
+
+    setResendStatus('sending');
+    setResendError('');
+
+    try {
+      const response = await fetch('/api/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to resend verification email');
+      }
+
+      setResendStatus('sent');
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+    } catch (err: any) {
+      setResendStatus('error');
+      setResendError(err.message || 'Failed to resend verification email');
+    }
+  };
+
   if (success) {
     return (
       <div className="min-h-screen bg-background">
@@ -83,7 +127,33 @@ export default function SignupPage() {
               <div className="bg-primary/10 border-l-4 border-primary rounded p-3 mb-6">
                 <p className="text-sm font-semibold text-card-foreground">You'll receive 3 monthly scans after verification</p>
               </div>
-              <p className="text-xs text-muted-foreground mb-4">Don't see the email? Check your spam folder.</p>
+              <p className="text-xs text-muted-foreground mb-2">Don't see the email? Check your spam folder.</p>
+
+              {/* NEW: resend verification button */}
+              <button
+                onClick={handleResendVerification}
+                disabled={resendCooldown > 0 || resendStatus === 'sending'}
+                className="text-sm font-semibold text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline mb-4"
+              >
+                {resendStatus === 'sending'
+                  ? 'Sending...'
+                  : resendCooldown > 0
+                  ? `Resend available in ${resendCooldown}s`
+                  : 'Resend verification email'}
+              </button>
+
+              {resendStatus === 'sent' && resendCooldown === RESEND_COOLDOWN_SECONDS && (
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-green-800 dark:text-green-400">Verification email resent. Check your inbox.</p>
+                </div>
+              )}
+
+              {resendStatus === 'error' && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-red-800 dark:text-red-400">{resendError}</p>
+                </div>
+              )}
+
               <Link href="/" className="block w-full bg-secondary text-secondary-foreground px-6 py-3 rounded-lg font-semibold hover:bg-secondary/80 transition-colors">
                 Back to Homepage
               </Link>
