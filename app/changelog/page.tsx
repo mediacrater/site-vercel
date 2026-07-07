@@ -12,6 +12,20 @@ export default function ChangelogPage() {
       <div className="space-y-12">
         <section>
           <div className="flex items-center gap-3 mb-4">
+            <h2 className="text-xl font-semibold">Alpha 1.5.1</h2>
+            <span className="text-xs text-muted-foreground">July 2026</span>
+          </div>
+          <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
+            <li>Added advanced error logging for debugging</li>
+            <li>Backend security enhancements</li>
+            <li>Fixed issue with audio analysis answers</li>
+            <li>Fixed issue with billing and subscription system</li>
+            <li>Added facebook link permission for future feature</li>
+            <li>Removed Windows permission (Requests browser access uncessesarily)</li>
+          </ul>
+        </section>
+        <section>
+          <div className="flex items-center gap-3 mb-4">
             <h2 className="text-xl font-semibold">Alpha 1.5</h2>
             <span className="text-xs text-muted-foreground">July 2026</span>
           </div>
