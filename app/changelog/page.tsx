@@ -22,6 +22,7 @@ export default function ChangelogPage() {
             <li>Fixed issue with billing and subscription system</li>
             <li>Added facebook link permission for future feature</li>
             <li>Removed Windows permission (Requests browser access uncessesarily)</li>
+            <li>Added resend verification email</li>
           </ul>
         </section>
         <section>
