@@ -12,7 +12,7 @@ export default function ChangelogPage() {
       <div className="space-y-12">
         <section>
           <div className="flex items-center gap-3 mb-4">
-            <h2 className="text-xl font-semibold">Alpha 1.5.6</h2>
+            <h2 className="text-xl font-semibold">Alpha 1.5.2</h2>
             <span className="text-xs text-muted-foreground">July 2026</span>
           </div>
           <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
