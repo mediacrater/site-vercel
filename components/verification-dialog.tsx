@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { createClient } from '@supabase/supabase-js';
 import {
   Dialog,
   DialogContent,
