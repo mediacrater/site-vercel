@@ -10,8 +10,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wwnpgzgvwsbdipysvobb.supabase.co';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_o8jMPrlgQEyUInjtI5YrdA_lYybScNf';
+const supabaseAnon = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 type DialogType = 'email-verified' | 'password-reset' | 'error' | null;
 
