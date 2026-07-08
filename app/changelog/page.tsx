@@ -18,7 +18,7 @@ export default function ChangelogPage() {
           <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
             <li>Fixed error with resend verification email</li>
             <li>Fixed issue where the A keybind reveals scan history for free users</li>
-            <li>Fixed issue with Deep Scan type where "Paid plan required" was static across paid plans, nw displays token cost</li>
+            <li>Fixed UI issue with Deep Scan</li>
             <li>Code improvements</li>
           </ul>
         </section>
