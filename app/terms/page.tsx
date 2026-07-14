@@ -71,7 +71,6 @@ export default function TermsOfService() {
 
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">5.5. Subscriptions, fees and payment.</h2>
-        <p> className="mb-4">By creating an account and verifying your email, you automatically agree <strong>not</strong> to:</p>
         <ul className="list-disc list-inside space-y-2">
           <li><strong>Subscription content, features and services.</strong> The content, features, and other services provided as part of your Subscription, and the duration of your Subscription, will be described in the order process. We may change the content, features, and other services from time to time, and we do not guarantee that any particular piece of content, feature, or other service will always be available through the Services.</li>
           <li><strong>Subscription term and automatic renewal.</strong> If you sign up for a paid Subscription, we will automatically charge your Payment Method on each agreed-upon periodic renewal date until you cancel. If your Subscription has a minimum term (the “Initial Term”), we will let you know during the order process. Your Subscription will last for the Initial Term and will automatically renew, and your Payment Method will be charged, at the end of the Initial Term for an additional term equal in duration to the Initial Term and will continue to renew and incur charges for additional terms equal in duration to the Initial Term (each such additional term, a “Renewal Term”) until you cancel.</li>
