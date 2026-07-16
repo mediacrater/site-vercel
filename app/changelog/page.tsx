@@ -19,10 +19,10 @@ export default function ChangelogPage() {
             <span className="text-xs text-muted-foreground">July 2026</span>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Version 1.5.4 */}
             <section>
-              <div className="mb-0">
+              <div className="mb-1">
                 <h3 className="text-l font-semibold">Alpha 1.5.4</h3>
               </div>
               <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
@@ -32,7 +32,7 @@ export default function ChangelogPage() {
 
             {/* Version 1.5.3 */}
             <section>
-              <div className="mb-0">
+              <div className="mb-1">
                 <h3 className="text-l font-semibold">Alpha 1.5.3</h3>
               </div>
               <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
@@ -42,7 +42,7 @@ export default function ChangelogPage() {
             
             {/* Version 1.5.2 */}
             <section>
-              <div className="mb-0">
+              <div className="mb-1">
                 <h3 className="text-l font-semibold">Alpha 1.5.2</h3>
               </div>
               <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
@@ -55,7 +55,7 @@ export default function ChangelogPage() {
 
             {/* Version 1.5.1 */}
             <section>
-              <div className="mb-0">
+              <div className="mb-1">
                 <h3 className="text-l font-semibold">Alpha 1.5.1</h3>
               </div>
               <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
@@ -71,7 +71,7 @@ export default function ChangelogPage() {
 
             {/* Version 1.5 */}
             <section>
-              <div className="mb-0">
+              <div className="mb-1">
                 <h3 className="text-l font-semibold">Alpha 1.5</h3>
               </div>
               <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
