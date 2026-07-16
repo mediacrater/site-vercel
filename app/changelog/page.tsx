@@ -16,6 +16,8 @@ export default function ChangelogPage() {
             <span className="text-xs text-muted-foreground">July 2026</span>
           </div>
         </section>
+      </div>
+      <div className="space-y-6">
         <section>
           <div className="flex items-center gap-1 mb-2">
             <h3 className="text-l font-semibold">Alpha 1.5.4</h3>
@@ -69,6 +71,8 @@ export default function ChangelogPage() {
             <li>Queueing system added</li>
           </ul>
         </section>
+      </div>
+      <div className="space-y-12">      
         <section>
           <div className="flex items-center gap-3 mb-4">
             <h2 className="text-xl font-semibold">Beta 1.1.0</h2>
