@@ -51,7 +51,7 @@ export default function ChangelogPage() {
           </div>
           <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
             <li>Added advanced error logging for debugging</li>
-            <li>Backend security enhancements</li>
+            <li>Security enhancements</li>
             <li>Fixed issue with audio analysis answers</li>
             <li>Fixed issue with billing and subscription system</li>
             <li>Added facebook link permission for future feature</li>
