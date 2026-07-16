@@ -212,7 +212,7 @@ export default function SignupPage() {
                   className="mt-1 h-4 w-4 rounded border-input accent-primary cursor-pointer"
                 />
                 <label htmlFor="terms" className="text-sm text-muted-foreground">
-                  I accept the{' '}
+                  I represent that I am at least 18 years old. I accept the{' '}
                   <a href="/terms" target="_blank" className="text-primary hover:underline">Terms of Service</a>
                   {', '}
                   <a href="/refund" target="_blank" className="text-primary hover:underline">Refund Policy</a>
