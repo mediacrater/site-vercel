@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
         id: userId,
         email: email, // add this
         ip_at_creation: ip || null,
-        accept_tos_privacy_refund_emailconsent: new Date().toISOString()
+        accept_tos_privacy_refund_emailconsent_age18plus: new Date().toISOString()
       }, {
         onConflict: 'id',
         ignoreDuplicates: false
