@@ -15,18 +15,24 @@ export default function ChangelogPage() {
             <h2 className="text-xl font-semibold">Alpha 1.5 to 1.5.4</h2>
             <span className="text-xs text-muted-foreground">July 2026</span>
           </div>
+        </section>
+        <section>
           <div className="flex items-center gap-3 mb-4">
             <h3 className="text-l font-semibold">Alpha 1.5.4</h3>
           </div>
           <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
             <li>Token checks reduced to what is only necessary: down to a strategic 3 poll burst after each scan instead of every 2 seconds</li>
           </ul>
+        </section>
+        <section>
           <div className="flex items-center gap-3 mb-4">
             <h3 className="text-l font-semibold">Alpha 1.5.3</h3>
           </div>
           <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
             <li>Allowing bigger file sizes up to 1GB from our previous 700MB limit.</li>
           </ul>
+        </section>
+        <section>
           <div className="flex items-center gap-3 mb-4">
             <h3 className="text-l font-semibold">Alpha 1.5.2</h3>
           </div>
@@ -36,6 +42,8 @@ export default function ChangelogPage() {
             <li>Fixed UI issue with Deep Scan</li>
             <li>Code improvements</li>
           </ul>
+        </section>
+        <section>
           <div className="flex items-center gap-3 mb-4">
             <h3 className="text-l font-semibold">Alpha 1.5.1</h3>
           </div>
@@ -48,6 +56,8 @@ export default function ChangelogPage() {
             <li>Removed Windows permission (Requests browser access uncessesarily)</li>
             <li>Added resend verification email</li>
           </ul>
+        </section>
+        <section>
           <div className="flex items-center gap-3 mb-4">
             <h3 className="text-l font-semibold">Alpha 1.5</h3>
           </div>
