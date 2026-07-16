@@ -17,7 +17,7 @@ export default function ChangelogPage() {
           </div>
         </section>
         <section>
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex items-center gap-1 mb-4">
             <h3 className="text-l font-semibold">Alpha 1.5.4</h3>
           </div>
           <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
@@ -25,7 +25,7 @@ export default function ChangelogPage() {
           </ul>
         </section>
         <section>
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex items-center gap-1 mb-4">
             <h3 className="text-l font-semibold">Alpha 1.5.3</h3>
           </div>
           <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
@@ -33,7 +33,7 @@ export default function ChangelogPage() {
           </ul>
         </section>
         <section>
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-1 mb-4">
             <h3 className="text-l font-semibold">Alpha 1.5.2</h3>
           </div>
           <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
@@ -44,7 +44,7 @@ export default function ChangelogPage() {
           </ul>
         </section>
         <section>
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-1 mb-4">
             <h3 className="text-l font-semibold">Alpha 1.5.1</h3>
           </div>
           <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
@@ -58,7 +58,7 @@ export default function ChangelogPage() {
           </ul>
         </section>
         <section>
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-1 mb-4">
             <h3 className="text-l font-semibold">Alpha 1.5</h3>
           </div>
           <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
