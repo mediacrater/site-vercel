@@ -124,8 +124,15 @@ export default function TermsOfService() {
         </p>
       </section>
 
+      <section className="mb-10">
+        <h2 className="text-xl font-semibold mb-3">11. Age Requirement & Eligibility</h2>
+        <p>
+          By creating an account or using Mediacrater, you represent and warrant that you are at least 18 years of age and possess the legal capacity to agree to these Terms. If you are under the age of 18, you are strictly prohibited from creating an account or using our services. If we learn or have reason to suspect that a user is under the age of 18, we reserve the right to suspend or terminate that account immediately without notice or refund.
+        </p>
+      </section>
+      
       <section>
-        <h2 className="text-xl font-semibold mb-3">11. Contact</h2>
+        <h2 className="text-xl font-semibold mb-3">12. Contact</h2>
         <p>
           For questions about these terms, email{' '}
           <a href="mailto:hello.mediacrater@gmail.com" className="underline">
