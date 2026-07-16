@@ -14,7 +14,7 @@ export default function ChangelogPage() {
         
         {/* Alpha Section */}
         <section>
-          <div className="mb-6">
+          <div className="flex items-center gap-3 mb-6">
             <h2 className="text-xl font-semibold">Alpha 1.5 to 1.5.4</h2>
             <span className="text-xs text-muted-foreground">July 2026</span>
           </div>
