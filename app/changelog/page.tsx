@@ -12,6 +12,16 @@ export default function ChangelogPage() {
       <div className="space-y-12">
         <section>
           <div className="flex items-center gap-3 mb-4">
+            <h2 className="text-xl font-semibold">Alpha 1.5 to 1.5.4</h2>
+                        <h3 className="text-l font-semibold">Alpha 1.5 to 1.5.4</h3>
+            <span className="text-xs text-muted-foreground">July 2026</span>
+          </div>
+          <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
+            <li>Token checks reduced to what is only necessary: down to a strategic 3 poll burst after each scan instead of every 2 seconds</li>
+          </ul>
+        </section>
+        <section>
+          <div className="flex items-center gap-3 mb-4">
             <h2 className="text-xl font-semibold">Alpha 1.5.3</h2>
             <span className="text-xs text-muted-foreground">July 2026</span>
           </div>
