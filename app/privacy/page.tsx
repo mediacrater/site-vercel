@@ -206,6 +206,15 @@ export default function PrivacyPolicy() {
       </section>
 
       <section className="mb-10">
+        <h2 className="text-xl font-semibold mb-3">Content Processing & Sub-processors</h2>
+        <p>
+          To provide our services (e.g., content analysis), we transmit user-uploaded content to third-party AI processing services. We utilize OpenRouter as an API gateway to route requests to AI model providers.
+
+Your uploaded data is sent securely for the sole purpose of generating responses for your session. We do not permit OpenRouter or underlying AI model providers to use your uploaded content to train their AI models. Data is processed under strict zero-data-retention or minimal operational logging policies.
+        </p>
+      </section>
+
+      <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">Cookies and Local Storage</h2>
         <p>
           We use only essential cookies and Chrome local storage required for authentication
