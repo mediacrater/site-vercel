@@ -206,7 +206,7 @@ export default function PrivacyPolicy() {
       </section>
 
       <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-3">Content Processing & Sub-processors</h2>
+        <h2 className="text-xl font-semibold mb-3">Content Processing</h2>
         <p>
           To provide our services (e.g., content analysis), we transmit user-uploaded content to third-party AI processing services. We utilize OpenRouter as an API gateway to route requests to AI model providers. Your uploaded data is transmitted securely to generate responses and perform requested tasks. Your data is never used by us or our third-party provider partners to train AI models. Data may be subject to short-term, encrypted operational logging solely for system reliability and security purposes
       </section>
