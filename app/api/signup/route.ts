@@ -11,7 +11,6 @@ const supabaseAdmin = createClient(
 );
 
 const SIGNUP_RATE_LIMIT_MS = 15 * 60 * 1000; // 15 minutes
-const MAX_ATTEMPTS_PER_WINDOW = 4;
 
 export async function POST(req: NextRequest) {
   const { email, password, acceptedTerms } = await req.json(); // acceptedTerms added
@@ -31,35 +30,25 @@ export async function POST(req: NextRequest) {
   // Checked before any Supabase auth call, using a small table
   // since Vercel functions are stateless across invocations —
   // an in-memory limiter would not persist between requests.
+  // Supabase's own dashboard-configurable auth rate limit is
+  // currently unreliable (confirmed open bug), so this is the
+  // actual enforcement layer.
   if (ip) {
     const { data: existingLimit } = await supabaseAdmin
       .from('signup_rate_limits')
-      .select('last_attempt_at, attempt_count')
+      .select('last_attempt_at')
       .eq('ip', ip)
       .maybeSingle();
 
-    const now = new Date();
-    let newCount = 1;
-    let windowStart = now.toISOString();
-
     if (existingLimit) {
-      const elapsedMs = now.getTime() - new Date(existingLimit.last_attempt_at).getTime();
-
+      const elapsedMs = Date.now() - new Date(existingLimit.last_attempt_at).getTime();
       if (elapsedMs < SIGNUP_RATE_LIMIT_MS) {
-        if (existingLimit.attempt_count >= MAX_ATTEMPTS_PER_WINDOW) {
-          const retryAfterSeconds = Math.ceil((SIGNUP_RATE_LIMIT_MS - elapsedMs) / 1000);
-          return NextResponse.json(
-            { error: 'Too many signup attempts. Please try again later.' },
-            { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
-          );
-        }
-        
-        // Still within the 15-minute window, so increment count and keep the original start time
-        newCount = (existingLimit.attempt_count || 0) + 1;
-        windowStart = existingLimit.last_attempt_at;
+        const retryAfterSeconds = Math.ceil((SIGNUP_RATE_LIMIT_MS - elapsedMs) / 1000);
+        return NextResponse.json(
+          { error: 'Too many signup attempts. Please try again later.' },
+          { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
+        );
       }
-      // If elapsedMs >= 15 minutes, the flow naturally uses the default values 
-      // (newCount = 1, windowStart = now), effectively resetting the window.
     }
 
     // Record this attempt immediately, before calling Supabase auth,
@@ -68,7 +57,7 @@ export async function POST(req: NextRequest) {
     const { error: rateLimitError } = await supabaseAdmin
       .from('signup_rate_limits')
       .upsert(
-        { ip, last_attempt_at: windowStart, attempt_count: newCount },
+        { ip, last_attempt_at: new Date().toISOString() },
         { onConflict: 'ip' }
       );
 
