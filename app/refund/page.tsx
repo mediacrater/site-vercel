@@ -25,7 +25,7 @@ export default function RefundPolicy() {
         <h2 className="text-xl font-semibold mb-3">Eligibility</h2>
         <p className="mb-4">To qualify for a refund, all of the following must be true:</p>
         <ul className="list-disc list-inside space-y-2">
-          <li>Your refund request is submitted within <strong>7 days of your purchase date</strong></li>
+          <li>Your refund request is submitted within <strong>3 days of your purchase date</strong></li>
           <li>Your account has <strong>unused tokens remaining</strong></li>
           <li>You are requesting a refund of <strong>all remaining unused tokens</strong> — we do not issue partial refunds on individual tokens</li>
         </ul>
@@ -52,7 +52,7 @@ export default function RefundPolicy() {
         <h2 className="text-xl font-semibold mb-3">Non-Refundable</h2>
         <ul className="list-disc list-inside space-y-2">
           <li>Tokens that have already been used for scans</li>
-          <li>Purchases where the 7-day window has passed</li>
+          <li>Purchases where the 3-day window has passed</li>
           <li>Individual tokens (refunds apply to the full unused balance only)</li>
         </ul>
       </section>
