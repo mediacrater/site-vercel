@@ -20,15 +20,29 @@ export default function ChangelogPage() {
           </div>
 
           <div className="space-y-4">
+            {/* Version 1.5.8 */}
+            <section>
+              <div className="mb-1">
+                <h3 className="text-l font-semibold">Alpha 1.5.8</h3>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
+                <li>Frontend and backend improvements for the abuse prevention measures</li>
+              </ul>
+            </section>
+          
+          <div className="space-y-4">
             {/* Version 1.5.7 */}
             <section>
               <div className="mb-1">
                 <h3 className="text-l font-semibold">Alpha 1.5.7</h3>
               </div>
               <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
-                <li>Interface and backend improvements for abuse prevention measures</li>
+                <li>Changed Read and write access to Mediacrater domains instead of Supabase</li>
               </ul>
             </section>
+
+          </div>
+        </section>
 
         {/* Alpha Section */}
         <section>
