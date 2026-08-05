@@ -10,7 +10,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const SIGNUP_RATE_LIMIT_MS = 1 * 60 * 1000; // 15 minutes
+const SIGNUP_RATE_LIMIT_MS = 60 * 60 * 1000; // 60 minutes
 
 export async function POST(req: NextRequest) {
   const { email, password, acceptedTerms } = await req.json(); // acceptedTerms added
