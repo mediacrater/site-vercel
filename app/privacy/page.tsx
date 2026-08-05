@@ -100,7 +100,9 @@ export default function PrivacyPolicy() {
             <strong>Video and image files</strong> — files you submit for scanning are transmitted
             to our servers solely for policy analysis. They are permanently and automatically deleted
             the moment your scan results are returned to the extension. We do not store, retain,
-            review, or use your creative assets for any purpose beyond the scan you requested.
+            review, or use your creative assets for any purpose beyond the scan you requested. We store
+            the results of your scan purely for troubleshooting and debugging purposes as well as for 
+            assuring proper use our services. 
           </li>
         </ul>
       </section>
