@@ -213,6 +213,7 @@ function PricingContent() {
   const userId = searchParams.get('userId');
   const userEmail = searchParams.get('email');
   const fromExtension = searchParams.get('source') === 'extension';
+  const fromabuse_email = searchParams.get('source') === 'abuse_email';
   const currentPlan = searchParams.get('currentPlan') ?? '';
 
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
