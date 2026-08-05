@@ -68,9 +68,9 @@ const PLANS = [
     popular: false,
     highlight: false,
   },
-]
+];
 
-type CellValue = boolean | string
+type CellValue = boolean | string;
 
 const featureRows: { label: string; values: CellValue[] }[] = [
   {
@@ -103,13 +103,13 @@ const featureRows: { label: string; values: CellValue[] }[] = [
   },
   {
     label: 'Scan history',
-    values: [false, true, true, true, true],
+    values: [false, true, true, true],
   },
   {
     label: 'Dedicated account manager',
     values: [false, false, false, true],
   },
-]
+];
 
 const VALIDATION_SCREENSHOTS = [
   {
@@ -130,7 +130,7 @@ const VALIDATION_SCREENSHOTS = [
     role: 'Ad Specialist',
     quote: '"A tool that checks creatives before uploading would save time and stress for marketers."',
   },
-]
+];
 
 const FAQ_ITEMS = [
   {
@@ -165,7 +165,7 @@ const FAQ_ITEMS = [
     question: 'Is my payment secure?',
     answer: 'Yes. All payments are processed by Stripe. We never store or see your card details.',
   },
-]
+];
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
@@ -175,9 +175,9 @@ function Cell({ value }: { value: CellValue }) {
       <Check className="w-4 h-4 mx-auto text-emerald-500" strokeWidth={2.5} />
     ) : (
       <Minus className="w-4 h-4 mx-auto text-muted-foreground/30" strokeWidth={2} />
-    )
+    );
   }
-  return <span className="text-sm font-medium text-foreground">{value}</span>
+  return <span className="text-sm font-medium text-foreground">{value}</span>;
 }
 
 function FAQItem({ question, answer }: { question: string; answer: string }) {
@@ -223,7 +223,7 @@ function PricingContent() {
       alert('Please open this page from inside the extension to subscribe.');
       return;
     }
-    
+
     setLoadingPlan(planId);
     try {
       const response = await fetch('https://host.mediacrater.com/checkout/create', {
@@ -235,19 +235,18 @@ function PricingContent() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to initiate checkout');
       window.location.href = data.url;
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      alert(errorMessage);
       setLoadingPlan(null);
     }
   };
-
-  const highlightIndex = PLANS.findIndex((p) => p.highlight);
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="max-w-6xl mx-auto px-4 pt-33 pb-16 space-y-20">
+      <main className="max-w-6xl mx-auto px-4 pt-32 pb-16 space-y-20">
 
         {/* ── Heading ── */}
         <div className="text-center space-y-4 max-w-2xl mx-auto">
@@ -256,7 +255,7 @@ function PricingContent() {
             Pick a plan based on how many ad campaigns you run per month.
             Cancel or change plans anytime.
           </p>
-          {!fromExtension !fromabuse_email && (
+          {!fromExtension && !fromabuse_email && (
             <p className="text-sm text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-lg px-4 py-2 inline-block">
               Open this page from the Mediacrater extension to subscribe
             </p>
@@ -335,20 +334,24 @@ function PricingContent() {
                         </p>
                         <button
                           onClick={() => handleSubscribe(plan.id)}
-                          disabled={loadingPlan !== null || !fromExtension !fromabuse_email || plan.id === currentPlan}
+                          disabled={
+                            loadingPlan !== null ||
+                            (!fromExtension && !fromabuse_email) ||
+                            plan.id === currentPlan
+                          }
                           className={`block w-full text-center py-2 rounded-lg text-xs font-semibold transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed ${
                             plan.id === currentPlan
-                            ? 'bg-muted text-muted-foreground border border-border cursor-not-allowed'
-                            : plan.highlight
-                            ? 'bg-accent text-accent-foreground'
-                            : 'bg-primary/10 text-primary hover:bg-primary/15 border border-primary/20'
+                              ? 'bg-muted text-muted-foreground border border-border cursor-not-allowed'
+                              : plan.highlight
+                              ? 'bg-accent text-accent-foreground'
+                              : 'bg-primary/10 text-primary hover:bg-primary/15 border border-primary/20'
                           }`}
                         >
                           {plan.id === currentPlan
                             ? 'Current Plan'
                             : loadingPlan === plan.id
                             ? 'Redirecting…'
-                          : `Get ${plan.name}`}
+                            : `Get ${plan.name}`}
                         </button>
                       </th>
                     ))}
@@ -383,7 +386,7 @@ function PricingContent() {
             </div>
           </div>
         </div>
-        
+
         {/* ── Trust line ── */}
         <p className="text-center text-xs text-muted-foreground flex items-center justify-center gap-2 flex-wrap">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
@@ -398,7 +401,7 @@ function PricingContent() {
           <span className="text-border">·</span>
           Downgrade or upgrade at any time
         </p>
-        
+
         {/* ── Validation strip ── */}
         <div>
           <div className="flex items-center justify-center gap-3 mb-6">
@@ -443,7 +446,6 @@ function PricingContent() {
             Real feedback from Facebook advertising communities — collected before building
           </p>
         </div>
-      
 
         {/* ── What every scan includes ── */}
         <div className="max-w-2xl mx-auto">
