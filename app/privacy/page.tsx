@@ -166,6 +166,10 @@ export default function PrivacyPolicy() {
             results are delivered.
           </li>
           <li>
+            <strong>Generation results</strong> — retained for as long as your account is active
+            for troubleshooting, debugging and adherence to our Terms (Section 5: Acceptable Use).
+          </li>
+          <li>
             <strong>Account data</strong> — retained for as long as your account is active.
           </li>
           <li>
