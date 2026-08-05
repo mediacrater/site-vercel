@@ -256,7 +256,7 @@ function PricingContent() {
             Pick a plan based on how many ad campaigns you run per month.
             Cancel or change plans anytime.
           </p>
-          {!fromExtension && (
+          {!fromExtension !fromabuse_email && (
             <p className="text-sm text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-lg px-4 py-2 inline-block">
               Open this page from the Mediacrater extension to subscribe
             </p>
@@ -335,7 +335,7 @@ function PricingContent() {
                         </p>
                         <button
                           onClick={() => handleSubscribe(plan.id)}
-                          disabled={loadingPlan !== null || !fromExtension || plan.id === currentPlan}
+                          disabled={loadingPlan !== null || !fromExtension !fromabuse_email || plan.id === currentPlan}
                           className={`block w-full text-center py-2 rounded-lg text-xs font-semibold transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed ${
                             plan.id === currentPlan
                             ? 'bg-muted text-muted-foreground border border-border cursor-not-allowed'
