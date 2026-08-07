@@ -47,17 +47,17 @@ export default function PrivacyPolicy() {
             correctly and to support refund requests. Stored via Supabase.
           </li>
           <li>
-            <strong>Scan metadata</strong> — when you run a scan, we log the timestamp, tokens
-            consumed, platform selected, content type (video or image), generation results and analysis duration.
-            No ad content, video files, or images are ever stored. This data is used solely to
-            diagnose technical issues and to evaluate refund requests. Stored via Supabase.
+            <strong>Scan metadata & analysis results</strong> — when you run a scan, we log the timestamp, tokens
+            consumed, platform selected, content type (video or image), generation analysis output, and analysis duration.
+            No raw ad content, video files, or images are ever stored. This data is stored to
+            diagnose technical issues, evaluate refund requests, and ensure compliance with our terms. Stored via Supabase.
           </li>
           <li>
             <strong>Queue metadata</strong> — Our queuing system is designed to allocate our limited 
             server resources appropriately so everyone gets a chance to scan their ads. When you run 
             a scan and you're placed in our queuing system, we generate a queue ID and your scan
             metadata is logged with it. This includes your plan, user ID, scan type, content type, status,
-            timestamps, how long you waited in queue and payload size.
+            timestamps, how long you waited in queue, and payload size.
           </li>
           <li>
             <strong>Password</strong> — your password is encrypted using Supabase's authentication
@@ -76,7 +76,7 @@ export default function PrivacyPolicy() {
               >
                 Terms of Service
               </a>.
-          </li>   
+          </li>    
         </ul>
 
         <h3 className="text-lg font-semibold mb-2">Payment Data</h3>
@@ -98,11 +98,9 @@ export default function PrivacyPolicy() {
         <ul className="list-disc list-inside space-y-2">
           <li>
             <strong>Video and image files</strong> — files you submit for scanning are transmitted
-            to our servers solely for policy analysis. They are permanently and automatically deleted
+            to our API servers solely for policy analysis. They are permanently and automatically deleted
             the moment your scan results are returned to the extension. We do not store, retain,
-            review, or use your creative assets for any purpose beyond the scan you requested. We store
-            the results of your scan purely for troubleshooting and debugging purposes as well as for 
-            assuring proper use our services. 
+            review, or use your creative assets for any purpose beyond the scan you requested.
           </li>
         </ul>
       </section>
@@ -114,7 +112,7 @@ export default function PrivacyPolicy() {
           <li>To scan your ad content and return a policy compliance report</li>
           <li>To manage your token balance accurately across purchases and scans</li>
           <li>To process payments and evaluate refund requests</li>
-          <li>To diagnose technical issues using anonymised scan metadata</li>
+          <li>To diagnose technical issues using scan metadata and log history</li>
           <li>To improve Mediacrater's accuracy and features over time</li>
           <li>To respond to support requests sent to our email</li>
         </ul>
@@ -135,7 +133,7 @@ export default function PrivacyPolicy() {
         <ul className="list-disc list-inside space-y-2">
           <li>
             <strong>Supabase</strong> — user authentication, account data storage, and database
-            management. Supabase stores your email, token balance, purchase records, and scan
+            management. Supabase stores your email, token balance, purchase records, generated scan results, and scan
             metadata on our behalf.
           </li>
           <li>
@@ -143,10 +141,13 @@ export default function PrivacyPolicy() {
             billing data. We do not store payment details.
           </li>
           <li>
-            <strong>Cloud infrastructure provider</strong> — server hosting and processing infrastructure.
+            <strong>OpenRouter</strong> — secure API gateway used to transmit anonymized scan payloads to AI model infrastructure for content analysis.
           </li>
           <li>
-            <strong>Vercel</strong> — website hosting and infrastructure for mediacrater.com.
+            <strong>Cloud Infrastructure Provider</strong> — backend server hosting, request execution, and queue processing infrastructure.
+          </li>
+          <li>
+            <strong>Vercel</strong> — web application hosting and infrastructure for mediacrater.com.
           </li>
           <li>
             <strong>Vercel Analytics</strong> — anonymous usage analytics for our website.
@@ -166,19 +167,14 @@ export default function PrivacyPolicy() {
             results are delivered.
           </li>
           <li>
-            <strong>Generation results</strong> — retained for as long as your account is active
-            for troubleshooting, debugging and adherence to our Terms (Section 5: Acceptable Use).
+            <strong>Generation results & scan metadata</strong> — retained for as long as your account is active
+            for troubleshooting, debugging, and adherence to our Terms (Section 5: Acceptable Use).
           </li>
           <li>
             <strong>Account data</strong> — retained for as long as your account is active.
           </li>
           <li>
-            <strong>Scan metadata</strong> — retained for as long as your account is active and
-            used solely for diagnostics and refund evaluation.
-          </li>
-          <li>
-            <strong>Purchase records</strong> — retained for as long as your account is active
-            for billing and refund purposes.
+            <strong>Purchase & tax records</strong> — retained for 6 years from the end of the relevant tax year in compliance with statutory Canada Revenue Agency requirements.
           </li>
         </ul>
         <p className="mt-4">
