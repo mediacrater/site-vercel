@@ -48,7 +48,7 @@ export default function PrivacyPolicy() {
           </li>
           <li>
             <strong>Scan metadata</strong> — when you run a scan, we log the timestamp, tokens
-            consumed, platform selected, content type (video or image), and analysis duration.
+            consumed, platform selected, content type (video or image), generation results and analysis duration.
             No ad content, video files, or images are ever stored. This data is used solely to
             diagnose technical issues and to evaluate refund requests. Stored via Supabase.
           </li>
