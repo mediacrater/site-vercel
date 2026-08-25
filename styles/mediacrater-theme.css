@@ -1,0 +1,70 @@
+/* styles/mediacrater-theme.css
+ *
+ * Merge these into your existing app/globals.css :root and .dark blocks
+ * (don't replace the whole file — just override the variable VALUES so
+ * your existing Tailwind classes like bg-primary, bg-card, border-border
+ * automatically pick up the extension's palette everywhere, with zero
+ * component-level changes).
+ *
+ * Source of truth: popup.css's :root block (extension). Hex values below
+ * are copied 1:1 from there, just re-expressed as HSL for shadcn/Tailwind's
+ * `hsl(var(--x))` convention. If your globals.css uses raw hex instead of
+ * HSL triplets, use the "hex" value in the comment next to each line
+ * instead.
+ */
+
+:root {
+  --background: 210 40% 98%;        /* #f8fafc off-white */
+  --foreground: 222 47% 11%;        /* #0f172a text-primary */
+
+  --card: 0 0% 100%;                /* #ffffff white */
+  --card-foreground: 222 47% 11%;   /* #0f172a */
+
+  --primary: 213 71% 32%;           /* #16478f accent */
+  --primary-foreground: 0 0% 100%;  /* #ffffff */
+
+  --secondary: 210 40% 96%;         /* light neutral, unchanged */
+  --secondary-foreground: 222 47% 11%;
+
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;  /* #64748b-ish, close to --text-secondary #475569 */
+
+  --accent: 213 71% 32%;            /* mirrors --primary, same as extension's single accent */
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 0 74% 51%;         /* #dc2626 danger */
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 214 32% 91%;            /* #e2e8f0 */
+  --input: 214 32% 91%;
+  --ring: 213 71% 32%;              /* #16478f accent, used for focus rings */
+
+  --radius: 0.625rem;               /* ~10px, matches --radius-md */
+}
+
+.dark {
+  --background: 210 40% 6%;         /* #0d1b2a navy */
+  --foreground: 210 40% 98%;
+
+  --card: 213 33% 15%;              /* #1a2e44 navy-mid */
+  --card-foreground: 210 40% 98%;
+
+  --primary: 212 62% 46%;           /* #235db4 accent-hover, reads better on dark */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 213 28% 22%;         /* #243b55 navy-light */
+  --secondary-foreground: 210 40% 98%;
+
+  --muted: 213 28% 22%;
+  --muted-foreground: 215 20% 65%;  /* #94a3b8 text-muted */
+
+  --accent: 212 62% 46%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 0 74% 51%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 213 28% 22%;
+  --input: 213 28% 22%;
+  --ring: 212 62% 46%;
+}
