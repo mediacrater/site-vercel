@@ -226,7 +226,7 @@ function PricingContent() {
 
     setLoadingPlan(planId);
     try {
-      const response = await fetch('https://host.mediacrater.com/checkout/create', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_VPS_API_URL}/checkout/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan: planId, userId, email: userEmail }),
