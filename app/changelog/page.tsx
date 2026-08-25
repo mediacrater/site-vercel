@@ -15,6 +15,19 @@ export default function ChangelogPage() {
       {/* Single container for all sections */}
       <div className="space-y-12">
         {}
+
+          {/* Beta Section */}
+        <section>
+          <div className="flex items-center gap-3 mb-4">
+            <h2 className="text-xl font-semibold">Alpha 1.6</h2>
+            <span className="text-xs text-muted-foreground">May 2026</span>
+          </div>
+          <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
+            <li>Web app now available</li>
+            <li>Preparing environment for audio analysis capabilities</li>
+          </ul>
+        </section>
+        
         {/* Alpha Section */}
         <section>
           <div className="flex items-center gap-3 mb-6">
