@@ -34,7 +34,7 @@ const faqs = [
   },
   {
     question: "Can I get a refund?",
-    answer: "Tokens cannot be reaccumulated once used for scans. Unused tokens from one-time purchases can be refunded within 14 days of purchase. We may deduct the unrecoverable processing fees from refunds. Subscriptions are non refundable, you can cancel anytime, and unused tokens remain valid according to the rollover policy.",
+    answer: "Tokens cannot be reaccumulated once used for scans. Unused tokens can be refunded within 7 days of purchase. We may deduct the unrecoverable processing fees from refunds.",
   },
   {
     question: "Is Mediacrater affiliated with Meta, TikTok, or Google?",
