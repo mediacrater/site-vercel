@@ -1,153 +1,210 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Shield, CheckCircle, Zap, AlertTriangle, Check } from "lucide-react"
+import { Shield, CheckCircle, ArrowUpRight } from "lucide-react"
 
-const EXTENSION_LINK = "https://chromewebstore.google.com/detail/mediacrater-ad-compliance/fgekklkpomdcadiaekpigidkimnkjpnf?utm_medium=website_hero"
+const EXTENSION_LINK =
+  "https://chromewebstore.google.com/detail/mediacrater-ad-compliance/fgekklkpomdcadiaekpigidkimnkjpnf?utm_medium=website_hero"
 
 export function Hero() {
   return (
-    <section className="relative pt-28 pb-16 md:pt-36 md:pb-24 border-b border-border/50">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-          
-          {/* Left Column: Copy & Action */}
-          <div className="lg:col-span-7 flex flex-col items-start text-left">
-            <Badge variant="outline" className="mb-6 px-3.5 py-1.5 text-xs font-semibold rounded-full border-primary/30 bg-primary/5 text-primary">
-              <Zap className="w-3.5 h-3.5 mr-1.5 text-primary fill-primary/20" />
-              3 Free Tokens on Signup
+    <section className="relative overflow-hidden border-b border-border/50 pt-28 pb-20 md:pt-36 md:pb-28">
+      {/* Very subtle background treatment */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+      >
+        <div className="absolute left-[8%] top-[12%] h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute right-[8%] top-[18%] h-72 w-72 rounded-full bg-accent/5 blur-3xl" />
+      </div>
+
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid items-center gap-14 lg:grid-cols-12 lg:gap-10">
+          {/* Copy */}
+          <div className="lg:col-span-6">
+            <Badge
+              variant="outline"
+              className="mb-7 rounded-full border-primary/25 bg-primary/5 px-3 py-1.5 text-xs font-semibold text-primary"
+            >
+              <span className="mr-2 h-1.5 w-1.5 rounded-full bg-primary" />
+              Video ad policy checker
             </Badge>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground font-[family-name:var(--font-display)] leading-[1.15]">
-              Video Ad <span className="text-primary">Policy Checker</span>
+            <h1 className="max-w-3xl font-[family-name:var(--font-display)] text-5xl font-bold leading-[0.98] tracking-[-0.035em] text-foreground sm:text-6xl lg:text-7xl">
+              Know before
+              <br />
+              you <span className="text-primary">launch.</span>
             </h1>
-            
-            <p className="mt-3 text-xl sm:text-2xl font-bold text-foreground/90 font-[family-name:var(--font-display)]">
-              Never Get an Ad Rejection Notification Again
+
+            <p className="mt-7 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
+              Scan your video ads for potential Meta, TikTok, and Google
+              policy issues before you spend money promoting them.
             </p>
 
-            <p className="mt-5 text-base sm:text-lg text-muted-foreground max-w-xl leading-relaxed">
-              Scan your video ads for Meta, TikTok, and Google policy violations before uploading.
-              Get instant risk zone assessments and actionable fixes in 60 seconds.*
-            </p>
-
-            {/* CTAs */}
-            <div className="mt-8 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button
                 asChild
                 size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base px-7 py-6 shadow-sm"
+                className="h-12 rounded-xl bg-primary px-6 text-base font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
               >
-                <a href={EXTENSION_LINK} target="_blank" rel="noopener noreferrer">
-                  <Shield className="w-5 h-5 mr-2" />
-                  Try for free
+                <a
+                  href={EXTENSION_LINK}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Shield className="mr-2 h-4 w-4" />
+                  Try it free
+                  <ArrowUpRight className="ml-1 h-4 w-4" />
                 </a>
               </Button>
+
               <Button
                 asChild
                 variant="outline"
                 size="lg"
-                className="text-base px-7 py-6 border-border hover:bg-secondary/80 bg-card text-foreground font-medium"
+                className="h-12 rounded-xl bg-background px-6 text-base"
               >
-                <a href="https://www.youtube.com/watch?v=Jk_XtsN1N9I?utm_medium=website_how-it-works">See How It Works</a>
+                <a
+                  href="https://www.youtube.com/watch?v=Jk_XtsN1N9I&utm_medium=website_hero"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  See how it works
+                </a>
               </Button>
             </div>
 
-            {/* Trust Badges */}
-            <div className="mt-8 pt-8 border-t border-border/60 w-full flex flex-wrap items-center gap-x-6 gap-y-3 text-xs sm:text-sm font-medium text-muted-foreground">
+            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-500" />
-                <span>Privacy-first processing</span>
+                <CheckCircle className="h-4 w-4 text-emerald-500" />
+                Privacy-first processing
               </div>
+
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-500" />
-                <span>Multi-platform support</span>
+                <CheckCircle className="h-4 w-4 text-emerald-500" />
+                Multi-platform support
               </div>
+
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-500" />
-                <span>As low as $0.19/scan</span>
+                <CheckCircle className="h-4 w-4 text-emerald-500" />
+                From $0.19 / scan
               </div>
             </div>
 
-            {/* Supported Platforms Strip */}
-            <div className="mt-8 flex items-center gap-4">
-              <span className="text-xs uppercase tracking-wider font-bold text-muted-foreground/70">Platforms:</span>
-              <div className="flex items-center gap-3 text-muted-foreground">
-                <span className="text-xs font-semibold px-2.5 py-1 rounded bg-secondary/80 border border-border">Meta</span>
-                <span className="text-xs font-semibold px-2.5 py-1 rounded bg-secondary/80 border border-border">TikTok</span>
-                <span className="text-xs font-semibold px-2.5 py-1 rounded bg-secondary/80 border border-border">YouTube</span>
-                <span className="text-xs font-semibold px-2.5 py-1 rounded bg-secondary/80 border border-border">X</span>
-                <span className="text-xs font-semibold px-2.5 py-1 rounded bg-secondary/80 border border-border">Pinterest</span>
+            <div className="mt-10 border-t border-border/60 pt-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">
+                Check creatives for
+              </p>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {["Meta", "TikTok", "YouTube", "X", "Pinterest"].map(
+                  (platform) => (
+                    <span
+                      key={platform}
+                      className="rounded-md border border-border bg-secondary/50 px-2.5 py-1 text-xs font-medium text-muted-foreground"
+                    >
+                      {platform}
+                    </span>
+                  )
+                )}
               </div>
             </div>
           </div>
 
-          {/* Right Column: Risk Zone Scan Mockup Visual */}
-          <div className="lg:col-span-5 relative">
-            <div className="rounded-2xl border border-border bg-card shadow-xl overflow-hidden">
-              {/* Widget Header */}
-              <div className="px-4 py-3 bg-muted/40 border-b border-border flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-destructive/60" />
-                  <div className="w-3 h-3 rounded-full bg-amber-500/60" />
-                  <div className="w-3 h-3 rounded-full bg-emerald-500/60" />
-                  <span className="ml-2 text-xs font-mono text-muted-foreground">compliance_audit.mp4</span>
+          {/* Product visual */}
+          <div className="relative lg:col-span-6">
+            <div className="absolute -inset-6 rounded-[2rem] bg-primary/5 blur-3xl" />
+
+            <div className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+              {/* Browser chrome */}
+              <div className="flex items-center justify-between border-b border-border bg-muted/40 px-4 py-3">
+                <div className="flex items-center gap-1.5">
+                  <div className="h-2.5 w-2.5 rounded-full bg-destructive/50" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-amber-500/50" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/50" />
                 </div>
-                <Badge variant="secondary" className="text-[10px] font-mono bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">
-                  Scan Complete
-                </Badge>
+
+                <span className="text-[10px] font-mono text-muted-foreground">
+                  mediacrater.com / scan
+                </span>
+
+                <div className="w-10" />
               </div>
 
-              {/* Widget Body */}
-              <div className="p-5 space-y-4">
-                {/* Risk Level Banner */}
-                <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-wider font-bold text-amber-600 dark:text-amber-400">Policy Assessment</p>
-                    <p className="text-xl font-extrabold text-foreground font-mono flex items-center gap-1.5 mt-0.5">
-                      Medium Risk
+              <div className="grid gap-4 p-4 sm:p-5">
+                {/* Video */}
+                <div className="relative aspect-video overflow-hidden rounded-xl bg-black">
+                  <div className="absolute inset-0 bg-gradient-to-br from-slate-800 via-slate-950 to-black" />
+
+                  <div className="absolute left-5 top-5 rounded-md border border-white/10 bg-black/40 px-2.5 py-1.5 text-[10px] font-mono text-white/70 backdrop-blur">
+                    compliance_audit.mp4
+                  </div>
+
+                  <div className="absolute bottom-5 left-5">
+                    <p className="text-xs font-medium text-white/50">
+                      00:12 / 00:31
                     </p>
-                  </div>
-                  {/* 3-Tier Indicator Bar */}
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-[10px] text-muted-foreground font-mono">1 Issue Detected</span>
-                    <div className="flex items-center gap-1">
-                      <div className="w-6 h-2 rounded bg-emerald-500/30" />
-                      <div className="w-6 h-2 rounded bg-amber-500" />
-                      <div className="w-6 h-2 rounded bg-muted" />
+                    <div className="mt-2 h-1 w-48 overflow-hidden rounded-full bg-white/20">
+                      <div className="h-full w-[39%] rounded-full bg-primary" />
                     </div>
+                  </div>
+
+                  <div className="absolute right-5 top-5 rounded-full bg-amber-500/15 px-2.5 py-1 text-[10px] font-semibold text-amber-400 ring-1 ring-inset ring-amber-500/20">
+                    1 issue
                   </div>
                 </div>
 
-                {/* Detected Flags */}
-                <div className="space-y-2.5">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Audit Log</p>
-                  
-                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs flex items-start gap-2.5">
-                    <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                {/* Assessment */}
+                <div className="rounded-xl border border-border bg-background p-4">
+                  <div className="flex items-start justify-between gap-4">
                     <div>
-                      <span className="font-semibold text-foreground">Timestamp 0:12 — Soft Guarantee Claim</span>
-                      <p className="text-muted-foreground mt-0.5">1 medium-severity violation found. Change phrasing to pass Low Risk threshold.</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Policy assessment
+                      </p>
+                      <p className="mt-1 text-xl font-bold text-foreground">
+                        Medium risk
+                      </p>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-[10px] text-muted-foreground">
+                        Confidence
+                      </p>
+                      <p className="font-mono text-sm font-semibold text-amber-500">
+                        78%
+                      </p>
                     </div>
                   </div>
 
-                  <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs flex items-start gap-2.5">
-                    <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-semibold text-foreground">TikTok Safe Zone Guidelines</span>
-                      <p className="text-muted-foreground mt-0.5">Text overlays clear all native UI elements.</p>
+                  <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full w-[52%] rounded-full bg-amber-500" />
+                  </div>
+
+                  <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                    <div className="flex gap-3">
+                      <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-amber-500" />
+
+                      <div>
+                        <p className="text-xs font-semibold text-foreground">
+                          Timestamp 0:12 — Soft guarantee claim
+                        </p>
+                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                          Potential policy issue detected. Review the phrasing
+                          before publishing.
+                        </p>
+                      </div>
                     </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-[10px] text-muted-foreground">
+                    <span>Deep scan</span>
+                    <span className="font-mono text-primary">
+                      analysis complete
+                    </span>
                   </div>
                 </div>
-              </div>
-
-              {/* Widget Footer */}
-              <div className="px-4 py-3 bg-muted/20 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-                <span>Deep Scan Depth</span>
-                <span className="font-mono text-primary font-medium">0.4s processing</span>
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </section>
