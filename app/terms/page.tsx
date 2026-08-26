@@ -1,3 +1,4 @@
+//app/terms/page.tsx
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -10,7 +11,7 @@ export default function TermsOfService() {
   return (
     <main className="max-w-3xl mx-auto px-6 py-16 text-base leading-relaxed">
       <h1 className="text-3xl font-bold mb-2">Terms of Service</h1>
-      <p className="text-sm text-muted-foreground mb-10">Effective date: April 2026</p>
+      <p className="text-sm text-muted-foreground mb-10">Effective date: August 2026</p>
 
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">1. Acceptance of Terms</h2>
@@ -26,10 +27,10 @@ export default function TermsOfService() {
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">2. What Mediacrater Does</h2>
         <p>
-          Mediacrater is a Chrome extension that analyzes video ad creatives against publicly
-          available advertising policies from platforms including Meta, TikTok, YouTube, Pinterest,
-          and X. It returns a confidence score and actionable recommendations. It does not guarantee
-          ad approval and is not affiliated with any of these platforms.
+          Mediacrater analyzes video and image ad creatives against publicly available advertising
+          policies from platforms including Meta, TikTok, YouTube, Pinterest, and X, via our Chrome
+          extension or web app. It returns a confidence score and actionable recommendations. It
+          does not guarantee ad approval and is not affiliated with any of these platforms.
         </p>
       </section>
 
@@ -68,14 +69,7 @@ export default function TermsOfService() {
           <li>Resell or redistribute scan results without permission</li>
         </ul>
       </section>
-
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-3">5.5. Subscriptions, fees and payment.</h2>
-        <ul className="list-disc list-inside space-y-2">
-          <li><strong>Subscription content, features and services.</strong> The content, features, and other services provided as part of your Subscription, and the duration of your Subscription, will be described in the order process. We may change the content, features, and other services from time to time, and we do not guarantee that any particular piece of content, feature, or other service will always be available through the Services.</li>
-          <li><strong>Subscription term and automatic renewal.</strong> If you sign up for a paid Subscription, we will automatically charge your Payment Method on each agreed-upon periodic renewal date until you cancel. If your Subscription has a minimum term (the “Initial Term”), we will let you know during the order process. Your Subscription will last for the Initial Term and will automatically renew, and your Payment Method will be charged, at the end of the Initial Term for an additional term equal in duration to the Initial Term and will continue to renew and incur charges for additional terms equal in duration to the Initial Term (each such additional term, a “Renewal Term”) until you cancel.</li>
-        </ul>
-      </section>     
+      
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">6. Abuse</h2>
         <p>
@@ -87,11 +81,22 @@ export default function TermsOfService() {
 
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">7. Your Content</h2>
+        <p className="mb-4">
+          You retain full ownership of any video or image files you submit. By submitting a file, you
+          grant Mediacrater a limited, temporary license to process it for the purpose of delivering
+          your scan results. The full file you upload is permanently deleted after results are
+          returned — we do not retain your original video or image. We claim no ownership over your
+          creative assets.
+        </p>
         <p>
-          You retain full ownership of any video files you submit. By submitting a file, you grant
-          Mediacrater a limited, temporary license to process it for the purpose of delivering your
-          scan results. Files are permanently deleted after results are returned. We claim no
-          ownership over your creative assets.
+          <strong>Scan History (paid plans):</strong> if your plan includes Scan History, we retain a
+          small, heavily compressed, low-resolution thumbnail (generated from the first frame of your
+          video, or your image) so you can visually identify past scans in your history list. This
+          thumbnail is intentionally too low-quality for any practical reuse of your creative — it
+          exists solely for your own reference. It is deleted if you delete the associated scan, and
+          is not retained if your plan does not include Scan History. Full scan results (the text
+          analysis, not the creative itself) are retained as part of your Scan History for as long as
+          your plan includes that feature.
         </p>
       </section>
 
@@ -124,15 +129,8 @@ export default function TermsOfService() {
         </p>
       </section>
 
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-3">11. Age Requirement & Eligibility</h2>
-        <p>
-          By creating an account or using Mediacrater, you represent and warrant that you are at least 18 years of age and possess the legal capacity to agree to these Terms. If you are under the age of 18, you are strictly prohibited from creating an account or using our services. If we learn or have reason to suspect that a user is under the age of 18, we reserve the right to suspend or terminate that account immediately without notice or refund.
-        </p>
-      </section>
-      
       <section>
-        <h2 className="text-xl font-semibold mb-3">12. Contact</h2>
+        <h2 className="text-xl font-semibold mb-3">11. Contact</h2>
         <p>
           For questions about these terms, email{' '}
           <a href="mailto:hello.mediacrater@gmail.com" className="underline">
