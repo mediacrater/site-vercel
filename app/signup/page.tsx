@@ -1,27 +1,46 @@
 'use client';
 
+// app/signup/page.tsx
+//
+// Rebuilt against the real /api/signup route (previously I had this
+// calling supabase.auth.signUp() directly, which skipped the IP rate
+// limiting, profiles upsert, and consent-timestamp write that route
+// handles — that was the actual signup bug, now fixed by routing
+// through /api/signup properly).
+//
+// checkEmail is now driven by whether the API response includes a
+// session (auto-confirmed) vs. not (confirmation email required) —
+// the version this replaced always redirected to /dashboard
+// unconditionally and never set checkEmail at all.
+//
+// TODO (Phase C): referral attribution (reading the mc_referrer cookie)
+// still not built — hook point is wherever signup succeeds below.
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Header } from '@/components/header';
+import { useTheme } from 'next-themes';
+import { AuthShowcasePanel } from '@/components/auth-showcase-panel';
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
-export default function SignupPage() {
+export default function SignUpPage() {
+  const router = useRouter();
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [acceptedTerms, setAcceptedTerms] = useState(false); // NEW
-  const router = useRouter();
-
-  // NEW: resend verification state
-  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
-  const [resendError, setResendError] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [checkEmail, setCheckEmail] = useState(false);
+  const [consentAccepted, setConsentAccepted] = useState(false);
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const [resendError, setResendError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
 
-  // NEW: cooldown ticker
+  // Cooldown ticker — ported directly from the live signup page's
+  // mechanism (60s, one-second interval, counts down to 0).
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = setInterval(() => {
@@ -30,58 +49,74 @@ export default function SignupPage() {
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
-  const handleSignup = async (e: React.FormEvent) => {
+  useEffect(() => setMounted(true), []);
+
+  const logoSrc = mounted && resolvedTheme === 'dark' ? '/images/header-logo-dark.png' : '/images/header-logo.png';
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    setError(null);
 
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      setLoading(false);
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    if (!consentAccepted) {
+      setError('Please confirm you are 18+ and accept the Terms, Refund Policy, and Privacy Policy to continue.');
       return;
     }
 
-    // NEW
-    if (!acceptedTerms) {
-      setError('You must accept the terms of service and privacy policy to create an account');
-      setLoading(false);
-      return;
-    }
-
+    setLoading(true);
     try {
-      const response = await fetch('/api/signup', {
+      const res = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, acceptedTerms }) // acceptedTerms added
+        body: JSON.stringify({
+          email,
+          password,
+          acceptedTerms: true,
+        }),
       });
 
-      const data = await response.json();
+      const json = await res.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Signup failed');
+      if (!res.ok) {
+        throw new Error(json.error || 'Failed to create account.');
       }
 
-      setSuccess(true);
+      // TODO (Phase C): referral attribution hook goes here, once the
+      // links table + consent banner exist — read mc_referrer cookie,
+      // write into profiles.referrer for the new user.
 
+      if (json.hasSession) {
+        router.push('/dashboard');
+      } else {
+        setCheckEmail(true);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to create account. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  // NEW: resend verification handler
-  const handleResendVerification = async () => {
-    if (resendCooldown > 0 || resendStatus === 'sending') return;
+  // Now calls the real /api/resend-verification route (server-side,
+  // service-role, includes the already-confirmed gate) instead of
+  // hitting Supabase's /auth/v1/resend directly from the client.
+  async function handleResendVerification() {
+    if (resendCooldown > 0 || resendState === 'sending') return;
 
-    setResendStatus('sending');
-    setResendError('');
-
+    setResendError(null);
+    setResendState('sending');
     try {
       const response = await fetch('/api/resend-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email }),
       });
 
       const data = await response.json();
@@ -90,151 +125,144 @@ export default function SignupPage() {
         throw new Error(data.error || 'Failed to resend verification email');
       }
 
-      setResendStatus('sent');
+      setResendState('sent');
       setResendCooldown(RESEND_COOLDOWN_SECONDS);
     } catch (err: any) {
-      setResendStatus('error');
-      setResendError(err.message || 'Failed to resend verification email');
+      setResendError(err.message || 'Failed to resend verification email. Please try again.');
+      setResendState('idle');
     }
-  };
-
-  if (success) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="flex items-center justify-center min-h-screen px-4 pt-16">
-          <div className="w-full max-w-md">
-            <div className="bg-card border border-border rounded-lg shadow-lg p-8 text-center">
-              <div className="mb-6">
-                <div className="w-20 h-20 mx-auto bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-                  <svg className="w-12 h-12 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-              </div>
-              <h1 className="text-3xl font-bold text-card-foreground mb-4">Check Your Email!</h1>
-              <p className="text-muted-foreground mb-6">We've sent a verification link to:</p>
-              <p className="text-lg font-semibold text-foreground mb-6">{email}</p>
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6 text-left">
-                <p className="text-sm text-blue-900 dark:text-blue-300 font-semibold mb-2">Next Steps:</p>
-                <ol className="text-sm text-blue-800 dark:text-blue-400 space-y-1 ml-4">
-                  <li>1. Click the verification link in your email</li>
-                  <li>2. Open the Mediacrater extension</li>
-                  <li>3. Sign in with your email and password</li>
-                  <li>4. Start scanning with your 3 free scans!</li>
-                </ol>
-              </div>
-              <div className="bg-primary/10 border-l-4 border-primary rounded p-3 mb-6">
-                <p className="text-sm font-semibold text-card-foreground">You'll receive 3 monthly scans after verification</p>
-              </div>
-              <p className="text-xs text-muted-foreground mb-2">Don't see the email? Check your spam folder.</p>
-
-              {/* NEW: resend verification button */}
-              <button
-                onClick={handleResendVerification}
-                disabled={resendCooldown > 0 || resendStatus === 'sending'}
-                className="text-sm font-semibold text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline mb-4"
-              >
-                {resendStatus === 'sending'
-                  ? 'Sending...'
-                  : resendCooldown > 0
-                  ? `Resend available in ${resendCooldown}s`
-                  : 'Resend verification email'}
-              </button>
-
-              {resendStatus === 'sent' && resendCooldown === RESEND_COOLDOWN_SECONDS && (
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mb-4">
-                  <p className="text-sm text-green-800 dark:text-green-400">Verification email resent. Check your inbox.</p>
-                </div>
-              )}
-
-              {resendStatus === 'error' && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
-                  <p className="text-sm text-red-800 dark:text-red-400">{resendError}</p>
-                </div>
-              )}
-
-              <Link href="/" className="block w-full bg-secondary text-secondary-foreground px-6 py-3 rounded-lg font-semibold hover:bg-secondary/80 transition-colors">
-                Back to Homepage
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="flex items-center justify-center min-h-screen px-4 pt-16">
-        <div className="w-full max-w-md">
-          <div className="bg-card border border-border rounded-lg shadow-lg p-8">
-            <h1 className="text-3xl font-bold text-card-foreground mb-2 text-center">Create Your Account</h1>
-            <p className="text-muted-foreground text-center mb-8">Get started with 3 free scans</p>
+    <div className="min-h-screen flex">
+      <AuthShowcasePanel variant="signup" />
 
-            <form onSubmit={handleSignup} className="space-y-6">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-card-foreground mb-2">Email Address</label>
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="your.email@example.com"
-                />
-              </div>
+      <div className="w-full lg:w-1/2 flex flex-col min-h-screen bg-background">
+        <div className="flex items-center justify-between px-6 py-5 lg:hidden">
+          <Link href="/" className="flex items-center gap-2 font-bold text-foreground">
+            <img src={logoSrc} alt="Mediacrater" className="h-8 w-8" />
+            Mediacrater
+          </Link>
+        </div>
 
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-card-foreground mb-2">Password</label>
-                <input
-                  type="password"
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="w-full px-4 py-3 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Minimum 6 characters"
-                />
-                <p className="text-xs text-muted-foreground mt-1">Must be at least 6 characters long</p>
-              </div>
-
-              {/* NEW: Terms checkbox */}
-              <div className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  id="terms"
-                  checked={acceptedTerms}
-                  onChange={(e) => setAcceptedTerms(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-input accent-primary cursor-pointer"
-                />
-                <label htmlFor="terms" className="text-sm text-muted-foreground">
-                  I represent that I am at least 18 years old. I accept the{' '}
-                  <a href="/terms" target="_blank" className="text-primary hover:underline">Terms of Service</a>
-                  {', '}
-                  <a href="/refund" target="_blank" className="text-primary hover:underline">Refund Policy</a>
-                  {' and '}
-                  <a href="/privacy" target="_blank" className="text-primary hover:underline">Privacy Policy</a>. I consent to receiving a one time verification link to confirm my email address.
-                </label>
-              </div>
-
-              {error && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                  <p className="text-sm text-red-800 dark:text-red-400">{error}</p>
+        <div className="flex-1 flex items-center justify-center px-6 py-12">
+          <div className="w-full max-w-sm">
+            {checkEmail ? (
+              <div className="text-center">
+                <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="text-primary">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                    <polyline points="22,6 12,13 2,6" />
+                  </svg>
                 </div>
-              )}
+                <h2 className="text-2xl font-bold mb-2">Check your email</h2>
+                <p className="text-sm text-muted-foreground mb-5">
+                  We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
+                </p>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Creating Account...' : 'Create Account'}
-              </button>
-            </form>
+                <button
+                  onClick={handleResendVerification}
+                  disabled={resendState === 'sending'}
+                  className="text-sm font-medium text-primary hover:underline disabled:opacity-50 disabled:no-underline disabled:cursor-not-allowed"
+                >
+                  {resendState === 'sending' ? 'Sending...' : 'Resend Email'}
+                </button>
+
+                {resendState === 'sent' && (
+                  <p className="text-sm text-green-600 dark:text-green-400 mt-2">✓ Verification email sent!</p>
+                )}
+                {resendError && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-2">{resendError}</p>
+                )}
+              </div>
+            ) : (
+              <>
+                <h2 className="text-2xl font-bold mb-1">Create your account</h2>
+                <p className="text-sm text-muted-foreground mb-8">
+                  Already have one?{' '}
+                  <Link href="/signin" className="text-primary font-medium hover:underline">
+                    Sign in
+                  </Link>
+                </p>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Email</label>
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-card border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      placeholder="you@company.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Password</label>
+                    <input
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-card border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      placeholder="At least 6 characters"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Confirm Password</label>
+                    <input
+                      type="password"
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-card border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  <label className="flex items-start gap-2.5 text-xs text-muted-foreground leading-relaxed pt-1">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={consentAccepted}
+                      onChange={(e) => setConsentAccepted(e.target.checked)}
+                      className="mt-0.5 shrink-0"
+                    />
+                    <span>
+                      I represent that I am at least 18 years old. I accept the{' '}
+                      <Link href="/terms" className="underline hover:text-foreground" target="_blank">
+                        Terms of Service
+                      </Link>
+                      ,{' '}
+                      <Link href="/refund" className="underline hover:text-foreground" target="_blank">
+                        Refund Policy
+                      </Link>{' '}
+                      and{' '}
+                      <Link href="/privacy" className="underline hover:text-foreground" target="_blank">
+                        Privacy Policy
+                      </Link>
+                      . I consent to receiving a one time verification link to confirm my email address.
+                    </span>
+                  </label>
+
+                  {error && (
+                    <div className="p-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-sm text-red-800 dark:text-red-400">
+                      {error}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-primary text-primary-foreground py-2.5 rounded-lg font-semibold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >
+                    {loading ? 'Creating account...' : 'Create Account'}
+                  </button>
+                </form>
+              </>
+            )}
           </div>
         </div>
       </div>
