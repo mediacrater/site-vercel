@@ -57,7 +57,7 @@ export default function ChangelogPage() {
             </section>
           </div>
         </section>
-
+          
         {}
         {/* Alpha Section */}
         <section>
