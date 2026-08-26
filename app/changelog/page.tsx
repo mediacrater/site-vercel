@@ -68,7 +68,6 @@ export default function ChangelogPage() {
           </div>
         </section>
 
-        {}
         {/* Alpha Section */}
         <section>
           <div className="flex items-center gap-3 mb-6">
@@ -109,7 +108,6 @@ export default function ChangelogPage() {
               </ul>
             </section>
 
-            {}
             {/* Version 1.5.3 */}
             <section>
               <div className="mb-1">
@@ -165,7 +163,6 @@ export default function ChangelogPage() {
           </div>
         </section>
 
-        {}
         {/* Beta Section */}
         <section>
           <div className="flex items-center gap-3 mb-4">
