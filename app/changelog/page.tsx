@@ -57,8 +57,7 @@ export default function ChangelogPage() {
             </section>
           </div>
         </section>
-          
-        {}
+
         {/* Alpha Section */}
         <section>
           <div className="flex items-center gap-3 mb-6">
