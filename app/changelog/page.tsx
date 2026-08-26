@@ -18,11 +18,33 @@ export default function ChangelogPage() {
         {/* Alpha Section */}
         <section>
           <div className="flex items-center gap-3 mb-6">
-            <h2 className="text-xl font-semibold">Alpha 1.5.7 to 1.5.8</h2>
+            <h2 className="text-xl font-semibold">Alpha 1.5.7 to 1.6.1.1</h2>
             <span className="text-xs text-muted-foreground">August 2026</span>
           </div>
 
           <div className="space-y-4">
+            {/* Version 1.6.1 */}
+            <section>
+              <div className="mb-1">
+                <h3 className="text-lg font-semibold">Alpha 1.6.1.1</h3>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
+                <li>Updated extension manifest</li>
+                <li>Updated extension configuration</li>
+              </ul>
+            </section>
+          
+            {/* Version 1.6 */}
+            <section>
+              <div className="mb-1">
+                <h3 className="text-lg font-semibold">Alpha 1.6</h3>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
+                <li>Web application available</li>
+              </ul>
+            </section>
+
+          
             {/* Version 1.5.8 */}
             <section>
               <div className="mb-1">
