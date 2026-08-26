@@ -4,6 +4,13 @@ import { Inter, Plus_Jakarta_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
+import { JetBrains_Mono } from 'next/font/google'
+ 
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono-data',
+  display: 'swap',
+})
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const plusJakarta = Plus_Jakarta_Sans({
