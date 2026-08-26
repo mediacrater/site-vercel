@@ -24,6 +24,17 @@ export default function ChangelogPage() {
           </div>
 
           <div className="space-y-4">
+            {/* Version 1.6.1.1 */}
+            <section>
+              <div className="mb-1">
+                <h3 className="text-lg font-semibold">Alpha 1.6.1.1</h3>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
+                <li>Updated configuration for extension</li>
+              </ul>
+            </section>
+          
+          <div className="space-y-4">
             {/* Version 1.6.1 */}
             <section>
               <div className="mb-1">
