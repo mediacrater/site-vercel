@@ -30,6 +30,7 @@ export default function ChangelogPage() {
               </div>
               <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
                 <li>Extension logs version that the user is on</li>
+                <li>Audio analysis now available for paid users</li>
 
               </ul>
             </section>
