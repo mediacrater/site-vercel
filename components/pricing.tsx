@@ -2,8 +2,7 @@
 
 import { Check, Minus } from 'lucide-react'
 
-const EXTENSION_URL =
-  'https://chromewebstore.google.com/detail/fgekklkpomdcadiaekpigidkimnkjpnf?utm_medium=website_pricing'
+const SITE_SIGNUP = process.env.NEXT_PUBLIC_SITE_SIGNUP ?? '#'
 
 const plans = [
   {
@@ -31,7 +30,7 @@ const plans = [
     price: '$40',
     period: '/mo',
     scans: '100 scans / mo',
-    campaigns: '20–33 campaigns / mo',
+    campaigns: '20 to 30+ campaigns / mo',
     description: 'For brands running consistent paid campaigns',
     cta: 'Get Established',
     popular: false,
@@ -41,7 +40,7 @@ const plans = [
     price: '$80',
     period: '/mo',
     scans: '250 scans / mo',
-    campaigns: '50–83 campaigns / mo',
+    campaigns: '50 to 80+ campaigns / mo',
     description: 'For media buyers scaling across multiple offers',
     cta: 'Get Scaler',
     popular: false,
@@ -51,7 +50,7 @@ const plans = [
     price: '$200',
     period: '/mo',
     scans: '1000 scans / mo',
-    campaigns: '200–300+ campaigns / mo',
+    campaigns: '200 to 300+ campaigns / mo',
     description: 'For agencies managing multiple client accounts',
     cta: 'Get Agency',
     popular: false,
@@ -94,8 +93,8 @@ const featureRows: { label: string; sub?: string; values: CellValue[] }[] = [
     values: [false, true, true, true, true],
   },
   {
-    label: 'Dedicated account manager',
-    values: [false, false, false, false, true],
+    label: 'Audio analysis',
+    values: [false, true, true, true, true],
   },
 ]
 
@@ -129,9 +128,10 @@ export function Pricing() {
           </h2>
           <p className="mt-4 text-lg text-muted-foreground text-pretty">
             Pick a plan based on how many campaigns you run per month.
-            Cancel or change anytime. Subscriptions are managed through the{' '}
+            Cancel or change anytime. Extension users: Subscriptions are 
+            upgradable and managed through the{' '}
             <a
-              href={EXTENSION_URL}
+              href={SITE_SIGNUP}
               target="_blank"
               rel="noopener noreferrer"
               className="underline hover:text-foreground transition-colors"
@@ -209,7 +209,7 @@ export function Pricing() {
                           {plan.description}
                         </p>
                         <a
-                          href={EXTENSION_URL}
+                          href={SITE_SIGNUP}
                           target="_blank"
                           rel="noopener noreferrer"
                           className={`block w-full text-center py-2 rounded-lg text-xs font-semibold transition-opacity hover:opacity-90 ${
