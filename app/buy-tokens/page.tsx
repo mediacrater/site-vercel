@@ -106,8 +106,8 @@ const featureRows: { label: string; values: CellValue[] }[] = [
     values: [false, true, true, true],
   },
   {
-    label: 'Dedicated account manager',
-    values: [false, false, false, true],
+    label: 'Audio analysis',
+    values: [true, true, true, true],
   },
 ];
 
