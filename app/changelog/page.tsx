@@ -51,7 +51,7 @@ export default function ChangelogPage() {
                 <h3 className="text-lg font-semibold">Alpha 1.6</h3>
               </div>
               <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
-                <li>Web application available</li>\
+                <li>Web application available</li>
                 <li>Collection of uploaded images and a snapshot of the beginning of videos for a centralized history system to paid users across the web app and the extension</li>
               </ul>
             </section>
