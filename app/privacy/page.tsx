@@ -1,17 +1,14 @@
 import type { Metadata } from 'next'
-
 export const metadata: Metadata = {
   title: 'Privacy Policy | Mediacrater',
   description: 'How Mediacrater handles your data. We scan your ads for policy violations and permanently delete the original files after.',
   robots: { index: true, follow: true },
 }
-
 export default function PrivacyPolicy() {
   return (
     <main className="max-w-3xl mx-auto px-6 py-16 text-base leading-relaxed">
       <h1 className="text-3xl font-bold mb-2">Privacy Policy</h1>
       <p className="text-sm text-muted-foreground mb-10">Effective date: August 2026</p>
-
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">Who We Are</h2>
         <p>
@@ -23,14 +20,12 @@ export default function PrivacyPolicy() {
           </a>.
         </p>
       </section>
-
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">What Data We Collect</h2>
         <p className="mb-4">
           We collect only what is necessary to operate the service. Below is a complete list of
           the data we collect, why we collect it, and how it is stored.
         </p>
-
         <h3 className="text-lg font-semibold mb-2">Account Data</h3>
         <ul className="list-disc list-inside space-y-2 mb-6">
           <li>
@@ -59,8 +54,8 @@ export default function PrivacyPolicy() {
             in your History page. Not stored if your plan does not include Scan History.
           </li>
           <li>
-            <strong>Queue metadata</strong> — Our queuing system is designed to allocate our limited 
-            server resources appropriately so everyone gets a chance to scan their ads. When you run 
+            <strong>Queue metadata</strong> — Our queuing system is designed to allocate our limited
+            server resources appropriately so everyone gets a chance to scan their ads. When you run
             a scan and you're placed in our queuing system, we generate a queue ID and your scan
             metadata is logged with it. This includes your plan, user ID, scan type, content type, status,
             timestamps, how long you waited in queue and payload size.
@@ -75,17 +70,33 @@ export default function PrivacyPolicy() {
             browser's local storage on the web app). They are never transmitted to or stored on our
             servers beyond what Supabase requires for session management.
           </li>
-          <li>
-            <strong>Device address</strong> — we collect your device IP address at the time of account creation solely to prevent abuse of our free tier. Read more about this in our{' '}
-              <a
-                href="https://mediacrater.com/terms"
-                style={{ textDecoration: 'underline', cursor: 'pointer' }}
-              >
-                Terms of Service
-              </a>.
-          </li>   
         </ul>
-
+        <h3 className="text-lg font-semibold mb-2">Device and abuse-prevention data</h3>
+        <p className="mb-4">
+          We collect the following when you create an account on mediacrater.com, so we can keep
+          the free plan fair. We do not use this data for advertising, and we do not track you on
+          other websites. The Chrome extension does not collect this data.
+        </p>
+        <ul className="list-disc list-inside space-y-2 mb-6">
+          <li>
+            <strong>IP address and approximate location</strong> — IP address, country, city, and
+            network provider, collected at account creation. Used only to prevent abuse of the free
+            plan. Approximate location is derived from the IP address; it is not a street address.
+          </li>
+          <li>
+            <strong>Device cookie</strong> — a first-party identifier stored in your browser so we
+            can tell when several free accounts are created from the same device. It is not your
+            login session and is not cleared when you sign out. See our{' '}
+            <a href="https://mediacrater.com/cookie-policy" className="underline">
+              Cookie Policy
+            </a>.
+          </li>
+          <li>
+            <strong>Browser and device information</strong> — browser name and version, operating
+            system, timezone, and a technical identifier derived from those details. Used only to
+            enforce the free plan across accounts.
+          </li>
+        </ul>
         <h3 className="text-lg font-semibold mb-2">Payment Data</h3>
         <ul className="list-disc list-inside space-y-2 mb-6">
           <li>
@@ -94,13 +105,12 @@ export default function PrivacyPolicy() {
             Stripe is PCI-DSS compliant and maintains its own security standards.
           </li>
           <li>
-            <strong>Purchase and transaction records</strong> — retained for 6 years 
-            from the end of the tax year in which the transaction occurred, as required 
-            by the Canada Revenue Agency for tax and accounting compliance. This applies 
+            <strong>Purchase and transaction records</strong> — retained for 6 years
+            from the end of the tax year in which the transaction occurred, as required
+            by the Canada Revenue Agency for tax and accounting compliance. This applies
             even if you delete your account.
           </li>
         </ul>
-
         <h3 className="text-lg font-semibold mb-2">Creative Assets (video and image files)</h3>
         <ul className="list-disc list-inside space-y-2">
           <li>
@@ -122,7 +132,6 @@ export default function PrivacyPolicy() {
           </li>
         </ul>
       </section>
-
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">How We Use Your Data</h2>
         <ul className="list-disc list-inside space-y-2">
@@ -134,9 +143,9 @@ export default function PrivacyPolicy() {
           <li>To improve Mediacrater's accuracy and features over time</li>
           <li>To respond to support requests sent to our email</li>
           <li>To display scan history accurately for paying users</li>
+          <li>To prevent abuse of the free plan and keep it available for people who need it</li>
         </ul>
       </section>
-
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">Data Sharing</h2>
         <p>
@@ -145,7 +154,6 @@ export default function PrivacyPolicy() {
           listed below, and only to the extent necessary to operate the service.
         </p>
       </section>
-
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">Third-Party Services</h2>
         <p className="mb-4">We use the following third-party services to operate Mediacrater:</p>
@@ -169,12 +177,17 @@ export default function PrivacyPolicy() {
             <strong>Vercel Analytics</strong> — anonymous usage analytics for our website.
             No personally identifiable information is collected.
           </li>
+          <li>
+            <strong>Network intelligence provider</strong> — we may send an IP address to a
+            network intelligence service to derive approximate location (country and city) and
+            connection type (for example, residential or data center). Used only for free-plan
+            enforcement. We do not receive a street address.
+          </li>
         </ul>
         <p className="mt-4">
           Each provider maintains their own privacy policies and security standards.
         </p>
       </section>
-
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">Data Retention</h2>
         <ul className="list-disc list-inside space-y-2">
@@ -198,13 +211,16 @@ export default function PrivacyPolicy() {
             <strong>Purchase records</strong> — retained for as long as your account is active
             for billing and refund purposes.
           </li>
+          <li>
+            <strong>Device and abuse-prevention data</strong> — retained for as long as your
+            account is active, and deleted when you delete your account.
+          </li>
         </ul>
         <p className="mt-4">
           You may request deletion of your account and all associated data at any time by
           emailing us.
         </p>
       </section>
-
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">Your Rights</h2>
         <p className="mb-4">You have the right to:</p>
@@ -222,13 +238,12 @@ export default function PrivacyPolicy() {
           </a>.
         </p>
         <p className="mt-4">
-          We will action all valid deletion requests within a reasonable timeframe. 
-          We reserve the right to decline requests that are manifestly unfounded, 
-          repetitive, or made in bad faith, in accordance with applicable data 
+          We will action all valid deletion requests within a reasonable timeframe.
+          We reserve the right to decline requests that are manifestly unfounded,
+          repetitive, or made in bad faith, in accordance with applicable data
           protection law.
         </p>
       </section>
-
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">Cookies and Local Storage</h2>
         <p>
@@ -238,10 +253,10 @@ export default function PrivacyPolicy() {
           <a href="https://mediacrater.com/cookie-policy" className="underline">
             Cookie Policy
           </a>
-          , including one optional affiliate-tracking cookie that only activates if you accept it.
+          , including a required device cookie used to enforce the free plan, and one optional
+          affiliate-tracking cookie that only activates if you accept it.
         </p>
       </section>
-
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">Changes to This Policy</h2>
         <p>
@@ -250,7 +265,6 @@ export default function PrivacyPolicy() {
           changes constitutes acceptance of the updated policy.
         </p>
       </section>
-
       <section>
         <h2 className="text-xl font-semibold mb-3">Contact</h2>
         <p>
@@ -260,7 +274,6 @@ export default function PrivacyPolicy() {
           </a>.
         </p>
       </section>
-
     </main>
   )
 }
