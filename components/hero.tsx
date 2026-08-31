@@ -73,6 +73,27 @@ export function Hero() {
               </Button>
             </div>
 
+            {/* Trustpilot Widget */}
+            <div className="mt-6 flex justify-start">
+              <div
+                className="trustpilot-widget"
+                data-locale="en-US"
+                data-template-id="56278e9abfbba0bdcd568bc"
+                data-businessunit-id="6a316a13a30ac9aadd7ff637"
+                data-style-height="52px"
+                data-style-width="100%"
+                data-token="35bbe89d-638d-4d52-8934-b91cab52ef84"
+              >
+                <a
+                  href="https://www.trustpilot.com/review/mediacrater.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Trustpilot
+                </a>
+              </div>
+            </div>
+
             <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-emerald-500" />
