@@ -1,9 +1,19 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import { Play, CheckCircle2 } from "lucide-react"
 
-const YOUTUBE_VIDEO_ID = "Jk_XtsN1N9I"
+// Public watch URL
+const YOUTUBE_WATCH_URL = "https://www.youtube.com/watch?v=Jk_XtsN1N9I"
+
+function youtubeIdFromWatchUrl(url: string): string {
+  try {
+    return new URL(url).searchParams.get("v") ?? ""
+  } catch {
+    return ""
+  }
+}
+
+const YOUTUBE_VIDEO_ID = youtubeIdFromWatchUrl(YOUTUBE_WATCH_URL)
 
 const steps = [
   {
@@ -27,22 +37,17 @@ const steps = [
     description: "Review detected risk zones, jump to violation timestamps, and copy suggested fixes.",
   },
 ]
-
 export function HowItWorks() {
   const [activeStep, setActiveStep] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
-
   // Auto-cycle through steps without causing layout shifts
   useEffect(() => {
     if (isPlaying) return
-
     const timer = setInterval(() => {
       setActiveStep((prev) => (prev + 1) % steps.length)
     }, 3500)
-
     return () => clearInterval(timer)
   }, [isPlaying])
-
   return (
     <section id="how-it-works" className="py-20 md:py-28 border-b border-border/50 bg-secondary/20 overflow-hidden">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -57,7 +62,6 @@ export function HowItWorks() {
             From installation to your first policy risk report in under a minute.
           </p>
         </div>
-
         {/* Split Section: Interactive Steps Left + YouTube Facade Right */}
         <div className="grid lg:grid-cols-12 gap-10 items-center">
           
@@ -94,7 +98,6 @@ export function HowItWorks() {
               )
             })}
           </div>
-
           {/* Right Column: YouTube Click-to-Play Mockup Frame */}
           <div className="lg:col-span-7">
             <div className="rounded-2xl border border-border bg-card shadow-xl overflow-hidden relative">
@@ -110,7 +113,6 @@ export function HowItWorks() {
                 </div>
                 <div className="w-12" />
               </div>
-
               {/* Player Container */}
               <div className="relative aspect-video bg-black overflow-hidden">
                 {isPlaying ? (
@@ -120,19 +122,24 @@ export function HowItWorks() {
                     className="w-full h-full border-0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
+                    referrerPolicy="strict-origin-when-cross-origin"
                   />
                 ) : (
-                  <div 
-                    onClick={() => setIsPlaying(true)}
-                    className="relative w-full h-full cursor-pointer group overflow-hidden"
+                  <a
+                    href={YOUTUBE_WATCH_URL}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      setIsPlaying(true)
+                    }}
+                    className="relative block w-full h-full cursor-pointer group overflow-hidden"
+                    aria-label="Watch Mediacrater product walkthrough on YouTube"
                   >
-                    {/* Reliable YouTube Thumbnail */}
+                    {/* Image CDN only — not youtube.com, so it does not set login cookies */}
                     <img
-                      src={`https://img.youtube.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`}
+                      src={`https://i.ytimg.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`}
                       alt="Mediacrater Video Walkthrough Thumbnail"
                       className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-80"
                     />
-
                     {/* Dark Overlay Tint & Centered Play Badge */}
                     <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors flex items-center justify-center p-4">
                       <div className="flex items-center gap-3 px-5 py-3 rounded-full bg-primary text-primary-foreground font-semibold shadow-2xl group-hover:scale-105 transition-transform z-10">
@@ -142,19 +149,16 @@ export function HowItWorks() {
                         <span className="text-sm whitespace-nowrap">Watch Demo</span>
                       </div>
                     </div>
-
                     {/* Bottom Status Badge */}
                     <div className="absolute bottom-3 right-3 z-10 px-3 py-1 rounded-full bg-background/80 backdrop-blur-md border border-border text-[10px] font-mono text-muted-foreground flex items-center gap-1.5">
                       <CheckCircle2 className="w-3 h-3 text-emerald-500" /> YouTube HD Walkthrough
                     </div>
-                  </div>
+                  </a>
                 )}
               </div>
             </div>
           </div>
-
         </div>
-
       </div>
     </section>
   )
