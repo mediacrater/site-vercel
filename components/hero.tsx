@@ -1,3 +1,7 @@
+"use client"
+
+import { useEffect, useRef } from "react"
+import Script from "next/script"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Shield, CheckCircle, ArrowUpRight } from "lucide-react"
@@ -6,8 +10,29 @@ const EXTENSION_LINK =
   "https://chromewebstore.google.com/detail/mediacrater-ad-compliance/fgekklkpomdcadiaekpigidkimnkjpnf?utm_medium=website_hero"
 
 export function Hero() {
+  const trustpilotRef = useRef<HTMLDivElement>(null)
+
+  const handleTrustpilotLoad = () => {
+    if (window.Trustpilot && trustpilotRef.current) {
+      window.Trustpilot.loadFromElement(trustpilotRef.current)
+    }
+  }
+
+  useEffect(() => {
+    if (window.Trustpilot && trustpilotRef.current) {
+      window.Trustpilot.loadFromElement(trustpilotRef.current)
+    }
+  }, [])
+
   return (
     <section className="relative overflow-hidden border-b border-border/50 pt-28 pb-20 md:pt-36 md:pb-28">
+      {/* Load Trustpilot script dynamic bootstrap */}
+      <Script
+        src="//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js"
+        strategy="lazyOnload"
+        onLoad={handleTrustpilotLoad}
+      />
+
       {/* Very subtle background treatment */}
       <div
         aria-hidden="true"
@@ -73,9 +98,10 @@ export function Hero() {
               </Button>
             </div>
 
-            {/* Trustpilot Widget */}
+            {/* Trustpilot Widget with Ref */}
             <div className="mt-6 flex justify-start">
               <div
+                ref={trustpilotRef}
                 className="trustpilot-widget"
                 data-locale="en-US"
                 data-template-id="56278e9abfbba0bdcd568bc"
