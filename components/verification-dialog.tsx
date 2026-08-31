@@ -1,22 +1,12 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-
-const supabaseAnon = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { useSearchParams, useRouter } from 'next/navigation';
 
 type DialogType = 'email-verified' | 'password-reset' | 'error' | null;
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 function VerificationDialogContent() {
   const [open, setOpen] = useState(false);
@@ -27,7 +17,10 @@ function VerificationDialogContent() {
   const [loading, setLoading] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
   const [accessToken, setAccessToken] = useState('');
+  const [redirectCountdown, setRedirectCountdown] = useState(3);
+  
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   useEffect(() => {
     const urlAccessToken = searchParams.get('access_token');
@@ -43,7 +36,6 @@ function VerificationDialogContent() {
     const finalAccessToken = urlAccessToken || hashAccessToken;
     const finalType = type || hashType;
 
-    // Clean URL immediately so token never lingers visibly
     if (hash) {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
@@ -70,6 +62,24 @@ function VerificationDialogContent() {
       setOpen(true);
     }
   }, [searchParams]);
+
+  // Auto-redirect effect when email is verified
+  useEffect(() => {
+    if (dialogType !== 'email-verified' || !open) return;
+
+    const timer = setInterval(() => {
+      setRedirectCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          router.push('/dashboard');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [dialogType, open, router]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,22 +128,27 @@ function VerificationDialogContent() {
     window.history.replaceState({}, document.title, '/');
   };
 
+  const goToDashboard = () => {
+    setOpen(false);
+    router.push('/dashboard');
+  };
+
+  if (!open) return null;
+
   // ── Email Verified ──────────────────────────────────────────
   if (dialogType === 'email-verified') {
     return (
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
-              <svg className="h-10 w-10 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <DialogTitle className="text-center text-2xl">Email Verified!</DialogTitle>
-            <DialogDescription className="text-center">
-              Your account has been successfully verified.
-            </DialogDescription>
-          </DialogHeader>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="w-full max-w-md rounded-lg bg-card p-6 shadow-xl border border-border">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
+            <svg className="h-10 w-10 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-center text-2xl font-bold text-card-foreground">Email Verified!</h2>
+          <p className="text-center text-sm text-muted-foreground mt-1 mb-4">
+            Your account has been successfully verified.
+          </p>
 
           <div className="space-y-4">
             <div className="rounded-lg bg-primary/10 border-l-4 border-primary p-4">
@@ -141,30 +156,28 @@ function VerificationDialogContent() {
                 🎉 3 free scans added to your account!
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Free plan includes 3 scans per month. Upgrade anytime for more.
+                Free plan includes 3 scans per month.
               </p>
             </div>
 
             <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4">
-              <p className="text-sm text-blue-900 dark:text-blue-300 font-semibold mb-2">
-                📌 Next Steps:
+              <p className="text-sm text-blue-900 dark:text-blue-300 font-semibold mb-1">
+                Redirecting to your Dashboard in {redirectCountdown}s...
               </p>
-              <ol className="text-sm text-blue-800 dark:text-blue-400 space-y-1 ml-4">
-                <li>1. Open the Mediacrater Chrome extension</li>
-                <li>2. Sign in with your email and password</li>
-                <li>3. Start scanning your ads!</li>
-              </ol>
+              <p className="text-xs text-blue-800 dark:text-blue-400">
+                You can start running ad compliance scans immediately on the web or via the Chrome extension.
+              </p>
             </div>
 
             <button
-              onClick={handleClose}
+              onClick={goToDashboard}
               className="w-full bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors"
             >
-              Got it!
+              Go to Dashboard Now
             </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </div>
     );
   }
 
@@ -172,57 +185,42 @@ function VerificationDialogContent() {
   if (dialogType === 'password-reset') {
     if (resetSuccess) {
       return (
-        <Dialog open={open} onOpenChange={handleClose}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
-                <svg className="h-10 w-10 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <DialogTitle className="text-center text-2xl">Password Updated!</DialogTitle>
-              <DialogDescription className="text-center">
-                Your password has been successfully reset.
-              </DialogDescription>
-            </DialogHeader>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-lg bg-card p-6 shadow-xl border border-border">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
+              <svg className="h-10 w-10 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-center text-2xl font-bold text-card-foreground">Password Updated!</h2>
+            <p className="text-center text-sm text-muted-foreground mt-1 mb-4">
+              Your password has been successfully reset.
+            </p>
 
             <div className="space-y-4">
-              <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4">
-                <p className="text-sm text-blue-900 dark:text-blue-300 font-semibold mb-2">
-                  📌 Next Steps:
-                </p>
-                <ol className="text-sm text-blue-800 dark:text-blue-400 space-y-1 ml-4">
-                  <li>1. Open the Mediacrater Chrome extension</li>
-                  <li>2. Sign in with your new password</li>
-                  <li>3. Start scanning your ads!</li>
-                </ol>
-              </div>
-
               <button
-                onClick={handleClose}
+                onClick={() => router.push('/signin')}
                 className="w-full bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors"
               >
-                Got it!
+                Sign In
               </button>
             </div>
-          </DialogContent>
-        </Dialog>
+          </div>
+        </div>
       );
     }
 
     return (
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-center text-2xl">Reset Your Password</DialogTitle>
-            <DialogDescription className="text-center">
-              Enter your new password below
-            </DialogDescription>
-          </DialogHeader>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="w-full max-w-md rounded-lg bg-card p-6 shadow-xl border border-border">
+          <h2 className="text-center text-2xl font-bold text-card-foreground">Reset Your Password</h2>
+          <p className="text-center text-sm text-muted-foreground mt-1 mb-4">
+            Enter your new password below
+          </p>
 
           <form onSubmit={handleResetPassword} className="space-y-4">
             <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-2">
+              <label htmlFor="password" className="block text-sm font-medium mb-2 text-card-foreground">
                 New Password
               </label>
               <input
@@ -232,13 +230,13 @@ function VerificationDialogContent() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full px-4 py-2 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full px-4 py-2 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
                 placeholder="Minimum 6 characters"
               />
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2 text-card-foreground">
                 Confirm Password
               </label>
               <input
@@ -248,7 +246,7 @@ function VerificationDialogContent() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full px-4 py-2 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full px-4 py-2 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
                 placeholder="Re-enter your password"
               />
             </div>
@@ -267,38 +265,34 @@ function VerificationDialogContent() {
               {loading ? 'Resetting...' : 'Reset Password'}
             </button>
           </form>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </div>
     );
   }
 
   // ── Error ───────────────────────────────────────────────────
   if (dialogType === 'error') {
     return (
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
-              <svg className="h-10 w-10 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </div>
-            <DialogTitle className="text-center text-2xl">Link Expired</DialogTitle>
-            <DialogDescription className="text-center">
-              {errorMessage}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <button
-              onClick={handleClose}
-              className="w-full bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors"
-            >
-              Close
-            </button>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="w-full max-w-md rounded-lg bg-card p-6 shadow-xl border border-border">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
+            <svg className="h-10 w-10 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </div>
-        </DialogContent>
-      </Dialog>
+          <h2 className="text-center text-2xl font-bold text-card-foreground">Link Expired</h2>
+          <p className="text-center text-sm text-muted-foreground mt-1 mb-4">
+            {errorMessage}
+          </p>
+
+          <button
+            onClick={handleClose}
+            className="w-full bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
     );
   }
 
