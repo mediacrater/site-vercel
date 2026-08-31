@@ -1,18 +1,15 @@
 //app/terms/page.tsx
 import type { Metadata } from 'next'
-
 export const metadata: Metadata = {
   title: 'Terms of Service | Mediacrater',
   description: 'Terms of Service for Mediacrater. Understand your rights and responsibilities when using our ad policy scanning tool.',
   robots: { index: true, follow: true },
 }
-
 export default function TermsOfService() {
   return (
     <main className="max-w-3xl mx-auto px-6 py-16 text-base leading-relaxed">
       <h1 className="text-3xl font-bold mb-2">Terms of Service</h1>
       <p className="text-sm text-muted-foreground mb-10">Effective date: August 2026</p>
-
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">1. Acceptance of Terms</h2>
         <p>
@@ -23,7 +20,6 @@ export default function TermsOfService() {
           </a>.
         </p>
       </section>
-
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">2. What Mediacrater Does</h2>
         <p>
@@ -33,7 +29,6 @@ export default function TermsOfService() {
           does not guarantee ad approval and is not affiliated with any of these platforms.
         </p>
       </section>
-
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">3. No Guarantees</h2>
         <p>
@@ -43,7 +38,6 @@ export default function TermsOfService() {
           replicate, mirror, or bypass. Results are for informational purposes only.
         </p>
       </section>
-
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">4. Token System</h2>
         <p className="mb-4">
@@ -57,7 +51,6 @@ export default function TermsOfService() {
           <li>Unused tokens may be refundable, see our Refund Policy for details</li>
         </ul>
       </section>
-
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">5. Acceptable Use</h2>
         <p className="mb-4">By creating an account and verifying your email, you automatically agree <strong>not</strong> to:</p>
@@ -67,18 +60,37 @@ export default function TermsOfService() {
           <li>Submit content that is illegal, harmful, or violates third-party rights</li>
           <li>Attempt to manipulate, scrape, or abuse the scanning infrastructure</li>
           <li>Resell or redistribute scan results without permission</li>
+          <li>Create multiple free accounts to get around the free-plan allowance</li>
         </ul>
       </section>
-      
+
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">6. Abuse</h2>
-        <p>
-          We want to keep our free plan for those who truly need it. Whether it's for the small dropshipper 
-          just starting out or a new media buyer running their first campaign of creatives, the free plan is for you. To enforce this and to prevent abuse, we collect and store your IP address upon account creation. If we detect 2 or more accounts sharing the same IP address that are all on the free plan, we will notify the affected users via email and provide the option to either upgrade to a paid plan or request deletion of one of the accounts. If no response is received and no action is taken within a reasonable timeframe, we reserve the right to suspend access to our services to comply and adhere to our policy. Please use responsibly.
+        <p className="mb-4">
+          We want to keep our free plan for those who truly need it. Whether it's for the small dropshipper
+          just starting out or a new media buyer running their first campaign of creatives, the free plan is for you.
         </p>
-        <p><strong>Note:</strong> Mediacrater accepts the use of 2 or more accounts when they're all registered on any paid plan. If you believe your account was flagged in error, contact us at hello.mediacrater@gmail.com.</p>
+        <p className="mb-4">
+          The free allowance is per person and per device, not per account. Extra accounts are allowed.
+          If several free accounts appear to belong to the same person, they share that allowance until
+          one of them is on a paid plan. Paid accounts are not limited this way — agencies and buyers
+          who need a separate account per client are welcome to do that on a paid plan.
+        </p>
+        <p className="mb-4">
+          To enforce this, we collect your IP address, a device cookie, and basic browser and device
+          information when you sign up. We do not block VPNs. Using a VPN, including a different
+          profile per client, is allowed. Details are in our{' '}
+          <a href="https://mediacrater.com/privacy" className="underline">
+            Privacy Policy
+          </a>.
+        </p>
+        <p>
+          If you believe your account was limited in error, contact us at{' '}
+          <a href="mailto:hello.mediacrater@gmail.com" className="underline">
+            hello.mediacrater@gmail.com
+          </a>.
+        </p>
       </section>
-
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">7. Your Content</h2>
         <p className="mb-4">
@@ -99,7 +111,6 @@ export default function TermsOfService() {
           your plan includes that feature.
         </p>
       </section>
-
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">8. Intellectual Property</h2>
         <p>
@@ -109,7 +120,6 @@ export default function TermsOfService() {
           of their respective owners.
         </p>
       </section>
-
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">9. Limitation of Liability</h2>
         <p>
@@ -119,7 +129,6 @@ export default function TermsOfService() {
           your current token bundle.
         </p>
       </section>
-
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">10. Changes to the Service</h2>
         <p>
@@ -128,7 +137,6 @@ export default function TermsOfService() {
           constitutes acceptance of the updated terms.
         </p>
       </section>
-
       <section>
         <h2 className="text-xl font-semibold mb-3">11. Contact</h2>
         <p>
