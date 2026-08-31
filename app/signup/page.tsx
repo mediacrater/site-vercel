@@ -1,5 +1,4 @@
 'use client';
-
 // app/signup/page.tsx
 //
 // Rebuilt against the real /api/signup route (previously I had this
@@ -13,14 +12,19 @@
 // the version this replaced always redirected to /dashboard
 // unconditionally and never set checkEmail at all.
 //
+// Device signals (timezone, browser, os, device_fp) are collected here
+// and posted to /api/signup. mc_device_id is HttpOnly and set by the
+// API — do not read or write it from this page. The Supabase session
+// in localStorage is unrelated and still dies on logout.
+//
 // TODO (Phase C): referral attribution (reading the mc_referrer cookie)
 // still not built — hook point is wherever signup succeeds below.
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { AuthShowcasePanel } from '@/components/auth-showcase-panel';
+import { collectDeviceClient } from '@/lib/collect-device-client';
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
@@ -56,7 +60,6 @@ export default function SignUpPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-
     if (password !== confirmPassword) {
       setError('Passwords do not match.');
       return;
@@ -69,9 +72,9 @@ export default function SignUpPage() {
       setError('Please confirm you are 18+ and accept the Terms, Refund Policy, and Privacy Policy to continue.');
       return;
     }
-
     setLoading(true);
     try {
+      const device = await collectDeviceClient();
       const res = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -79,19 +82,20 @@ export default function SignUpPage() {
           email,
           password,
           acceptedTerms: true,
+          timezone: device.timezone,
+          browser: device.browser,
+          browser_version: device.browser_version,
+          os: device.os,
+          device_fp: device.device_fp,
         }),
       });
-
       const json = await res.json();
-
       if (!res.ok) {
         throw new Error(json.error || 'Failed to create account.');
       }
-
       // TODO (Phase C): referral attribution hook goes here, once the
       // links table + consent banner exist — read mc_referrer cookie,
       // write into profiles.referrer for the new user.
-
       if (json.hasSession) {
         router.push('/dashboard');
       } else {
@@ -109,7 +113,6 @@ export default function SignUpPage() {
   // hitting Supabase's /auth/v1/resend directly from the client.
   async function handleResendVerification() {
     if (resendCooldown > 0 || resendState === 'sending') return;
-
     setResendError(null);
     setResendState('sending');
     try {
@@ -118,13 +121,10 @@ export default function SignUpPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-
       const data = await response.json();
-
       if (!response.ok) {
         throw new Error(data.error || 'Failed to resend verification email');
       }
-
       setResendState('sent');
       setResendCooldown(RESEND_COOLDOWN_SECONDS);
     } catch (err: any) {
@@ -136,7 +136,6 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen flex">
       <AuthShowcasePanel variant="signup" />
-
       <div className="w-full lg:w-1/2 flex flex-col min-h-screen bg-background">
         <div className="flex items-center justify-between px-6 py-5 lg:hidden">
           <Link href="/" className="flex items-center gap-2 font-bold text-foreground">
@@ -144,7 +143,6 @@ export default function SignUpPage() {
             Mediacrater
           </Link>
         </div>
-
         <div className="flex-1 flex items-center justify-center px-6 py-12">
           <div className="w-full max-w-sm">
             {checkEmail ? (
@@ -159,7 +157,6 @@ export default function SignUpPage() {
                 <p className="text-sm text-muted-foreground mb-5">
                   We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
                 </p>
-
                 <button
                   onClick={handleResendVerification}
                   disabled={resendState === 'sending'}
@@ -167,7 +164,6 @@ export default function SignUpPage() {
                 >
                   {resendState === 'sending' ? 'Sending...' : 'Resend Email'}
                 </button>
-
                 {resendState === 'sent' && (
                   <p className="text-sm text-green-600 dark:text-green-400 mt-2">✓ Verification email sent!</p>
                 )}
@@ -184,7 +180,6 @@ export default function SignUpPage() {
                     Sign in
                   </Link>
                 </p>
-
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium mb-1.5">Email</label>
@@ -197,7 +192,6 @@ export default function SignUpPage() {
                       placeholder="you@company.com"
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium mb-1.5">Password</label>
                     <input
@@ -209,7 +203,6 @@ export default function SignUpPage() {
                       placeholder="At least 6 characters"
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium mb-1.5">Confirm Password</label>
                     <input
@@ -221,7 +214,6 @@ export default function SignUpPage() {
                       placeholder="••••••••"
                     />
                   </div>
-
                   <label className="flex items-start gap-2.5 text-xs text-muted-foreground leading-relaxed pt-1">
                     <input
                       type="checkbox"
@@ -246,13 +238,11 @@ export default function SignUpPage() {
                       . I consent to receiving a one time verification link to confirm my email address.
                     </span>
                   </label>
-
                   {error && (
                     <div className="p-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-sm text-red-800 dark:text-red-400">
                       {error}
                     </div>
                   )}
-
                   <button
                     type="submit"
                     disabled={loading}
