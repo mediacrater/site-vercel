@@ -41,9 +41,7 @@ export default function CookiePolicy() {
                 <td className="py-3 pl-4 align-top">Until you sign out, or session expiry</td>
               </tr>
               <tr>
-                <td className="py-3 pr-4 align-top font-mono text-xs">
-                  <code className="bg-muted px-1.5 py-0.5 rounded">mc_device_id</code>
-                </td>
+                <td className="py-3 pr-4 align-top">Device identifier cookie</td>
                 <td className="py-3 px-4 align-top">
                   Identifies this browser so the free plan cannot be reset by opening extra
                   accounts. Not used for ads. Not your login session — it stays after you sign out.
