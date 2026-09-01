@@ -19,11 +19,32 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const SIGNUP_RATE_LIMIT_MS = 1 * 60 * 1000; // 60 minutes
+const SIGNUP_RATE_LIMIT_MS = 60 * 60 * 1000; // 60 minutes
 
 function jsonWithDevice(body: unknown, status: number, deviceId: string, extraHeaders?: HeadersInit) {
   const res = NextResponse.json(body, { status, headers: extraHeaders });
   return attachDeviceCookie(res, deviceId);
+}
+
+async function verifyTurnstileToken(token: string, ip?: string | null) {
+  const params = new URLSearchParams({
+    secret: process.env.TURNSTILE_SECRET_KEY!,
+    response: token,
+  });
+  if (ip) params.set('remoteip', ip);
+
+  try {
+    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params,
+    });
+    const data = await res.json();
+    return data.success === true;
+  } catch (err) {
+    console.error('[SIGNUP] Turnstile siteverify failed:', err);
+    return false;
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -38,6 +59,7 @@ export async function POST(req: NextRequest) {
     browser_version,
     os,
     device_fp,
+    turnstileToken,
   } = await req.json();
 
   // Server-side guard — can't be bypassed by calling the API directly
@@ -46,6 +68,16 @@ export async function POST(req: NextRequest) {
   }
 
   const ip = clientIpFrom(req);
+
+  // Verify Turnstile BEFORE writing the IP rate-limit row. An expired
+  // widget token should not burn the user's 60-minute signup slot.
+  if (!turnstileToken || !(await verifyTurnstileToken(turnstileToken, ip))) {
+    return jsonWithDevice(
+      { error: 'Verification failed. Please try again.' },
+      400,
+      deviceId
+    );
+  }
 
   // ── Per-IP signup rate limit ──────────────────────────────
   // Checked before any Supabase auth call, using a small table
