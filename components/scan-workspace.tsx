@@ -52,6 +52,7 @@ export interface WorkspaceProfile {
   scans_remaining: number;
   scans_per_month?: number;
   deep_scan_enabled?: boolean;
+  audio_analysis?: boolean;
   scan_history?: boolean;
   last_notified_at?: string | null;
 }
@@ -104,6 +105,7 @@ export function ScanWorkspace({
 
   const isVideo = fileKind === 'video';
   const canDeepScan = Boolean(profile?.deep_scan_enabled);
+  const canAnalyzeAudio = Boolean(profile?.audio_analysis);
   const scansRemaining = profile?.scans_remaining ?? 0;
 
   const scanCostPerPlatform = isVideo && scanType === 'deep' ? 2 : 1;
@@ -115,6 +117,10 @@ export function ScanWorkspace({
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [previewUrl]);
+
+  useEffect(() => {
+    if (!canAnalyzeAudio) setAnalyzeAudio(false);
+  }, [canAnalyzeAudio]);
 
   function startElapsedTimer() {
     const startTime = Date.now();
@@ -297,7 +303,7 @@ export function ScanWorkspace({
       setProgressText('Preparing your video...');
       frames = await extractFrames(currentFile, signal, scanType);
       framesExtractedTime = Date.now();
-      if (analyzeAudio) {
+      if (analyzeAudio && canAnalyzeAudio) {
         setProgressText('Preparing audio track...');
         audio = await extractAudio(currentFile, signal);
       }
@@ -436,6 +442,9 @@ export function ScanWorkspace({
         const isRateLimitError = message.includes('Rate limit exceeded') || message.includes('Free tier limit');
         const isAccountFlaggedError =
           message.includes('ACCOUNT_FLAGGED') || message.includes('locked pending resolution');
+        const isAudioLockedError =
+          message.includes('Audio analysis unavailable') ||
+          message.includes('Audio analysis is available on paid plans only');
         const isTokenError = message.includes('Insufficient tokens');
         const isAuthError = message.includes('Unauthorized') || message.includes('Not authenticated');
         const isCorruptionError =
@@ -502,6 +511,14 @@ export function ScanWorkspace({
             title: 'Analysis error',
             message:
               'We returned an invalid response. This may be due to complex content or a temporary issue. Please try again or contact support if this persists.',
+          });
+        } else if (isAudioLockedError) {
+          setBanner({
+            tone: 'warning',
+            title: 'Paid plan required',
+            message: 'Audio analysis is available on paid plans only. Upgrade to analyze spoken claims in your ads.',
+            actionLabel: 'Upgrade plan',
+            onAction: () => window.location.assign('/buy-tokens'),
           });
         } else {
           setBanner({
@@ -654,14 +671,28 @@ export function ScanWorkspace({
 
             {/* Audio analysis — opt-in, video only */}
             {isVideo && (
-              <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer text-sm w-fit">
+              <label
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm w-fit ${
+                  canAnalyzeAudio
+                    ? 'border-border cursor-pointer'
+                    : 'border-border opacity-60 cursor-not-allowed'
+                }`}
+              >
                 <input
                   type="checkbox"
-                  checked={analyzeAudio}
+                  disabled={!canAnalyzeAudio}
+                  checked={canAnalyzeAudio && analyzeAudio}
                   onChange={(e) => setAnalyzeAudio(e.target.checked)}
                   className="accent-current"
                 />
-                <span className="font-medium">Analyze Audio Content</span>
+                <span className="font-medium">
+                  Analyze Audio Content
+                  {!canAnalyzeAudio && (
+                    <span className="ml-1 text-[10px] font-semibold uppercase tracking-wide text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                      Paid plan required
+                    </span>
+                  )}
+                </span>
               </label>
             )}
 
