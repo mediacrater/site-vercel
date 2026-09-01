@@ -17,16 +17,32 @@
 // API — do not read or write it from this page. The Supabase session
 // in localStorage is unrelated and still dies on logout.
 //
+// Cloudflare Turnstile uses explicit render (required on a Next.js
+// client page). The script + widget div are the same two pieces as
+// the HTML snippet; we call turnstile.render() ourselves because
+// implicit scan-on-load misses a React-hydrated form.
+//
 // TODO (Phase C): referral attribution (reading the mc_referrer cookie)
 // still not built — hook point is wherever signup succeeds below.
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Script from 'next/script';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { AuthShowcasePanel } from '@/components/auth-showcase-panel';
 import { collectDeviceClient } from '@/lib/collect-device-client';
-
 const RESEND_COOLDOWN_SECONDS = 60;
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!;
+
+type TurnstileAPI = {
+  render: (container: HTMLElement, options: Record<string, unknown>) => string;
+  reset: (widgetId: string) => void;
+  remove: (widgetId: string) => void;
+};
+
+function getTurnstile(): TurnstileAPI | undefined {
+  return (window as unknown as { turnstile?: TurnstileAPI }).turnstile;
+}
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -42,7 +58,10 @@ export default function SignUpPage() {
   const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle');
   const [resendError, setResendError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
-
+  const [scriptReady, setScriptReady] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const widgetIdRef = useRef<string | null>(null);
   // Cooldown ticker — ported directly from the live signup page's
   // mechanism (60s, one-second interval, counts down to 0).
   useEffect(() => {
@@ -52,11 +71,35 @@ export default function SignUpPage() {
     }, 1000);
     return () => clearInterval(timer);
   }, [resendCooldown]);
-
   useEffect(() => setMounted(true), []);
 
-  const logoSrc = mounted && resolvedTheme === 'dark' ? '/images/header-logo-dark.png' : '/images/header-logo.png';
+  useEffect(() => {
+    if (!mounted || !scriptReady || checkEmail) return;
+    const turnstile = getTurnstile();
+    if (!turnstile || !widgetRef.current || widgetIdRef.current) return;
+    widgetIdRef.current = turnstile.render(widgetRef.current, {
+      sitekey: TURNSTILE_SITE_KEY,
+      theme: resolvedTheme === 'dark' ? 'dark' : 'light',
+      size: 'flexible',
+      callback: (token: string) => setTurnstileToken(token),
+      'expired-callback': () => setTurnstileToken(null),
+      'error-callback': () => setTurnstileToken(null),
+    });
+    return () => {
+      if (widgetIdRef.current) {
+        turnstile.remove(widgetIdRef.current);
+        widgetIdRef.current = null;
+      }
+      setTurnstileToken(null);
+    };
+  }, [mounted, scriptReady, checkEmail, resolvedTheme]);
 
+  const logoSrc = mounted && resolvedTheme === 'dark' ? '/images/header-logo-dark.png' : '/images/header-logo.png';
+  function resetTurnstile() {
+    const id = widgetIdRef.current;
+    if (id) getTurnstile()?.reset(id);
+    setTurnstileToken(null);
+  }
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -70,6 +113,10 @@ export default function SignUpPage() {
     }
     if (!consentAccepted) {
       setError('Please confirm you are 18+ and accept the Terms, Refund Policy, and Privacy Policy to continue.');
+      return;
+    }
+    if (!turnstileToken) {
+      setError('Please complete the verification check.');
       return;
     }
     setLoading(true);
@@ -87,6 +134,7 @@ export default function SignUpPage() {
           browser_version: device.browser_version,
           os: device.os,
           device_fp: device.device_fp,
+          turnstileToken,
         }),
       });
       const json = await res.json();
@@ -103,11 +151,11 @@ export default function SignUpPage() {
       }
     } catch (err: any) {
       setError(err.message || 'Failed to create account. Please try again.');
+      resetTurnstile();
     } finally {
       setLoading(false);
     }
   }
-
   // Now calls the real /api/resend-verification route (server-side,
   // service-role, includes the already-confirmed gate) instead of
   // hitting Supabase's /auth/v1/resend directly from the client.
@@ -132,9 +180,13 @@ export default function SignUpPage() {
       setResendState('idle');
     }
   }
-
   return (
     <div className="min-h-screen flex">
+      <Script
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+        strategy="afterInteractive"
+        onReady={() => setScriptReady(true)}
+      />
       <AuthShowcasePanel variant="signup" />
       <div className="w-full lg:w-1/2 flex flex-col min-h-screen bg-background">
         <div className="flex items-center justify-between px-6 py-5 lg:hidden">
@@ -230,7 +282,8 @@ export default function SignUpPage() {
                       ,{' '}
                       <Link href="/refund" className="underline hover:text-foreground" target="_blank">
                         Refund Policy
-                      </Link>{' '}
+                      </Link>
+                      {' '}
                       and{' '}
                       <Link href="/privacy" className="underline hover:text-foreground" target="_blank">
                         Privacy Policy
@@ -238,6 +291,12 @@ export default function SignUpPage() {
                       . I consent to receiving a one time verification link to confirm my email address.
                     </span>
                   </label>
+                  <div ref={widgetRef} />
+                  {!TURNSTILE_SITE_KEY && (
+                    <p className="text-xs text-red-600 dark:text-red-400">
+                      Turnstile site key is missing. Set NEXT_PUBLIC_TURNSTILE_SITE_KEY and redeploy.
+                    </p>
+                  )}
                   {error && (
                     <div className="p-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-sm text-red-800 dark:text-red-400">
                       {error}
@@ -245,7 +304,7 @@ export default function SignUpPage() {
                   )}
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !turnstileToken}
                     className="w-full bg-primary text-primary-foreground py-2.5 rounded-lg font-semibold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
                   >
                     {loading ? 'Creating account...' : 'Create Account'}
