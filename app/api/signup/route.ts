@@ -19,7 +19,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const SIGNUP_RATE_LIMIT_MS = 60 * 60 * 1000; // 60 minutes
+const SIGNUP_RATE_LIMIT_MS = 1 * 60 * 1000; // 60 minutes
 
 function jsonWithDevice(body: unknown, status: number, deviceId: string, extraHeaders?: HeadersInit) {
   const res = NextResponse.json(body, { status, headers: extraHeaders });
