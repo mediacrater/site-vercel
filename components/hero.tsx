@@ -1,7 +1,3 @@
-"use client"
-
-import { useEffect, useRef } from "react"
-import Script from "next/script"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Shield, CheckCircle, ArrowUpRight } from "lucide-react"
@@ -10,29 +6,8 @@ const EXTENSION_LINK =
   "https://chromewebstore.google.com/detail/mediacrater-ad-compliance/fgekklkpomdcadiaekpigidkimnkjpnf?utm_medium=website_hero"
 
 export function Hero() {
-  const trustpilotRef = useRef<HTMLDivElement>(null)
-
-  const handleTrustpilotLoad = () => {
-    if (window.Trustpilot && trustpilotRef.current) {
-      window.Trustpilot.loadFromElement(trustpilotRef.current)
-    }
-  }
-
-  useEffect(() => {
-    if (window.Trustpilot && trustpilotRef.current) {
-      window.Trustpilot.loadFromElement(trustpilotRef.current)
-    }
-  }, [])
-
   return (
     <section className="relative overflow-hidden border-b border-border/50 pt-28 pb-20 md:pt-36 md:pb-28">
-      {/* Load Trustpilot script dynamic bootstrap */}
-      <Script
-        src="//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js"
-        strategy="lazyOnload"
-        onLoad={handleTrustpilotLoad}
-      />
-
       {/* Very subtle background treatment */}
       <div
         aria-hidden="true"
@@ -96,28 +71,6 @@ export function Hero() {
                   See how it works
                 </a>
               </Button>
-            </div>
-
-            {/* Trustpilot Widget with Ref */}
-            <div className="mt-6 flex justify-start">
-              <div
-                ref={trustpilotRef}
-                className="trustpilot-widget"
-                data-locale="en-US"
-                data-template-id="56278e9abfbba0bdcd568bc"
-                data-businessunit-id="6a316a13a30ac9aadd7ff637"
-                data-style-height="52px"
-                data-style-width="100%"
-                data-token="35bbe89d-638d-4d52-8934-b91cab52ef84"
-              >
-                <a
-                  href="https://www.trustpilot.com/review/mediacrater.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Trustpilot
-                </a>
-              </div>
             </div>
 
             <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
