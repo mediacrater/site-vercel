@@ -99,11 +99,11 @@ const featureRows: { label: string; values: CellValue[] }[] = [
   },
   {
     label: 'Priority support',
-    values: [false, true, true, true],
+    values: [true, true, true, true],
   },
   {
     label: 'Scan history',
-    values: [false, true, true, true],
+    values: [true, true, true, true],
   },
   {
     label: 'Audio analysis',
