@@ -62,7 +62,7 @@ const featureRows: { label: string; values: CellValue[] }[] = [
   { label: 'Violation timestamps & fixes', values: [true, true, true, true] },
   { label: 'Scan type', values: ['Regular + Deep', 'Regular + Deep', 'Regular + Deep', 'Regular + Deep'] },
   { label: 'Monthly scans', values: ['20', '100', '250', '1000'] },
-  { label: 'Priority support', values: [false, true, true, true] },
+  { label: 'Priority support', values: [true, true, true, true] },
   { label: 'Audio analysis', values: [true, true, true, true] },
 ];
 
