@@ -137,6 +137,7 @@ export default function PrivacyPolicy() {
           We use Cloudflare's invisible and visible services to fight against malicious attacks.
           We are required to reference their policy on invisible services. Read more about it here:
         </p>
+        <p className="mb-4">
               <a
                 href="https://www.cloudflare.com/en-gb/turnstile-privacy-policy"
                 target="_blank"
@@ -145,6 +146,7 @@ export default function PrivacyPolicy() {
               >
                 https://www.cloudflare.com/en-gb/turnstile-privacy-policy
               </a>
+        </p>
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">How We Use Your Data</h2>
         <ul className="list-disc list-inside space-y-2">
