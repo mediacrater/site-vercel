@@ -134,8 +134,11 @@ export default function PrivacyPolicy() {
       </section>
         <h3 className="text-lg font-semibold mb-2">Cloudflare usage</h3>
         <p className="mb-4">
-          We use Cloudflare's invisible and visible services to fight against malicious attacks.
-          We are required to reference their policy on invisible services. Read more about it here:
+          We use Cloudflare services (including Bot Fight Mode and related challenge mechanisms) 
+          to protect our infrastructure against automated abuse and malicious traffic. These 
+          services may process limited technical signals such as IP address, TLS fingerprint, and 
+          User-Agent. For details on how Cloudflare handles this data, see Cloudflare’s Turnstile 
+          Privacy Addendum:
         </p>
         <p className="mb-4">
               <a
