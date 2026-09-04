@@ -135,36 +135,16 @@ export default function PrivacyPolicy() {
         <h3 className="text-lg font-semibold mb-2">Cloudflare usage</h3>
         <p className="mb-4">
           We use Cloudflare's invisible and visible services to fight against malicious attacks.
-          We are required to reference their policy on ivisible services. Read more about it
+          We are required to reference their policy on invisible services. Read more about it
               <a
                 href="https://www.cloudflare.com/en-gb/turnstile-privacy-policy"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-secondary"
+                className="mb-4"
               >
                 here.
               </a>
         </p>
-        <ul className="list-disc list-inside space-y-2 mb-6">
-          <li>
-            <strong>IP address and approximate location</strong> — IP address, country, city, and
-            network provider, collected at account creation. Used only to prevent abuse of the free
-            plan. Approximate location is derived from the IP address; it is not a street address.
-          </li>
-          <li>
-            <strong>Device cookie</strong> — a first-party identifier stored in your browser so we
-            can tell when several free accounts are created from the same device. It is not your
-            login session and is not cleared when you sign out. See our{' '}
-            <a href="https://mediacrater.com/cookie-policy" className="underline">
-              Cookie Policy
-            </a>.
-          </li>
-          <li>
-            <strong>Browser and device information</strong> — browser name and version, operating
-            system, timezone, and a technical identifier derived from those details. Used only to
-            enforce the free plan across accounts.
-          </li>
-        </ul>
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">How We Use Your Data</h2>
         <ul className="list-disc list-inside space-y-2">
