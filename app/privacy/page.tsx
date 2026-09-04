@@ -142,7 +142,7 @@ export default function PrivacyPolicy() {
                 rel="noopener noreferrer"
                 className="mb-4 underline underline-offset-2 transition-all duration-300 hover:text-blue-400 hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]"
               >
-                here.
+                 here.
               </a>
         </p>
       <section className="mb-10">
