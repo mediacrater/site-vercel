@@ -12,7 +12,7 @@ export function Hero() {
   const [hasChanged, setHasChanged] = useState(false)
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setHasChanged(true), 4000)
+    const timer = window.setTimeout(() => setHasChanged(true), 3000)
     return () => window.clearTimeout(timer)
   }, [])
 
