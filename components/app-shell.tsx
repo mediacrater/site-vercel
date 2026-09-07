@@ -23,6 +23,7 @@ import { CommandPalette } from '@/components/command-palette';
 import { KeyboardShortcuts } from '@/components/keyboard-shortcuts';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { supabase } from '@/lib/mediacrater/supabaseClient';
+import { ApiHostClearance } from './ApiHostClearance';
 
 const EXTENSION_LINK =
   'https://chromewebstore.google.com/detail/mediacrater-ad-compliance/fgekklkpomdcadiaekpigidkimnkjpnf?utm_medium=app_mobile_nav';
@@ -58,6 +59,7 @@ export function AppShell({
       <AppSidebar />
       <CommandPalette />
       <KeyboardShortcuts />
+      <ApiHostClearance />
 
       <div className="flex-1 min-w-0">
         <AppTopBar userEmail={userEmail} plan={plan} scansRemaining={scansRemaining} />
