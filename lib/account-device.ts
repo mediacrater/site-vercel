@@ -43,7 +43,18 @@ function asText(value: unknown): string | null {
 }
 
 export function clientIpFrom(req: NextRequest): string {
-  const forwarded = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '';
+  const cf = req.headers.get('cf-connecting-ip')?.trim();
+  if (cf) return cf;
+
+  const trueClient = req.headers.get('true-client-ip')?.trim();
+  if (trueClient) return trueClient;
+
+  // Last resort only — behind Cloudflare these are often the edge IP
+  const forwarded =
+    req.headers.get('x-forwarded-for') ||
+    req.headers.get('x-vercel-forwarded-for') ||
+    req.headers.get('x-real-ip') ||
+    '';
   return forwarded.split(',')[0].trim();
 }
 
