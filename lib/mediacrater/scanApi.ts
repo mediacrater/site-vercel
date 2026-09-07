@@ -86,6 +86,7 @@ export async function scanVideo(
 
   const response = await fetch(`${VPS_URL}/scan-video`, {
     method: 'POST',
+    credentials: 'include',
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -130,6 +131,7 @@ export async function scanImage(
 
   const response = await fetch(`${VPS_URL}/scan-image`, {
     method: 'POST',
+    credentials: 'include',
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -163,6 +165,7 @@ export async function getQueueStatus(
 ): Promise<{ status: 'running' | 'queued' | 'not_found'; position?: number }> {
   const token = await requireAccessToken();
   const response = await fetch(`${VPS_URL}/queue-status/${jobId}`, {
+    credentials: 'include',
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) throw new Error('Failed to get queue status');
@@ -173,6 +176,7 @@ export async function cancelQueuedScan(jobId: string): Promise<{ success: boolea
   const token = await requireAccessToken();
   const response = await fetch(`${VPS_URL}/queue-cancel/${jobId}`, {
     method: 'POST',
+    credentials: 'include',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
   });
   if (!response.ok) {
@@ -190,6 +194,7 @@ export async function reportQueueTiming(
     const token = await requireAccessToken();
     await fetch(`${VPS_URL}/queue-timing/${jobId}`, {
       method: 'POST',
+      credentials: 'include',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(timings),
     });
