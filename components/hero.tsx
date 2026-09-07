@@ -1,11 +1,21 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Shield, CheckCircle, ArrowUpRight } from "lucide-react"
 
 const EXTENSION_LINK =
-  "https://chromewebstore.google.com/detail/mediacrater-ad-compliance/fgekklkpomdcadiaekpigidkimnkjpnf?utm_medium=website_hero"
+  "https://mediacrater.com/signup"
 
 export function Hero() {
+  const [hasChanged, setHasChanged] = useState(false)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setHasChanged(true), 4000)
+    return () => window.clearTimeout(timer)
+  }, [])
+
   return (
     <section className="relative overflow-hidden border-b border-border/50 pt-28 pb-20 md:pt-36 md:pb-28">
       {/* Very subtle background treatment */}
@@ -29,12 +39,59 @@ export function Hero() {
               Video ad policy checker
             </Badge>
 
-            <h1 className="max-w-3xl font-[family-name:var(--font-display)] text-5xl font-bold leading-[0.98] tracking-[-0.035em] text-foreground sm:text-6xl lg:text-7xl">
-              Know before
+            <h1
+              aria-label="Know before you launch."
+              className="max-w-3xl font-[family-name:var(--font-display)] text-5xl font-bold leading-[0.98] tracking-[-0.035em] text-foreground sm:text-6xl lg:text-7xl"
+            >
+              <span className="inline-flex items-baseline">
+                <span
+                  aria-hidden="true"
+                  className="relative inline-block h-[1.05em] shrink-0 translate-y-[0.16em] overflow-hidden transition-[width] duration-[2500ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                  style={{
+                    width: hasChanged ? "2.75em" : "4.35em",
+                  }}
+                >
+                  <span
+                    className="absolute inset-x-0 top-0 flex h-[2.1em] flex-col transition-transform duration-[2500ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                    style={{
+                     transform: hasChanged ? "translateY(0)" : "translateY(-1.05em)",
+                    }}
+                  >
+                    <span className="flex h-[1.05em] shrink-0 items-center">
+                      Know
+                    </span>
+                    <span className="flex h-[1.05em] shrink-0 items-center">
+                      Question
+                    </span>
+                  </span>
+                </span>
+                <span className="ml-[0.18em]">before</span>
+              </span>
               <br />
-              you <span className="text-primary">launch.</span>
+              you <span className="text-primary">launch</span>
+              <span
+                aria-hidden="true"
+                className="relative ml-[0.02em] inline-block h-[1.05em] translate-y-[0.16em] overflow-hidden transition-[width] duration-[2500ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                style={{
+                  width: hasChanged ? "0.3em" : "1.1em",
+                }}
+              >
+                <span
+                  className="absolute inset-x-0 top-0 flex h-[2.1em] flex-col transition-transform duration-[2500ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                  style={{
+                    transform: hasChanged ? "translateY(0)" : "translateY(-1.05em)",
+                  }}
+                >
+                  <span className="flex h-[1.05em] shrink-0 items-center">
+                    .
+                  </span>
+                  <span className="flex h-[1.05em] shrink-0 items-center">
+                    ..?
+                  </span>
+                </span>
+              </span>
             </h1>
-
+            
             <p className="mt-7 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
               Scan your video ads for potential Meta, TikTok, and Google
               policy issues before you spend money promoting them.
@@ -86,7 +143,7 @@ export function Hero() {
 
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-emerald-500" />
-                From $0.19 / scan
+                Audio analysis
               </div>
             </div>
 
@@ -158,19 +215,16 @@ export function Hero() {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                        Policy assessment
+                        Analysis Results
                       </p>
                       <p className="mt-1 text-xl font-bold text-foreground">
-                        Medium risk
+                        META
                       </p>
                     </div>
 
                     <div className="text-right">
-                      <p className="text-[10px] text-muted-foreground">
-                        Confidence
-                      </p>
                       <p className="font-mono text-sm font-semibold text-amber-500">
-                        78%
+                        Medium risk
                       </p>
                     </div>
                   </div>
