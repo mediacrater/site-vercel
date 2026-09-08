@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Shield, CheckCircle, ArrowUpRight } from "lucide-react"
 
-const EXTENSION_LINK =
+const SIGNUP_LINK =
   "https://mediacrater.com/signup"
 
 export function Hero() {
@@ -165,9 +165,7 @@ export function Hero() {
                 className="h-12 rounded-xl bg-primary px-6 text-base font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
               >
                 <a
-                  href={EXTENSION_LINK}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={SIGNUP_LINK}
                 >
                   <Shield className="mr-2 h-4 w-4" />
                   Try it free
