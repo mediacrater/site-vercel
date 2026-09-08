@@ -10,9 +10,16 @@ const EXTENSION_LINK =
 
 export function Hero() {
   const [hasChanged, setHasChanged] = useState(false)
+  const [reduceMotion, setReduceMotion] = useState(false)
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setHasChanged(true), 3000)
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
+    setReduceMotion(mq.matches)
+
+    const timer = window.setTimeout(
+      () => setHasChanged(true),
+      mq.matches ? 400 : 3000 // shorter hold, no one's reading a slide they won't see
+    )
     return () => window.clearTimeout(timer)
   }, [])
 
