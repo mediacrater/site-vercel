@@ -52,9 +52,6 @@ export function AppTopBar({
   }
 
   return (
-   <div className="bg-amber-100 dark:bg-transparent text-amber-700 dark:text-[#fbbf24] text-center py-2 px-5 text-xs font-semibold border-b border-[#fde68a] dark:border-[#4d2900] tracking-[0.2px]">
-     Major update underway: expect intermittent delays.
-  </div>
     <div className="hidden lg:flex items-center justify-end gap-3 h-16 px-8 border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-30">
       {plan && (
         <div className="px-3 py-1.5 rounded-full border border-border text-xs font-medium text-foreground capitalize">
