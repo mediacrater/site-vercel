@@ -31,6 +31,7 @@ import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { AuthShowcasePanel } from '@/components/auth-showcase-panel';
 import { collectDeviceClient } from '@/lib/collect-device-client';
+import { supabase } from "@/lib/mediacrater/supabaseClient"
 const RESEND_COOLDOWN_SECONDS = 100;
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!;
 
@@ -45,6 +46,7 @@ function getTurnstile(): TurnstileAPI | undefined {
 }
 
 export default function SignUpPage() {
+  const [checkingSession, setCheckingSession] = useState(true)
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -62,6 +64,26 @@ export default function SignUpPage() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        router.replace("/dashboard")
+        return
+      }
+
+      if (mounted) {
+        setCheckingSession(false)
+      }
+    })
+
+    return () => {
+      mounted = false
+    }
+  }, [router])
+  
   // Cooldown ticker — ported directly from the live signup page's
   // mechanism (60s, one-second interval, counts down to 0).
   useEffect(() => {
@@ -179,6 +201,9 @@ export default function SignUpPage() {
       setResendError(err.message || 'Failed to resend verification email. Please try again.');
       setResendState('idle');
     }
+  }
+  if (checkingSession) {
+    return null
   }
   return (
     <div className="min-h-screen flex">
