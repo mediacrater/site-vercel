@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Shield, CheckCircle, ArrowUpRight } from "lucide-react"
 
-const SIGNUP_LINK =
-  "https://mediacrater.com/signup"
+const SIGNUP_LINK = `${process.env.NEXT_PUBLIC_APP_URL}/signup`
 
 export function Hero() {
   const [hasChanged, setHasChanged] = useState(false)
