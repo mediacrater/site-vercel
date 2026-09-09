@@ -1,0 +1,13 @@
+FILES EDITED IN WEBSITE TEST ENV:
+
+lib/mediacrater/scanApi.ts
+components/ApiHostClearance.tsx (new file)
+components/app-shell.tsx
+
+VPS TEST ENV:
+server.js
+
+Also updated extension: supabase.js and popup.js
+
+friday sept 4 2026: pushed v 1.6.3 - pending review after policy update
+monday sept 7 2026: pushed website and VPS changes
