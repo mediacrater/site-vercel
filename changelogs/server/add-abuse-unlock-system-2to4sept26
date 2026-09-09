@@ -1,0 +1,227 @@
+## Step 1 – Database
+Run this once:
+SQL
+
+ALTER TABLE profiles
+ADD COLUMN IF NOT EXISTS abuse_lock_exempt boolean NOT NULL DEFAULT false;Step 2 – Manual unlock rule (for you)
+
+
+## Whenever you unlock an account yourself, always run:
+SQL
+
+UPDATE profiles
+SET account_status = 'active',
+    abuse_lock_exempt = true
+WHERE id = 'the-user-id';That flag tells the system never to touch the account again.
+
+
+## Step 3 – Update the webhook (clearAbuseFlag + re-lock)
+Replace the existing clearAbuseFlag function with this version:
+JavaScript
+
+async function clearAbuseFlag(supabase: any, userId: string) {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('account_status, flagged_cluster_id, abuse_lock_exempt')
+    .eq('id', userId)
+    .single()
+
+  if (!profile || profile.account_status === 'active') return
+  if (profile.abuse_lock_exempt) return   // admin override — leave alone
+
+  await supabase
+    .from('profiles')
+    .update({ account_status: 'active' })
+    .eq('id', userId)
+
+  console.log(`Cleared abuse flag for user ${userId} after upgrade`)
+
+  if (!profile.flagged_cluster_id) return
+
+  const { data: remaining } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('flagged_cluster_id', profile.flagged_cluster_id)
+    .neq('account_status', 'active')
+
+  if (!remaining || remaining.length === 0) {
+    await supabase
+      .from('flagged_ip_clusters')
+      .update({ resolved_at: new Date().toISOString() })
+      .eq('id', profile.flagged_cluster_id)
+
+    console.log(`Cluster ${profile.flagged_cluster_id} fully resolved`)
+  }
+}
+
+## In the customer.subscription.deleted handler, change the re-lock check to also respect the exempt flag.
+Replace this block:
+JavaScript
+
+let reLock = false
+
+  if (currentProfile?.previously_flagged && currentProfile?.ip_at_creation) {
+    const { data: stillFlaggedPeers } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('ip_at_creation', currentProfile.ip_at_creation)
+      .eq('plan', 'free')
+      .neq('account_status', 'active')
+      .neq('id', userId)
+      .limit(1)
+
+    reLock = !!(stillFlaggedPeers && stillFlaggedPeers.length > 0)
+  }
+  
+  ## with:
+JavaScript
+
+let reLock = false
+
+  // Only consider re-locking if the admin has not exempted this account
+  if (
+    currentProfile?.previously_flagged &&
+    currentProfile?.ip_at_creation &&
+    currentProfile?.abuse_lock_exempt !== true
+  ) {
+    const { data: stillFlaggedPeers } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('ip_at_creation', currentProfile.ip_at_creation)
+      .eq('plan', 'free')
+      .neq('account_status', 'active')
+      .neq('id', userId)
+      .limit(1)
+
+    reLock = !!(stillFlaggedPeers && stillFlaggedPeers.length > 0)
+  }
+  
+## Also add abuse_lock_exempt to the select that fetches currentProfile:
+JavaScript
+
+.select('stripe_subscription_id, plan, ip_at_creation, flagged_cluster_id, previously_flagged, abuse_lock_exempt')
+
+##  Step 4 – Bring back a controlled resolution sweep in abuseDetection.js
+Add this function (it replaces the old one we deleted):
+JavaScript
+
+async function resolveClearedClusters() {
+  const supabase = supabaseRef;
+  try {
+    // Only look at accounts the system is allowed to manage
+    const { data: lockedAccounts, error } = await supabase
+      .from('profiles')
+      .select('id, ip_at_creation, flagged_cluster_id, plan, abuse_lock_exempt')
+      .eq('account_status', 'action_required')
+      .eq('abuse_lock_exempt', false)
+      .not('ip_at_creation', 'is', null);
+
+    if (error) {
+      console.error('[ABUSE] Resolution sweep fetch failed:', summarizeError(error));
+      return;
+    }
+
+    if (!lockedAccounts || lockedAccounts.length === 0) return;
+
+    const byIp = new Map();
+    for (const acc of lockedAccounts) {
+      if (!byIp.has(acc.ip_at_creation)) byIp.set(acc.ip_at_creation, []);
+      byIp.get(acc.ip_at_creation).push(acc);
+    }
+
+    for (const [ip, accountsAtIp] of byIp.entries()) {
+      for (const acc of accountsAtIp) {
+        // Case 1: account is no longer free → unlock
+        if (acc.plan !== 'free') {
+          const { error: unlockError } = await supabase
+            .from('profiles')
+            .update({ account_status: 'active' })
+            .eq('id', acc.id);
+
+          if (unlockError) {
+            console.error('[ABUSE] Failed to auto-unlock paid account:', summarizeError(unlockError));
+            continue;
+          }
+          console.error(`[ABUSE] Auto-unlocked paid user ${acc.id}`);
+          continue;
+        }
+
+        // Case 2: still free — only unlock if no other free peer remains
+        const { data: peers, error: peerError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('ip_at_creation', ip)
+          .eq('plan', 'free')
+          .neq('id', acc.id)
+          .limit(1);
+
+        if (peerError) {
+          console.error('[ABUSE] Resolution peer check failed:', summarizeError(peerError));
+          continue;
+        }
+
+        if (peers && peers.length > 0) continue; // still has a free peer → stay locked
+
+        const { error: unlockError } = await supabase
+          .from('profiles')
+          .update({ account_status: 'active' })
+          .eq('id', acc.id);
+
+        if (unlockError) {
+          console.error('[ABUSE] Failed to auto-unlock account:', summarizeError(unlockError));
+          continue;
+        }
+
+        console.error(`[ABUSE] Auto-unlocked user ${acc.id} — no free peers remain at IP ${ip}`);
+
+        if (acc.flagged_cluster_id) {
+          await supabase
+            .from('flagged_ip_clusters')
+            .update({ resolved_at: new Date().toISOString() })
+            .eq('id', acc.flagged_cluster_id)
+            .is('resolved_at', null);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[ABUSE] Resolution sweep crashed:', summarizeError(err));
+  }
+}Update runSweep:
+JavaScript
+
+async function runSweep() {
+  try {
+    await checkForAbusiveIPs();
+  } catch (err) {
+    console.error('[ABUSE] checkForAbusiveIPs crashed the sweep:', summarizeError(err));
+  }
+  try {
+    await resolveClearedClusters();
+  } catch (err) {
+    console.error('[ABUSE] resolveClearedClusters crashed the sweep:', summarizeError(err));
+  }
+}Update the export:
+JavaScript
+
+module.exports = { initAbuseDetection, checkForAbusiveIPs, resolveClearedClusters };
+
+## Step 5 – Protect the lock path itself
+In lockAndNotifyCluster, change the filter that builds toLock so it never locks an exempt account:
+JavaScript
+
+const toLock = accounts.filter(
+  (a) => a.account_status === 'active' && a.abuse_lock_exempt !== true
+);
+
+## And include the column in the select:
+JavaScript
+
+.select('id, email, account_status, abuse_lock_exempt')
+
+That is the full set of changes. After applying them:
+
+Paid users are unlocked automatically.
+If they cancel and another free account still shares the IP, they are re-locked.
+Any account you manually unlock with abuse_lock_exempt = true is permanently ignored by the system.
+Edward  [11:01 AM]
+Completed Applied to live
