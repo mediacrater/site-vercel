@@ -25,6 +25,7 @@ function getTurnstile(): TurnstileAPI | undefined {
 }
 
 export default function SignInPage() {
+  const [checkingSession, setCheckingSession] = useState(true)
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,6 +36,25 @@ export default function SignInPage() {
   const widgetRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
 
+  useEffect(() => {
+    let mounted = true
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        router.replace("/dashboard")
+        return
+      }
+
+      if (mounted) {
+        setCheckingSession(false)
+      }
+    })
+
+    return () => {
+      mounted = false
+    }
+  }, [router])
+  
   useEffect(() => {
     if (!scriptReady) return;
     const turnstile = getTurnstile();
@@ -80,6 +100,10 @@ export default function SignInPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (checkingSession) {
+    return null
   }
   return (
     <div className="min-h-screen flex">
