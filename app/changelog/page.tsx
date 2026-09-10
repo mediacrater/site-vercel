@@ -18,7 +18,7 @@ export default function ChangelogPage() {
         <section>
           <div className="flex items-center gap-3 mb-6">
             <h2 className="text-xl font-semibold">Alpha 1.6.3 to 1.6.3.1</h2>
-            <span className="text-xs text-muted-foreground">August 2026</span>
+            <span className="text-xs text-muted-foreground">September 2026</span>
           </div>
           
             <section>
