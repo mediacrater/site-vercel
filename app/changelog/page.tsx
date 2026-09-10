@@ -14,16 +14,32 @@ export default function ChangelogPage() {
 
       {/* Single container for all sections */}
       <div className="space-y-12">
-        
         {/* Alpha Section */}
         <section>
-          <div className="flex items-center gap-3 mb-4">
-            <h2 className="text-xl font-semibold">Alpha 1.6.3</h2>
-            <span className="text-xs text-muted-foreground">September 2026</span>
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-xl font-semibold">Alpha 1.6.3 to 1.6.3.1</h2>
+            <span className="text-xs text-muted-foreground">August 2026</span>
           </div>
-          <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
-            <li>Security enhancements</li>
-          </ul>
+          
+            <section>
+              <div className="mb-1">
+                <h3 className="text-lg font-semibold">Alpha 1.6.3.1</h3>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
+                <li>Configuration enhancements</li>
+
+              </ul>
+            </section>
+          
+            <section>
+              <div className="mb-1">
+                <h3 className="text-lg font-semibold">Alpha 1.6.3</h3>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
+                <li>Security enhancements</li>
+
+              </ul>
+            </section>
         </section>
         
         {/* Alpha Section */}
