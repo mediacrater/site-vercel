@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_VPS_API_URL;
-// if NEXT_PUBLIC_API_URL is the full API root, that's fine:
+// if NEXT_PUBLIC_API_URL is the full API root, that's kikefine:
 const CF_OK = `${String(API_ORIGIN).replace(/\/$/, '')}/cf-ok`;
 
 export function ApiHostClearance() {
