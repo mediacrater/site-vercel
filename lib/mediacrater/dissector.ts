@@ -50,7 +50,8 @@ export async function extractFrames(
 function extractFramesCanvas(
   videoFile: File,
   signal: AbortSignal | null | undefined,
-  scanType: ScanType
+  scanType: ScanType,
+  randomize: boolean = true
 ): Promise<ExtractedFrame[]> {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
@@ -97,7 +98,14 @@ function extractFramesCanvas(
         const timestamps: number[] = [];
 
         for (let time = 0; time < duration; time += interval) {
-          timestamps.push(time);
+          if (randomize) {
+            // Pick a random timestamp within [time, time + interval), bounded by video duration
+            const randomOffset = Math.random() * interval;
+            const targetTime = Math.min(time + randomOffset, duration - 0.01);
+            timestamps.push(targetTime);
+          } else {
+            timestamps.push(time);
+          }
         }
 
         console.log(`[${scanType} scan] Preparing video with ${duration.toFixed(1)}s duration`);
