@@ -1,5 +1,5 @@
 # Gateway Timeout Patch — abuseDetection.js
-
+**AI conversation link:** https://claude.ai/chat/5cc52007-76e3-47ab-801e-1ab844b085a9
 **Date:** September 13, 2026
 **File touched:** `abuseDetection.js` (production: `/var/www/mediacrater-api/`)
 **Status:** Root cause confirmed, fix written, **not yet deployed to production**
