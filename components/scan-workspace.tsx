@@ -1,21 +1,6 @@
 'use client';
 
 // components/scan-workspace.tsx
-//
-// Web app equivalent of the extension's dashboard screen (upload → config
-// → progress → results). Same validation rules, same platform taxonomy,
-// same queue-aware polling, same error taxonomy, same risk-scoring logic
-// as popup.js — just re-expressed as a React component instead of
-// direct DOM manipulation, and styled with the app's existing Tailwind/
-// shadcn tokens rather than the extension's raw CSS classes.
-//
-// Scan history is NOT re-implemented here on purpose: every scan already
-// gets written server-side to the `scans` table (see helpers.js logScan,
-// called from routes/scanVideo.js and routes/scanImage.js) regardless of
-// which client made the request. The dashboard's history table just
-// needs to query that table — no client-side storage needed here, unlike
-// the extension's historyManager.js (which exists only because the
-// extension has no server-rendered history view of its own).
 
 import { useEffect, useRef, useState } from 'react';
 import { extractFrames, extractAudio, type ExtractedFrame, type ScanType } from '@/lib/mediacrater/dissector';
