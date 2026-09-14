@@ -64,15 +64,48 @@ const [canCancel, setCanCancel] = useState(true);
 ```
 
 ### 2. State transitions added at each phase boundary
-- Reset to `true` at the start of every `handleAnalyze()` run.
-- Set to `true` whenever a platform enters the **queued** state
-  (`while ('queued' in response && response.queued)` loop in
-  `performAnalysis`).
-- Set to `false` at the exact point `progressText` switches to
-  `"Analyzing your content against ... policies..."` — both the
-  initial pre-queue path and the post-queue path (since with multiple
-  platforms selected, each platform can independently re-enter the
-  queued state before starting its own analysis).
+
+Four `setCanCancel` call sites, one at each phase transition:
+
+- **`handleAnalyze()`, at the start of every run:**
+  ```js
+  setIsAnalyzing(true);
+  setResults(null);
+  setCanCancel(true);   // reset — extraction phase is always cancellable
+  ```
+
+- **`performAnalysis()`, right before the first (pre-queue) analysis
+  call for each platform** — covers the case where a platform skips
+  the queue entirely and goes straight to analysis:
+  ```js
+  const platformList = platforms.join(', ').toUpperCase();
+  setProgressText(`Analyzing your content against ${platformList} policies...`);
+  setCanCancel(false);   // AI call is about to start
+  ```
+
+- **Inside the per-platform `while ('queued' in response && response.queued)`
+  loop, when a platform enters the queue:**
+  ```js
+  jobId = response.jobId;
+  currentJobIdRef.current = jobId;
+  setCanCancel(true);   // authenticated but not yet running — still cancellable
+  setProgressText(`You're queued at position ${response.position}. Waiting for your turn...`);
+  ```
+
+- **Immediately after `waitForQueueTurn` resolves, once that platform's
+  own analysis is about to start:**
+  ```js
+  currentJobIdRef.current = null;
+  queueWaitMs = Date.now() - (queueEnteredAt as number);
+  setProgressText(`Analyzing your content against ${platform.toUpperCase()} policies...`);
+  setCanCancel(false);   // this platform's AI call is now running
+  ```
+
+This last pair (queued → analyzing) repeats per platform when multiple
+platforms are selected, since each can independently re-enter the
+queue before its own analysis begins — `canCancel` correctly flips
+back to `true` for platform 2's queue wait even after being `false`
+during platform 1's analysis.
 
 ### 3. UI now follows `canCancel`
 - Cancel button only renders when `canCancel` is true.
