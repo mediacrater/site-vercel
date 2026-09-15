@@ -94,13 +94,13 @@ export default function TermsOfService() {
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">7. Your Content</h2>
 
-        <p className="mb-4">
-          You retain full ownership of any video or image files you submit. By submitting a file, you
-          grant Mediacrater a limited, temporary license to process it for the purpose of delivering
-          your scan results. The full file you upload is permanently deleted after results are
-          returned — we do not retain your original video or image. We claim no ownership over your
-          creative assets.
-        </p>
+          <p className="mb-4">
+           You retain full ownership of any video or image files you submit. By submitting a file, you
+           grant Mediacrater a limited, temporary license to process it for the purpose of delivering
+           your scan results. The content you upload is permanently deleted after results are
+           returned, except for visual reference content retained for Scan History on paid plans as
+           described below. We claim no ownership over your creative assets.
+         </p>
 
         <p className="mb-4">
           <strong>Scan History (paid plans):</strong> if your plan includes Scan History, we retain a
