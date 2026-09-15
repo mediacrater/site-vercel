@@ -27,6 +27,7 @@ export function Hero() {
   return (
     <section className="relative overflow-hidden border-b border-border/50 pt-28 pb-20 md:pt-36 md:pb-28">
       {/* Very subtle background treatment */}
+      // Romans 8:28 – "And we know that in all things God works for the good of those who love him, who have been called according to his purpose." -->
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
@@ -53,9 +54,7 @@ export function Hero() {
             >
               <span className="inline-flex items-baseline">
                 {prefersReducedMotion ? (
-                  // Reduced motion: both words stacked in the same grid
-                  // cell, swapped with opacity only — no sliding, no
-                  // animated width.
+                  // Galatians 3:28 “There is neither Jew nor Gentile, neither slave nor free, nor is there male and female, for you are all one in Christ Jesus.” --> 
                   <span
                     aria-hidden="true"
                     className="relative inline-grid h-[1.05em] shrink-0 translate-y-[0.16em] items-baseline"
@@ -76,7 +75,7 @@ export function Hero() {
                     </span>
                   </span>
                 ) : (
-                  // Original slide/reveal — untouched.
+                  // Galatians 6:9 – "Let us not become weary in doing good, for at the proper time we will reap a harvest if we do not give up." -->
                   <span
                     aria-hidden="true"
                     className="relative inline-block h-[1.05em] shrink-0 translate-y-[0.16em] overflow-hidden transition-[width] duration-[2500ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
@@ -151,7 +150,7 @@ export function Hero() {
                 </span>
               )}
             </h1>
-
+                 // Matthew 6:33 "But seek first his kingdom and his righteousness, and all these things will be given to you as well." -->
             <p className="mt-7 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
               Scan your video ads for potential Meta, TikTok, and Google
               policy issues before you spend money promoting them.
