@@ -107,10 +107,9 @@ export default function TermsOfService() {
           small, heavily compressed, low-resolution thumbnail (generated from the first frame of your
           video, or your image) so you can visually identify past scans in your history list. This
           thumbnail is intentionally too low-quality for any practical reuse of your creative — it
-          exists solely for your own reference. It is deleted if you delete the associated scan, and
-          is not retained if your plan does not include Scan History. Full scan results (the text
-          analysis, not the creative itself) are retained as part of your Scan History for as long as
-          your plan includes that feature.
+          exists solely for your own visual reference. This content is not collected for users on the 
+          free plan. Full scan results (the text analysis, not the creative itself) are retained as part 
+          of your Scan History.
         </p>
 
         <p>
