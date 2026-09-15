@@ -27,7 +27,7 @@ export function Hero() {
   return (
     <section className="relative overflow-hidden border-b border-border/50 pt-28 pb-20 md:pt-36 md:pb-28">
       {/* Very subtle background treatment */}
-      //Romans 8:28 – And we know that in all things God works for the good of those who love him, who have been called according to his purpose.
+       {/*Romans 8:28 – And we know that in all things God works for the good of those who love him, who have been called according to his purpose. */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
@@ -150,7 +150,7 @@ export function Hero() {
                 </span>
               )}
             </h1>
-                 // Matthew 6:33 "But seek first his kingdom and his righteousness, and all these things will be given to you as well." -->
+            {/* Matthew 6:33 "But seek first his kingdom and his righteousness, and all these things will be given to you as well." */}
             <p className="mt-7 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
               Scan your video ads for potential Meta, TikTok, and Google
               policy issues before you spend money promoting them.
