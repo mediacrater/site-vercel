@@ -27,7 +27,7 @@ export function Hero() {
   return (
     <section className="relative overflow-hidden border-b border-border/50 pt-28 pb-20 md:pt-36 md:pb-28">
       {/* Very subtle background treatment */}
-      // Romans 8:28 – "And we know that in all things God works for the good of those who love him, who have been called according to his purpose." -->
+      //Romans 8:28 – And we know that in all things God works for the good of those who love him, who have been called according to his purpose.
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
