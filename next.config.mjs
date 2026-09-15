@@ -10,7 +10,7 @@ const nextConfig = {
     return [
       {
         source: "/db/:path*",
-        destination: "https://wwnpgzgvwsbdipysvobb.supabase.co/:path*",
+        destination: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/:path*`,
       },
     ];
   },
