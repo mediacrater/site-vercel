@@ -83,6 +83,7 @@ export function Hero() {
                       width: hasChanged ? "2.75em" : "4.35em",
                     }}
                   >
+                    {/*Galatians 3:28 “There is neither Jew nor Gentile, neither slave nor free, nor is there male and female, for you are all one in Christ Jesus.”*/}
                     <span
                       className="absolute inset-x-0 top-0 flex h-[2.1em] flex-col transition-transform duration-[2500ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
                       style={{
