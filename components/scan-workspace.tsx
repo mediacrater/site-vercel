@@ -1089,7 +1089,7 @@ export function ScanWorkspace({
             <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
             <p className="text-sm font-medium">{progressText}</p>
             <p className="text-xs text-muted-foreground mt-2 max-w-lg">
-              Scan in progress, keep this tab open.
+              Scan in progress, keep this tab open, do not refresh the page.
               It is safe to leave this page, your
               results will be ready shortly.
             </p>
