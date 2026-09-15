@@ -17,6 +17,14 @@ import {
   reportQueueTiming,
   waitForQueueTurn,
 } from '@/lib/mediacrater/scanApi';
+import {
+  beginBackgroundScan,
+  clearBackgroundScanState,
+  completeBackgroundScan,
+  failBackgroundScan,
+  updateBackgroundScanProgress,
+  useBackgroundScanState,
+} from '@/lib/mediacrater/backgroundScanStore';
 import { supabase } from '@/lib/mediacrater/supabaseClient';
 import { uploadScanThumbnail } from '@/lib/mediacrater/thumbnails';
 
@@ -99,6 +107,14 @@ export function ScanWorkspace({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const mountedRef = useRef(true);
+
+  const ownsActiveScanRef = useRef(false);
+
+  const backgroundOperationIdRef = useRef<string | null>(null);
+
+  const backgroundScan = useBackgroundScanState();
+  
   const isVideo = fileKind === 'video';
   const canDeepScan = Boolean(profile?.deep_scan_enabled);
   const canAnalyzeAudio = Boolean(profile?.audio_analysis);
@@ -107,6 +123,14 @@ export function ScanWorkspace({
   const scanCostPerPlatform = isVideo && scanType === 'deep' ? 2 : 1;
   const totalCost = platforms.length > 0 ? platforms.length * scanCostPerPlatform : scanCostPerPlatform;
 
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+  
   useEffect(() => {
     return () => {
       if (previewUrl && previewUrl.startsWith('blob:')) URL.revokeObjectURL(previewUrl);
@@ -118,14 +142,179 @@ export function ScanWorkspace({
     if (!canAnalyzeAudio) setAnalyzeAudio(false);
   }, [canAnalyzeAudio]);
 
-  function startElapsedTimer() {
-    const startTime = Date.now();
-    setElapsedSeconds(0);
-    timerRef.current = setInterval(() => {
-      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
-    }, 1000);
+  useEffect(() => {
+  /*
+   * The instance that originally started
+   * the scan already owns its live local
+   * state.
+   *
+   * This branch is for a fresh Dashboard
+   * instance after navigating away and
+   * returning.
+   */
+    if (
+      ownsActiveScanRef.current
+    ) {
+      return;
+    }
+
+    if (
+      backgroundScan.status ===
+        'preparing' ||
+      backgroundScan.status ===
+        'running'
+    ) {
+      setResults(null);
+      setBanner(null);
+      setIsAnalyzing(true);
+      setCanCancel(false);
+
+      setProgressText(
+        backgroundScan.message ||
+          'Scan in progress...'
+      );
+
+      onResultsChange?.(
+        null
+      );
+
+      if (
+        backgroundScan.startedAt
+      ) {
+        const startedAt =
+          Date.parse(
+            backgroundScan.startedAt
+          );
+
+        if (
+          Number.isFinite(
+            startedAt
+          )
+        ) {
+          startElapsedTimer(
+            startedAt
+          );
+        }
+      }
+
+      return;
+    }
+
+    if (
+      backgroundScan.status ===
+        'completed' &&
+      backgroundScan.results
+    ) {
+      stopElapsedTimer();
+
+      setIsAnalyzing(false);
+      setCanCancel(false);
+
+      setResults(
+        backgroundScan.results as PlatformResult[]
+      );
+
+      onResultsChange?.({
+        scanIds:
+          backgroundScan.scanIds,
+      });
+
+      return;
+    }
+
+    if (
+      backgroundScan.status ===
+      'error'
+    ) {
+      stopElapsedTimer();
+
+      setIsAnalyzing(false);
+      setCanCancel(false);
+      setResults(null);
+
+      setBanner({
+        tone: 'error',
+
+        title:
+          backgroundScan.error
+            ?.title ||
+          'Analysis failed',
+
+        message:
+          backgroundScan.error
+            ?.message ||
+          'Something went wrong. Please try again.',
+      });
+
+      onResultsChange?.(
+        null
+      );
+    }
+  }, [
+    backgroundScan.updatedAt,
+  ]);
+  
+  function startElapsedTimer(
+    startTime = Date.now()
+  ) {
+    if (timerRef.current) {
+      clearInterval(
+        timerRef.current
+      );
+    }
+
+    setElapsedSeconds(
+      Math.max(
+        0,
+        Math.floor(
+          (Date.now() -
+            startTime) /
+            1000
+        )
+      )
+    );
+  
+    timerRef.current =
+      setInterval(() => {
+        setElapsedSeconds(
+          Math.max(
+            0,
+            Math.floor(
+              (Date.now() -
+                startTime) /
+                1000
+            )
+          )
+        );
+      }, 1000);
   }
 
+  function publishScanProgress(
+    message: string,
+    status:
+      | 'preparing'
+      | 'running' = 'running'
+    ) {
+      const operationId =
+        backgroundOperationIdRef.current;
+
+      if (operationId) {
+        updateBackgroundScanProgress(
+          operationId,
+          message,
+          status
+        );
+      }
+
+    if (mountedRef.current) {
+      setProgressText(
+        message
+      );
+    }
+  }
+
+  
+  
   function stopElapsedTimer() {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -143,6 +332,8 @@ export function ScanWorkspace({
   }
 
   async function handleFile(file: File) {
+    clearBackgroundScanState();
+    
     setBanner(null);
     setResults(null);
     onResultsChange?.(null);
@@ -262,6 +453,7 @@ export function ScanWorkspace({
     setFileKind(null);
     setCurrentFile(null);
     setResults(null);
+    clearBackgroundScanState();
     onResultsChange?.(null);
     setAnalyzeAudio(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -280,34 +472,68 @@ export function ScanWorkspace({
   }
 
   function handleCancelAnalysis() {
-    if (!canCancel) return;
-    abortControllerRef.current?.abort();
-    if (currentJobIdRef.current) {
-      cancelQueuedScan(currentJobIdRef.current).catch((err) =>
-        console.warn('Failed to cancel queued scan server-side:', err)
-      );
-      currentJobIdRef.current = null;
+    if (!canCancel) {
+      return;
     }
+
+    abortControllerRef.current
+      ?.abort();
+
+    if (
+      currentJobIdRef.current
+    ) {
+      cancelQueuedScan(
+        currentJobIdRef.current
+      ).catch((err) =>
+        console.warn(
+          'Failed to cancel queued scan:',
+          err
+        )
+      );
+
+      currentJobIdRef.current =
+        null;
+    }
+
+    clearBackgroundScanState();
+
+    ownsActiveScanRef.current =
+      false;
+
+    backgroundOperationIdRef.current =
+      null;
   }
 
   async function performAnalysis(signal: AbortSignal) {
     const scanStartTime = Date.now();
-    setProgressText('Preparing analysis...');
+    publishScanProgress(
+      'Preparing analysis...',
+      'preparing'
+    );
 
     let frames: ExtractedFrame[] = [];
     let framesExtractedTime: number | null = null;
     let audio: { data: string; mimeType: string } | null = null;
 
     if (isVideo && currentFile) {
-      setProgressText('Preparing your video...');
+      publishScanProgress(
+        'Preparing your video...',
+        'preparing'
+      );
       frames = await extractFrames(currentFile, signal, scanType);
       framesExtractedTime = Date.now();
       if (analyzeAudio && canAnalyzeAudio) {
-        setProgressText('Preparing audio track...');
+        publishScanProgress(
+          'Preparing audio track...',
+          'preparing'
+        );
         audio = await extractAudio(currentFile, signal);
       }
     } else if (currentFile) {
-      setProgressText('Preparing your image...');
+      publishScanProgress(
+        'Preparing your image...',
+        'preparing'
+      );
       const imageData = await fileToBase64(currentFile);
       frames = [{ frameNumber: 1, timestamp: '00:00.00', timestampSeconds: 0, data: imageData }];
       framesExtractedTime = Date.now();
@@ -332,7 +558,10 @@ export function ScanWorkspace({
 
     const framesWaitMs = framesExtractedTime ? framesExtractedTime - scanStartTime : 0;
     const platformList = platforms.join(', ').toUpperCase();
-    setProgressText(`Analyzing your content against ${platformList} policies...`);
+    publishScanProgress(
+      `Analyzing your content against ${platformList} policies...`,
+      'running'
+    );
     setCanCancel(false);
     
     const rawResults = await Promise.all(
@@ -355,15 +584,27 @@ export function ScanWorkspace({
           jobId = response.jobId;
           currentJobIdRef.current = jobId;
           setCanCancel(true);
-          setProgressText(`You're queued at position ${response.position}. Waiting for your turn...`);
+          publishScanProgress(
+            `You're queued at position ${response.position}. Waiting for your turn...`,
+            'running'
+          );
 
-          await waitForQueueTurn(jobId, signal, (position) =>
-            setProgressText(`You're queued at position ${position}. Waiting for your turn...`)
+          await waitForQueueTurn(
+            jobId,
+            signal,
+            (position) =>
+              publishScanProgress(
+                `You're queued at position ${position}. Waiting for your turn...`,
+                'running'
+              )
           );
           currentJobIdRef.current = null;
           queueWaitMs = Date.now() - (queueEnteredAt as number);
 
-          setProgressText(`Analyzing your content against ${platform.toUpperCase()} policies...`);
+          publishScanProgress(
+            `Analyzing your content against ${platform.toUpperCase()} policies...`,
+            'running'
+          );
           setCanCancel(false);
 
           response = isVideo
@@ -397,16 +638,35 @@ export function ScanWorkspace({
       return { platform: response.result.platform, riskLevel, riskClass, processedViolations };
     });
 
-    setResults(formatted);
-
-    onResultsChange?.({
-      scanIds: rawResults.map(
+    const completedScanIds =
+      rawResults.map(
         ({ scanId }) =>
           scanId
-      ),
-    }),
-      
-    await onScanComplete();
+      );
+
+    const operationId =
+      backgroundOperationIdRef.current;
+
+    if (operationId) {
+      completeBackgroundScan(
+        operationId,
+        formatted,
+        completedScanIds
+      );
+    }
+
+    if (mountedRef.current) {
+      setResults(
+        formatted
+      );
+
+      onResultsChange?.({
+        scanIds:
+          completedScanIds,
+      }),
+
+      await onScanComplete();
+    }
   }
 
   async function handleAnalyze() {
@@ -434,23 +694,79 @@ export function ScanWorkspace({
       return;
     }
 
+    const operationId =
+      beginBackgroundScan(
+        'Preparing analysis...'
+      );
+
+    backgroundOperationIdRef.current =
+      operationId;
+
+    ownsActiveScanRef.current =
+      true;
+
     setIsAnalyzing(true);
     setResults(null);
     onResultsChange?.(null);
     setCanCancel(true);
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
+
+    const controller =
+      new AbortController();
+
+    abortControllerRef.current =
+      controller;
+
     startElapsedTimer();
 
     try {
       await performAnalysis(controller.signal);
     } catch (error: any) {
-      if (error?.name === 'AbortError' || controller.signal.aborted) {
-        setBanner({ tone: 'error', title: 'Analysis cancelled' });
+      if (
+        error?.name ===
+          'AbortError' ||
+        controller.signal.aborted
+      ) {
+        clearBackgroundScanState();
+
+        ownsActiveScanRef.current =
+          false;
+
+        backgroundOperationIdRef.current =
+          null;
+
+        if (mountedRef.current) {
+          setBanner({
+            tone: 'error',
+            title: 'Analysis cancelled',
+            message: '',
+          });
+        }
+
         return;
       }
 
       const message: string = error?.message || '';
+      const recordFailure = (
+        nextBanner: Banner
+      ) => {
+        const operationId =
+          backgroundOperationIdRef.current;
+
+        if (operationId) {
+          failBackgroundScan(
+            operationId,
+            nextBanner.title,
+            nextBanner.message ||
+              'Something went wrong. Please try again.'
+          );
+        }
+
+        if (mountedRef.current) {
+          setBanner(
+            nextBanner
+          );
+        }
+      };
       const isDuplicateScanError =
         message.includes('Scan already in progress') || message.includes('already have a scan in progress');
       const isRateLimitError = message.includes('Rate limit exceeded') || message.includes('Free tier limit');
@@ -466,13 +782,13 @@ export function ScanWorkspace({
       const isParseError = message.includes('parse') || message.includes('JSON');
 
       if (isDuplicateScanError) {
-        setBanner({
+        recordFailure({
           tone: 'error',
           title: 'One scan at a time',
           message: 'You already have a scan in progress. Please wait for it to finish before starting another.',
         });
       } else if (isRateLimitError) {
-        setBanner({
+        recordFailure({
           tone: 'warning',
           title: 'Scan limit reached',
           message,
@@ -487,7 +803,7 @@ export function ScanWorkspace({
               year: 'numeric',
             })
           : null;
-        setBanner({
+        recordFailure({
           tone: 'warning',
           title: 'Action required',
           message: `We've paused scanning on this account pending a policy review. ${
@@ -499,13 +815,13 @@ export function ScanWorkspace({
           onAction: () => window.location.assign('/buy-tokens'),
         });
       } else if (isAuthError) {
-        setBanner({
+        recordFailure({
           tone: 'error',
           title: 'Session expired',
           message: 'Your session has expired. Please sign out and sign in again.',
         });
       } else if (isTokenError) {
-        setBanner({
+        recordFailure({
           tone: 'warning',
           title: 'Out of tokens',
           message: 'You have no tokens remaining. Purchase more to continue scanning.',
@@ -513,21 +829,21 @@ export function ScanWorkspace({
           onAction: () => window.location.assign('/buy-tokens'),
         });
       } else if (isCorruptionError) {
-        setBanner({
+        recordFailure({
           tone: 'error',
           title: 'Corrupt file',
           message:
             "Your content seems to be corrupt or we don't support this file type. Please upload another file or convert this file into a supported format.",
         });
       } else if (isParseError) {
-        setBanner({
+        recordFailure({
           tone: 'error',
           title: 'Analysis error',
           message:
             'We returned an invalid response. This may be due to complex content or a temporary issue. Please try again or contact support if this persists.',
         });
       } else if (isAudioLockedError) {
-        setBanner({
+        recordFailure({
           tone: 'warning',
           title: 'Paid plan required',
           message: 'Audio analysis is available on paid plans only. Upgrade to analyze spoken claims in your ads.',
@@ -535,7 +851,7 @@ export function ScanWorkspace({
           onAction: () => window.location.assign('/buy-tokens'),
         });
       } else {
-        setBanner({
+        recordFailure({
           tone: 'error',
           title: 'Analysis failed',
           message: 'Something went wrong. Please try again or contact support.',
@@ -543,8 +859,19 @@ export function ScanWorkspace({
       }
     } finally {
       stopElapsedTimer();
-      setIsAnalyzing(false);
-      abortControllerRef.current = null;
+
+      if (mountedRef.current) {
+        setIsAnalyzing(false);
+      }
+
+      abortControllerRef.current =
+        null;
+
+      ownsActiveScanRef.current =
+        false;
+
+      backgroundOperationIdRef.current =
+        null;
     }
   }
 
@@ -761,6 +1088,11 @@ export function ScanWorkspace({
             </div>
             <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
             <p className="text-sm font-medium">{progressText}</p>
+            <p className="text-xs text-muted-foreground mt-2 max-w-lg">
+              Scan in progress, keep this tab open.
+              It is safe to leave this page, your
+              results will be ready shortly.
+            </p>
             {!canCancel && (
               <p className="text-xs text-muted-foreground mt-2">
                 Your scan is now running and can no longer be cancelled.
