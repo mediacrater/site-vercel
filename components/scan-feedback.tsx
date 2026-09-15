@@ -1,0 +1,315 @@
+'use client';
+
+// components/scan-feedback.tsx
+
+import { useState } from 'react';
+import {
+  Check,
+  Loader2,
+  ThumbsDown,
+  ThumbsUp,
+} from 'lucide-react';
+import { supabase } from '@/lib/mediacrater/supabaseClient';
+
+const MAX_COMMENT_LENGTH = 1000;
+
+type FeedbackStage =
+  | 'question'
+  | 'details'
+  | 'submitted';
+
+export function ScanFeedback({
+  scanIds,
+}: {
+  scanIds: string[];
+}) {
+  const [stage, setStage] =
+    useState<FeedbackStage>('question');
+
+  const [comment, setComment] =
+    useState('');
+
+  const [submitting, setSubmitting] =
+    useState(false);
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+  async function submitFeedback(
+    feedbackAnswer: boolean,
+    feedbackComment: string | null
+  ) {
+    if (submitting) return;
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const {
+        data: { session },
+      } =
+        await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error(
+          'Your session has expired. Please sign in again.'
+        );
+      }
+
+      const baseUrl =
+        process.env.NEXT_PUBLIC_VPS_API_URL;
+
+      if (!baseUrl) {
+        throw new Error(
+          'Feedback service is not configured.'
+        );
+      }
+
+      const response =
+        await fetch(
+          `${baseUrl.replace(/\/$/, '')}/scan-feedback`,
+          {
+            method: 'POST',
+
+            headers: {
+              'Content-Type':
+                'application/json',
+
+              Authorization:
+                `Bearer ${session.access_token}`,
+            },
+
+            body: JSON.stringify({
+              scanIds,
+              feedbackAnswer,
+              feedbackComment,
+            }),
+          }
+        );
+
+      const body =
+        await response
+          .json()
+          .catch(() => ({}));
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error(
+            'Too many feedback attempts. Please wait a minute and try again.'
+          );
+        }
+
+        throw new Error(
+          body?.error ||
+            'Unable to save your feedback. Please try again.'
+        );
+      }
+
+      setStage('submitted');
+    } catch (err: any) {
+      setError(
+        err?.message ||
+          'Unable to save your feedback. Please try again.'
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function handleNo() {
+    setError(null);
+    setStage('details');
+  }
+
+  function handleSubmitNegative() {
+    const trimmedComment =
+      comment.trim();
+
+    submitFeedback(
+      false,
+      trimmedComment || null
+    );
+  }
+
+  if (stage === 'submitted') {
+    return (
+      <div
+        className="bg-card border border-border rounded-xl p-6"
+        role="status"
+        aria-live="polite"
+      >
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+            <Check
+              className="h-4 w-4"
+              aria-hidden="true"
+            />
+          </div>
+
+          <div>
+            <p className="font-semibold text-sm">
+              Thanks for the feedback
+            </p>
+
+            <p className="text-xs text-muted-foreground mt-1">
+              Your response was saved and
+              will help us improve future
+              scan results.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="bg-card border border-border rounded-xl p-6"
+      aria-labelledby="scan-feedback-title"
+    >
+      <div className="flex flex-col gap-5">
+        <div>
+          <p
+            id="scan-feedback-title"
+            className="font-semibold text-sm"
+          >
+            Did we get this right?
+          </p>
+
+          <p className="text-xs text-muted-foreground mt-1">
+            Your feedback helps us improve
+            the quality of future scan results.
+          </p>
+        </div>
+
+        {stage === 'question' ? (
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                submitFeedback(
+                  true,
+                  null
+                )
+              }
+              disabled={submitting}
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-semibold transition-colors hover:border-primary/60 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {submitting ? (
+                <Loader2
+                  className="h-4 w-4 animate-spin"
+                  aria-hidden="true"
+                />
+              ) : (
+                <ThumbsUp
+                  className="h-4 w-4"
+                  aria-hidden="true"
+                />
+              )}
+
+              Yes
+            </button>
+
+            <button
+              type="button"
+              onClick={handleNo}
+              disabled={submitting}
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-semibold transition-colors hover:border-primary/60 hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ThumbsDown
+                className="h-4 w-4"
+                aria-hidden="true"
+              />
+
+              No
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <label
+                htmlFor="scan-feedback-comment"
+                className="text-sm font-semibold"
+              >
+                What did we get wrong?
+              </label>
+
+              <p className="text-xs text-muted-foreground mt-1">
+                Optional, but specific details
+                are especially useful.
+              </p>
+            </div>
+
+            <textarea
+              id="scan-feedback-comment"
+              value={comment}
+              onChange={(event) =>
+                setComment(
+                  event.target.value
+                )
+              }
+              maxLength={
+                MAX_COMMENT_LENGTH
+              }
+              rows={4}
+              autoFocus
+              placeholder="For example: a violation was incorrect, something was missed, or the suggested fix wasn't useful."
+              className="w-full resize-y rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={submitting}
+            />
+
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[11px] text-muted-foreground">
+                {comment.length}/
+                {MAX_COMMENT_LENGTH}
+              </span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setStage(
+                      'question'
+                    );
+                  }}
+                  disabled={submitting}
+                  className="px-3 py-2 rounded-lg text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Back
+                </button>
+
+                <button
+                  type="button"
+                  onClick={
+                    handleSubmitNegative
+                  }
+                  disabled={submitting}
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {submitting && (
+                    <Loader2
+                      className="h-4 w-4 animate-spin"
+                      aria-hidden="true"
+                    />
+                  )}
+
+                  Send feedback
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <p
+            className="text-xs text-red-700 dark:text-red-400"
+            role="alert"
+          >
+            {error}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
