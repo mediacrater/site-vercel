@@ -93,6 +93,7 @@ export default function TermsOfService() {
       </section>
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">7. Your Content</h2>
+
         <p className="mb-4">
           You retain full ownership of any video or image files you submit. By submitting a file, you
           grant Mediacrater a limited, temporary license to process it for the purpose of delivering
@@ -100,7 +101,8 @@ export default function TermsOfService() {
           returned — we do not retain your original video or image. We claim no ownership over your
           creative assets.
         </p>
-        <p>
+
+        <p className="mb-4">
           <strong>Scan History (paid plans):</strong> if your plan includes Scan History, we retain a
           small, heavily compressed, low-resolution thumbnail (generated from the first frame of your
           video, or your image) so you can visually identify past scans in your history list. This
@@ -109,6 +111,13 @@ export default function TermsOfService() {
           is not retained if your plan does not include Scan History. Full scan results (the text
           analysis, not the creative itself) are retained as part of your Scan History for as long as
           your plan includes that feature.
+        </p>
+
+        <p>
+          <strong>Local Processing:</strong> Certain functions of the Service may process or transform
+          submitted content locally on your device as part of preparing that content for analysis. By
+          using the Service, you acknowledge that your device may perform such processing as necessary
+          to provide the Service.
         </p>
       </section>
       <section className="mb-10">
