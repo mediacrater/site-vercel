@@ -42,6 +42,10 @@ export interface WorkspaceProfile {
   last_notified_at?: string | null;
 }
 
+export interface CompletedScanFeedbackTarget {
+  scanIds: string[];
+}
+
 interface PlatformResult {
   platform: string;
   riskLevel: string;
@@ -60,9 +64,15 @@ interface Banner {
 export function ScanWorkspace({
   profile,
   onScanComplete,
+  onResultsChange,
 }: {
   profile: WorkspaceProfile | null;
   onScanComplete: () => Promise<void> | void;
+  onResultsChange?: (
+    target:
+      | CompletedScanFeedbackTarget
+      | null
+  ) => void;
 }) {
   const [currentFile, setCurrentFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -135,6 +145,7 @@ export function ScanWorkspace({
   async function handleFile(file: File) {
     setBanner(null);
     setResults(null);
+    onResultsChange?.(null);
 
     if (!VALID_TYPES.includes(file.type)) {
       setBanner({
@@ -251,6 +262,7 @@ export function ScanWorkspace({
     setFileKind(null);
     setCurrentFile(null);
     setResults(null);
+    onResultsChange?.(null);
     setAnalyzeAudio(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
   }
@@ -366,7 +378,7 @@ export function ScanWorkspace({
           reportQueueTiming(jobId, { totalTimeMs, queueWaitMs, framesWaitMs });
         }
 
-        return { platform, response: completed };
+        return { platform, response: completed, scanId, };
       })
     );
 
@@ -386,6 +398,14 @@ export function ScanWorkspace({
     });
 
     setResults(formatted);
+
+    onResultsChange?.({
+      scanIds: rawResults.map(
+        ({ scanId }) =>
+          scanId
+      ),
+    }),
+      
     await onScanComplete();
   }
 
@@ -416,6 +436,7 @@ export function ScanWorkspace({
 
     setIsAnalyzing(true);
     setResults(null);
+    onResultsChange?.(null);
     setCanCancel(true);
     const controller = new AbortController();
     abortControllerRef.current = controller;
