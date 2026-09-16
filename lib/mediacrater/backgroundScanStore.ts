@@ -20,7 +20,29 @@ export type BackgroundScanStatus =
   | 'completed'
   | 'error';
 
+export type BackgroundBatchItemStatus =
+  | 'queued'
+  | 'cooldown'
+  | 'processing'
+  | 'success'
+  | 'error';
+
+export interface BackgroundBatchItem {
+  creativeId: string;
+  fileName: string;
+  fileKind: 'image' | 'video';
+  batchPosition: number;
+  status: BackgroundBatchItemStatus;
+  scanIds: string[];
+  error: string | null;
+}
+
 export interface BackgroundScanResult {
+  creativeId: string;
+  fileName: string;
+  fileKind: 'image' | 'video';
+  batchPosition: number | null;
+  scanId: string;
   platform: string;
   riskLevel: string;
   riskClass: string;
@@ -38,6 +60,7 @@ export interface BackgroundScanState {
   message: string | null;
   results: BackgroundScanResult[] | null;
   scanIds: string[];
+  batchItems: BackgroundBatchItem[];
   error: {
     title: string;
     message: string;
@@ -87,6 +110,71 @@ function isActiveStatus(
     status === 'preparing' ||
     status === 'running'
   );
+}
+
+const VALID_BATCH_ITEM_STATUSES:
+  BackgroundBatchItemStatus[] = [
+    'queued',
+    'cooldown',
+    'processing',
+    'success',
+    'error',
+  ];
+
+function normalizeBatchItems(
+  value: unknown
+): BackgroundBatchItem[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item) => {
+    if (
+      !item ||
+      typeof item !== 'object'
+    ) {
+      return [];
+    }
+
+    const candidate =
+      item as Partial<BackgroundBatchItem>;
+
+    if (
+      typeof candidate.creativeId !== 'string' ||
+      typeof candidate.fileName !== 'string' ||
+      (
+        candidate.fileKind !== 'image' &&
+        candidate.fileKind !== 'video'
+      ) ||
+      !Number.isInteger(candidate.batchPosition) ||
+      !VALID_BATCH_ITEM_STATUSES.includes(
+        candidate.status as BackgroundBatchItemStatus
+      )
+    ) {
+      return [];
+    }
+
+    return [{
+      creativeId: candidate.creativeId,
+      fileName: candidate.fileName,
+      fileKind: candidate.fileKind,
+      batchPosition:
+        candidate.batchPosition as number,
+      status:
+        candidate.status as BackgroundBatchItemStatus,
+      scanIds:
+        Array.isArray(candidate.scanIds)
+          ? candidate.scanIds.filter(
+              (id): id is string =>
+                typeof id === 'string'
+            )
+          : [],
+      error:
+        typeof candidate.error === 'string'
+          ? candidate.error
+          : null,
+    }];
+  });
 }
 
 function normalizeStoredState(
@@ -175,6 +263,11 @@ function normalizeStoredState(
           )
         : [],
 
+    batchItems:
+      normalizeBatchItems(
+        state.batchItems
+      ),
+
     error:
       state.error &&
       typeof state.error === 'object' &&
@@ -205,6 +298,18 @@ function convertStaleRuntime(
       message: null,
       results: null,
       scanIds: [],
+      batchItems:
+        state.batchItems.map(
+          (item) =>
+            item.status === 'success' ||
+            item.status === 'error'
+              ? item
+              : {
+                  ...item,
+                  status: 'error',
+                  error: 'Scan interrupted.',
+                }
+        ),
       error: {
         title: 'Scan interrupted',
         message:
@@ -283,7 +388,9 @@ function publishState(
 }
 
 export function beginBackgroundScan(
-  message = 'Preparing analysis...'
+  message = 'Preparing analysis...',
+  batchItems:
+    BackgroundBatchItem[] = []
 ) {
   const operationId =
     makeId();
@@ -302,6 +409,7 @@ export function beginBackgroundScan(
     message,
     results: null,
     scanIds: [],
+    batchItems,
     error: null,
   });
 
@@ -333,6 +441,45 @@ export function updateBackgroundScanProgress(
     updatedAt:
       new Date().toISOString(),
     error: null,
+  });
+}
+
+export function updateBackgroundBatchItem(
+  operationId: string,
+  creativeId: string,
+  patch: Partial<
+    Pick<
+      BackgroundBatchItem,
+      'status' | 'scanIds' | 'error'
+    >
+  >
+) {
+  const current =
+    getBackgroundScanState();
+
+  if (
+    current.operationId !==
+    operationId
+  ) {
+    return;
+  }
+
+  publishState({
+    ...current,
+    runtimeId: RUNTIME_ID,
+    batchItems:
+      current.batchItems.map(
+        (item) =>
+          item.creativeId ===
+          creativeId
+            ? {
+                ...item,
+                ...patch,
+              }
+            : item
+      ),
+    updatedAt:
+      new Date().toISOString(),
   });
 }
 
@@ -390,6 +537,18 @@ export function failBackgroundScan(
     message: null,
     results: null,
     scanIds: [],
+    batchItems:
+      current.batchItems.map(
+        (item) =>
+          item.status === 'success' ||
+          item.status === 'error'
+            ? item
+            : {
+                ...item,
+                status: 'error',
+                error: message,
+              }
+      ),
     updatedAt:
       new Date().toISOString(),
     completedAt: null,
