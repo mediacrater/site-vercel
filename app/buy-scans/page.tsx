@@ -11,7 +11,7 @@
 // the signed-in Supabase session (same as the rest of the dashboard),
 // never from a URL parameter. There's no "open this from the right
 // place or the buttons stay disabled" state here — being signed in IS
-// the gate, enforced server-side by create-checkout-webapp itself.
+// the gate, enforced server-side by create-checkout-webapp itself
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -63,8 +63,6 @@ const featureRows: { label: string; values: CellValue[] }[] = [
   { label: 'Scan type', values: ['Regular + Deep', 'Regular + Deep', 'Regular + Deep', 'Regular + Deep'] },
   { label: 'Monthly scans', values: ['20', '100', '250', '1000'] },
   { label: 'Priority support', values: [true, true, true, true] },
-  { label: 'Batch scanning', values: [true, true, true, true, true] },
-  { label: 'Scan History', values: [false, true, true, true, true] },
   { label: 'Audio analysis', values: [true, true, true, true] },
 ];
 
