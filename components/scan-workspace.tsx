@@ -22,8 +22,10 @@ import {
   clearBackgroundScanState,
   completeBackgroundScan,
   failBackgroundScan,
+  updateBackgroundBatchItem,
   updateBackgroundScanProgress,
   useBackgroundScanState,
+  type BackgroundBatchItem,
 } from '@/lib/mediacrater/backgroundScanStore';
 import { supabase } from '@/lib/mediacrater/supabaseClient';
 import { uploadScanThumbnail } from '@/lib/mediacrater/thumbnails';
@@ -39,6 +41,8 @@ const PLATFORMS = [
 const VALID_TYPES = ['video/mp4', 'video/quicktime', 'video/webm', 'image/png', 'image/jpeg', 'image/gif'];
 const MAX_FILE_BYTES = 1100 * 1024 * 1024;
 const MAX_VIDEO_SECONDS = 121;
+const MAX_BATCH_FILES = 5;
+const BATCH_COOLDOWN_SECONDS = 5;
 
 export interface WorkspaceProfile {
   plan: string;
@@ -50,11 +54,51 @@ export interface WorkspaceProfile {
   last_notified_at?: string | null;
 }
 
-export interface CompletedScanFeedbackTarget {
+type CreativeKind =
+  | 'video'
+  | 'image';
+
+interface CreativeBase {
+  id: string;
+  file: File;
+  previewUrl: string;
+  platforms: string[];
+}
+
+interface ImageCreative
+  extends CreativeBase {
+  kind: 'image';
+}
+
+interface VideoCreative
+  extends CreativeBase {
+  kind: 'video';
+  scanType: ScanType;
+  analyzeAudio: boolean;
+}
+
+type BatchCreative =
+  | ImageCreative
+  | VideoCreative;
+
+export interface CompletedScanFeedbackItem {
+  creativeId: string;
+  fileName: string;
+  batchPosition: number | null;
   scanIds: string[];
 }
 
+export interface CompletedScanFeedbackTarget {
+  isBatch: boolean;
+  items: CompletedScanFeedbackItem[];
+}
+
 interface PlatformResult {
+  creativeId: string;
+  fileName: string;
+  fileKind: CreativeKind;
+  batchPosition: number | null;
+  scanId: string;
   platform: string;
   riskLevel: string;
   riskClass: string;
@@ -67,6 +111,171 @@ interface Banner {
   message: string;
   actionLabel?: string;
   onAction?: () => void;
+}
+
+function orderCreativesForExecution(
+  creatives: BatchCreative[]
+) {
+  return [
+    ...creatives.filter(
+      (creative) =>
+        creative.kind === 'image'
+    ),
+    ...creatives.filter(
+      (creative) =>
+        creative.kind === 'video'
+    ),
+  ];
+}
+
+function buildFeedbackTarget(
+  results: PlatformResult[],
+  isBatch: boolean
+): CompletedScanFeedbackTarget | null {
+  const grouped =
+    new Map<
+      string,
+      CompletedScanFeedbackItem
+    >();
+
+  for (const result of results) {
+    const existing =
+      grouped.get(
+        result.creativeId
+      );
+
+    if (existing) {
+      existing.scanIds.push(
+        result.scanId
+      );
+
+      continue;
+    }
+
+    grouped.set(
+      result.creativeId,
+      {
+        creativeId:
+          result.creativeId,
+        fileName:
+          result.fileName,
+        batchPosition:
+          result.batchPosition,
+        scanIds: [
+          result.scanId,
+        ],
+      }
+    );
+  }
+
+  const items =
+    Array.from(
+      grouped.values()
+    );
+
+  if (items.length === 0) {
+    return null;
+  }
+
+  return {
+    isBatch,
+    items,
+  };
+}
+
+function waitWithAbort(
+  ms: number,
+  signal: AbortSignal
+): Promise<void> {
+  return new Promise(
+    (resolve, reject) => {
+      if (signal.aborted) {
+        reject(
+          new DOMException(
+            'Aborted',
+            'AbortError'
+          )
+        );
+
+        return;
+      }
+
+      const onAbort = () => {
+        clearTimeout(timeout);
+
+        reject(
+          new DOMException(
+            'Aborted',
+            'AbortError'
+          )
+        );
+      };
+
+      const timeout =
+        window.setTimeout(
+          () => {
+            signal.removeEventListener(
+              'abort',
+              onAbort
+            );
+
+            resolve();
+          },
+          ms
+        );
+
+      signal.addEventListener(
+        'abort',
+        onAbort,
+        { once: true }
+      );
+    }
+  );
+}
+
+function shouldStopBatch(
+  error: unknown
+) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : String(error || '');
+
+  return (
+    message.includes(
+      'Not authenticated'
+    ) ||
+    message.includes(
+      'Unauthorized'
+    ) ||
+    message.includes(
+      'ACCOUNT_FLAGGED'
+    ) ||
+    message.includes(
+      'locked pending resolution'
+    ) ||
+    message.includes(
+      'Insufficient tokens'
+    ) ||
+    message.includes(
+      'Scan limit reached'
+    ) ||
+    message.includes(
+      'Rate limit exceeded'
+    ) ||
+    message.includes(
+      'already have a scan in progress'
+    ) ||
+    message.includes(
+      'Batch scanning is available on paid plans only'
+    ) ||
+    message.includes(
+      'Invalid batch metadata'
+    ) ||
+    message.includes(
+      'Unable to validate scan batch'
+    )
+  );
 }
 
 export function ScanWorkspace({
@@ -82,18 +291,35 @@ export function ScanWorkspace({
       | null
   ) => void;
 }) {
-  const [currentFile, setCurrentFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [fileKind, setFileKind] = useState<'video' | 'image' | null>(null);
-  const [isDragOver, setIsDragOver] = useState(false);
+  const [
+    creatives,
+    setCreatives,
+  ] =
+    useState<BatchCreative[]>([]);
 
-  const [platforms, setPlatforms] = useState<string[]>([]);
-  const [scanType, setScanType] = useState<ScanType>('regular');
-  // Opt-in — audio is only extracted and sent when this is checked.
-  // Video scans only; irrelevant for images and reset whenever a new
-  // file is chosen via removeFile()/resetForNewScan().
-  const [analyzeAudio, setAnalyzeAudio] = useState(false);
-  const [canCancel, setCanCancel] = useState(true);
+  const [
+    platformCreativeId,
+    setPlatformCreativeId,
+  ] =
+    useState<string | null>(null);
+
+  const [
+    videoCreativeId,
+    setVideoCreativeId,
+  ] =
+    useState<string | null>(null);
+
+  const [
+    selectedResultCreativeId,
+    setSelectedResultCreativeId,
+  ] =
+    useState<string | null>(null);
+
+  const [isDragOver, setIsDragOver] =
+    useState(false);
+
+  const [canCancel, setCanCancel] =
+    useState(true);
   
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progressText, setProgressText] = useState('Initializing...');
@@ -107,6 +333,11 @@ export function ScanWorkspace({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const previewUrlsRef =
+  useRef<Set<string>>(
+    new Set()
+  );
+  
   const mountedRef = useRef(true);
 
   const ownsActiveScanRef = useRef(false);
@@ -115,13 +346,81 @@ export function ScanWorkspace({
 
   const backgroundScan = useBackgroundScanState();
   
-  const isVideo = fileKind === 'video';
-  const canDeepScan = Boolean(profile?.deep_scan_enabled);
-  const canAnalyzeAudio = Boolean(profile?.audio_analysis);
-  const scansRemaining = profile?.scans_remaining ?? 0;
+  const canDeepScan =
+    Boolean(
+      profile?.deep_scan_enabled
+    );
 
-  const scanCostPerPlatform = isVideo && scanType === 'deep' ? 2 : 1;
-  const totalCost = platforms.length > 0 ? platforms.length * scanCostPerPlatform : scanCostPerPlatform;
+  const canAnalyzeAudio =
+    Boolean(
+      profile?.audio_analysis
+    );
+
+  const canBatchScan =
+    Boolean(profile) &&
+    profile?.plan !== 'free';
+
+  const scansRemaining =
+    profile?.scans_remaining ?? 0;
+
+  const videoCreatives =
+    creatives.filter(
+      (
+        creative
+      ): creative is VideoCreative =>
+        creative.kind === 'video'
+    );
+
+  const platformCreative =
+    creatives.find(
+      (creative) =>
+        creative.id ===
+        platformCreativeId
+    ) ??
+    creatives[0] ??
+    null;
+
+  const selectedVideoCreative =
+    videoCreatives.find(
+      (creative) =>
+        creative.id ===
+        videoCreativeId
+    ) ??
+    videoCreatives[0] ??
+    null;
+
+  const executionPreview =
+    orderCreativesForExecution(
+      creatives
+    );
+
+  const allCreativesConfigured =
+    creatives.length > 0 &&
+    creatives.every(
+      (creative) =>
+        Boolean(creative.platforms[0])
+    );
+
+  const totalCost =
+    creatives.reduce(
+      (
+        total,
+        creative
+      ) => {
+        if (!creative.platforms[0]) {
+          return total;
+        }
+
+        const creativeCost =
+          creative.kind === 'video' &&
+          creative.scanType === 'deep'
+            ? 2
+            : 1;
+
+        return total + creativeCost;
+      },
+      0
+    );
 
   useEffect(() => {
     mountedRef.current = true;
@@ -133,13 +432,44 @@ export function ScanWorkspace({
   
   useEffect(() => {
     return () => {
-      if (previewUrl && previewUrl.startsWith('blob:')) URL.revokeObjectURL(previewUrl);
-      if (timerRef.current) clearInterval(timerRef.current);
+      for (
+        const url of
+        previewUrlsRef.current
+      ) {
+        URL.revokeObjectURL(
+          url
+        );
+      }
+
+      previewUrlsRef.current.clear();
+
+      if (timerRef.current) {
+        clearInterval(
+          timerRef.current
+        );
+      }
     };
-  }, [previewUrl]);
+  }, []);
 
   useEffect(() => {
-    if (!canAnalyzeAudio) setAnalyzeAudio(false);
+    if (canAnalyzeAudio) {
+      return;
+    }
+
+    setCreatives(
+      (previous) =>
+        previous.map(
+          (creative) =>
+            creative.kind ===
+            'video'
+              ? {
+                  ...creative,
+                  analyzeAudio:
+                    false,
+                }
+              : creative
+        )
+    );
   }, [canAnalyzeAudio]);
 
   useEffect(() => {
@@ -210,14 +540,28 @@ export function ScanWorkspace({
       setIsAnalyzing(false);
       setCanCancel(false);
 
+      const restoredResults =
+        backgroundScan.results as PlatformResult[];
+
       setResults(
-        backgroundScan.results as PlatformResult[]
+        restoredResults
       );
 
-      onResultsChange?.({
-        scanIds:
-          backgroundScan.scanIds,
-      });
+      setSelectedResultCreativeId(
+        backgroundScan.batchItems[0]
+          ?.creativeId ??
+          restoredResults[0]
+            ?.creativeId ??
+          null
+      );
+
+      onResultsChange?.(
+        buildFeedbackTarget(
+          restoredResults,
+          backgroundScan.batchItems
+            .length > 1
+        )
+      );
 
       return;
     }
@@ -331,146 +675,615 @@ export function ScanWorkspace({
     });
   }
 
-  async function handleFile(file: File) {
-    clearBackgroundScanState();
-    
-    setBanner(null);
-    setResults(null);
-    onResultsChange?.(null);
-
-    if (!VALID_TYPES.includes(file.type)) {
-      setBanner({
-        tone: 'error',
-        title: 'Invalid file type',
-        message: 'Please upload a valid video (MP4, MOV, WebM) or image (PNG, JPG, GIF) file.',
-      });
-      return;
+  async function prepareCreative(
+    file: File
+  ): Promise<BatchCreative> {
+    if (
+      !VALID_TYPES.includes(
+        file.type
+      )
+    ) {
+      throw new Error(
+        'INVALID_FILE_TYPE'
+      );
     }
 
-    if (file.size > MAX_FILE_BYTES) {
-      setBanner({
-        tone: 'error',
-        title: 'File too large',
-        message: 'Ads are typically under 1 GB. Please compress your video first.',
-      });
-      return;
+    if (
+      file.size >
+      MAX_FILE_BYTES
+    ) {
+      throw new Error(
+        'FILE_TOO_LARGE'
+      );
     }
 
-    const kind: 'video' | 'image' = file.type.startsWith('video/') ? 'video' : 'image';
+    const kind:
+      CreativeKind =
+        file.type.startsWith(
+          'video/'
+        )
+          ? 'video'
+          : 'image';
+
+    const objectUrl =
+      URL.createObjectURL(
+        file
+      );
 
     try {
       if (kind === 'video') {
-        const objectUrl = URL.createObjectURL(file);
-        await new Promise<void>((resolve, reject) => {
-          const probe = document.createElement('video');
-          const timeout = setTimeout(() => reject(new Error('Video failed to load - file may be corrupt')), 10000);
+        await new Promise<void>(
+          (
+            resolve,
+            reject
+          ) => {
+            const probe =
+              document.createElement(
+                'video'
+              );
 
-          probe.addEventListener(
-            'loadedmetadata',
-            () => {
-              clearTimeout(timeout);
-              if (!isFinite(probe.duration) || probe.duration <= 0) {
-                reject(new Error('Video file is corrupt or has invalid duration'));
-                return;
-              }
-              if (probe.duration > MAX_VIDEO_SECONDS) {
-                reject(new Error('VIDEO_TOO_LONG'));
-                return;
-              }
-              if (probe.videoWidth === 0 || probe.videoHeight === 0) {
-                reject(new Error('Video file is corrupt or has no video track'));
-                return;
-              }
-              resolve();
-            },
-            { once: true }
-          );
+            const timeout =
+              window.setTimeout(
+                () =>
+                  reject(
+                    new Error(
+                      'CORRUPT_FILE'
+                    )
+                  ),
+                10000
+              );
 
-          probe.addEventListener(
-            'error',
-            () => {
-              clearTimeout(timeout);
-              reject(new Error('Video file is corrupt or unsupported format'));
-            },
-            { once: true }
-          );
+            probe.addEventListener(
+              'loadedmetadata',
+              () => {
+                clearTimeout(
+                  timeout
+                );
 
-          probe.src = objectUrl;
-        });
+                if (
+                  !isFinite(
+                    probe.duration
+                  ) ||
+                  probe.duration <= 0 ||
+                  probe.videoWidth ===
+                    0 ||
+                  probe.videoHeight ===
+                    0
+                ) {
+                  reject(
+                    new Error(
+                      'CORRUPT_FILE'
+                    )
+                  );
 
-        setPreviewUrl(objectUrl);
-        setFileKind('video');
-        setCurrentFile(file);
+                  return;
+                }
+
+                if (
+                  probe.duration >
+                  MAX_VIDEO_SECONDS
+                ) {
+                  reject(
+                    new Error(
+                      'VIDEO_TOO_LONG'
+                    )
+                  );
+
+                  return;
+                }
+
+                resolve();
+              },
+              { once: true }
+            );
+
+            probe.addEventListener(
+              'error',
+              () => {
+                clearTimeout(
+                  timeout
+                );
+
+                reject(
+                  new Error(
+                    'CORRUPT_FILE'
+                  )
+                );
+              },
+              { once: true }
+            );
+
+            probe.src =
+              objectUrl;
+          }
+        );
       } else {
-        const dataUrl = await fileToBase64(file);
-        await new Promise<void>((resolve, reject) => {
-          const img = new Image();
-          const timeout = setTimeout(() => reject(new Error('Image failed to load - file may be corrupt')), 5000);
-          img.onload = () => {
-            clearTimeout(timeout);
-            if (img.naturalWidth === 0 || img.naturalHeight === 0) {
-              reject(new Error('Image file is corrupt or has invalid dimensions'));
-              return;
-            }
-            resolve();
-          };
-          img.onerror = () => {
-            clearTimeout(timeout);
-            reject(new Error('Image file is corrupt or unsupported format'));
-          };
-          img.src = dataUrl;
-        });
+        await new Promise<void>(
+          (
+            resolve,
+            reject
+          ) => {
+            const image =
+              new Image();
 
-        setPreviewUrl(dataUrl);
-        setFileKind('image');
-        setCurrentFile(file);
+            const timeout =
+              window.setTimeout(
+                () =>
+                  reject(
+                    new Error(
+                      'CORRUPT_FILE'
+                    )
+                  ),
+                5000
+              );
+
+            image.onload = () => {
+              clearTimeout(
+                timeout
+              );
+
+              if (
+                image.naturalWidth ===
+                  0 ||
+                image.naturalHeight ===
+                  0
+              ) {
+                reject(
+                  new Error(
+                    'CORRUPT_FILE'
+                  )
+                );
+
+                return;
+              }
+
+              resolve();
+            };
+
+            image.onerror =
+              () => {
+                clearTimeout(
+                  timeout
+                );
+
+                reject(
+                  new Error(
+                    'CORRUPT_FILE'
+                  )
+                );
+              };
+
+            image.src =
+              objectUrl;
+          }
+        );
+      }
+
+      previewUrlsRef.current.add(
+        objectUrl
+      );
+
+      const base = {
+        id:
+          crypto.randomUUID(),
+        file,
+        previewUrl:
+          objectUrl,
+        platforms: [],
+      };
+
+      return kind === 'video'
+        ? {
+            ...base,
+            kind: 'video',
+            scanType:
+              'regular',
+            analyzeAudio:
+              false,
+          }
+        : {
+            ...base,
+            kind: 'image',
+          };
+    } catch (error) {
+      URL.revokeObjectURL(
+        objectUrl
+      );
+
+      throw error;
+    }
+  }
+
+  async function handleFiles(
+    files: File[]
+  ) {
+    clearBackgroundScanState();
+    setBanner(null);
+    setResults(null);
+    setSelectedResultCreativeId(
+      null
+    );
+    onResultsChange?.(null);
+
+    if (files.length === 0) {
+      return;
+    }
+
+    const maxFiles =
+      canBatchScan
+        ? MAX_BATCH_FILES
+        : 1;
+
+    if (
+      !canBatchScan &&
+      (
+        files.length > 1 ||
+        creatives.length > 0
+      )
+    ) {
+      setBanner({
+        tone: 'warning',
+        title:
+          'Paid plan required',
+        message:
+          'Batch scanning is available on paid plans. Free accounts can scan one creative at a time.',
+        actionLabel:
+          'Upgrade plan',
+        onAction: () =>
+          window.location.assign(
+            '/buy-tokens'
+          ),
+      });
+
+      return;
+    }
+
+    if (
+      creatives.length +
+        files.length >
+      maxFiles
+    ) {
+      setBanner({
+        tone: 'warning',
+        title:
+          'Batch limit reached',
+        message:
+          `You can upload up to ${maxFiles} creative${maxFiles === 1 ? '' : 's'} at a time.`,
+      });
+
+      return;
+    }
+
+    const prepared:
+      BatchCreative[] = [];
+
+    try {
+      for (
+        const file of files
+      ) {
+        prepared.push(
+          await prepareCreative(
+            file
+          )
+        );
       }
     } catch (error: any) {
-      setPreviewUrl(null);
-      setFileKind(null);
-      setCurrentFile(null);
+      for (
+        const creative of
+        prepared
+      ) {
+        if (
+          creative.previewUrl
+            .startsWith('blob:')
+        ) {
+          URL.revokeObjectURL(
+            creative.previewUrl
+          );
 
-      if (error.message === 'VIDEO_TOO_LONG') {
+          previewUrlsRef.current.delete(
+            creative.previewUrl
+          );
+        }
+      }
+
+      if (
+        error?.message ===
+        'VIDEO_TOO_LONG'
+      ) {
         setBanner({
           tone: 'error',
-          title: 'Video too long',
-          message: 'Most platforms recommend 15-60 seconds for optimal engagement. Maximum allowed length is 2 minutes.',
+          title:
+            'Video too long',
+          message:
+            'Most platforms recommend 15-60 seconds for optimal engagement. Maximum allowed length is 2 minutes.',
+        });
+      } else if (
+        error?.message ===
+        'FILE_TOO_LARGE'
+      ) {
+        setBanner({
+          tone: 'error',
+          title:
+            'File too large',
+          message:
+            'Ads are typically under 1 GB. Please compress your video first.',
+        });
+      } else if (
+        error?.message ===
+        'INVALID_FILE_TYPE'
+      ) {
+        setBanner({
+          tone: 'error',
+          title:
+            'Invalid file type',
+          message:
+            'Please upload a valid video (MP4, MOV, WebM) or image (PNG, JPG, GIF) file.',
         });
       } else {
         setBanner({
           tone: 'error',
-          title: 'Corrupt file',
+          title:
+            'Corrupt file',
           message:
             "Your content seems to be corrupt or we don't support this file type. Please upload another file or convert this file into a supported format.",
         });
       }
+
+      return;
+    }
+
+    setCreatives(
+      (previous) => [
+        ...previous,
+        ...prepared,
+      ]
+    );
+
+    setPlatformCreativeId(
+      (previous) =>
+        previous ??
+        prepared[0]?.id ??
+        null
+    );
+
+    const firstNewVideo =
+      prepared.find(
+        (
+          creative
+        ): creative is VideoCreative =>
+          creative.kind ===
+          'video'
+      );
+
+    if (firstNewVideo) {
+      setVideoCreativeId(
+        (previous) =>
+          previous ??
+          firstNewVideo.id
+      );
+    }
+
+    if (
+      fileInputRef.current
+    ) {
+      fileInputRef.current.value =
+        '';
     }
   }
 
-  function removeFile() {
-    if (previewUrl && previewUrl.startsWith('blob:')) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(null);
-    setFileKind(null);
-    setCurrentFile(null);
-    setResults(null);
+  function removeCreative(
+    creativeId: string
+  ) {
+    const creative =
+      creatives.find(
+        (item) =>
+          item.id ===
+          creativeId
+      );
+
+    if (
+      creative?.previewUrl
+        .startsWith('blob:')
+    ) {
+      URL.revokeObjectURL(
+        creative.previewUrl
+      );
+
+      previewUrlsRef.current.delete(
+        creative.previewUrl
+      );
+    }
+
+    const next =
+      creatives.filter(
+        (item) =>
+          item.id !==
+          creativeId
+      );
+
+    setCreatives(next);
+
+    setPlatformCreativeId(
+      (previous) =>
+        previous ===
+        creativeId
+          ? next[0]?.id ??
+            null
+          : previous
+    );
+
+    const nextVideos =
+      next.filter(
+        (
+          item
+        ): item is VideoCreative =>
+          item.kind ===
+          'video'
+      );
+
+    setVideoCreativeId(
+      (previous) =>
+        previous ===
+        creativeId
+          ? nextVideos[0]
+              ?.id ??
+            null
+          : previous
+    );
+
     clearBackgroundScanState();
+    setResults(null);
+    setSelectedResultCreativeId(
+      null
+    );
     onResultsChange?.(null);
-    setAnalyzeAudio(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    if (
+      fileInputRef.current
+    ) {
+      fileInputRef.current.value =
+        '';
+    }
   }
 
-  function togglePlatform(value: string) {
-    setPlatforms((prev) => (prev.includes(value) ? prev.filter((p) => p !== value) : [...prev, value]));
+  function togglePlatform(
+    creativeId: string,
+    value: string
+  ) {
+    setCreatives(
+      (previous) =>
+        previous.map(
+          (creative) =>
+            creative.id === creativeId
+              ? {
+                  ...creative,
+                  platforms: [value],
+                }
+              : creative
+        )
+    );
+  }
+
+  function applyPlatformsToAll() {
+    const selectedPlatform =
+      platformCreative?.platforms[0];
+
+    if (!selectedPlatform) {
+      return;
+    }
+
+    setCreatives(
+      (previous) =>
+        previous.map(
+          (creative) => ({
+            ...creative,
+            platforms: [
+              selectedPlatform,
+            ],
+          })
+        )
+    );
+  }
+
+  function updateSelectedVideo(
+    patch: Partial<
+      Pick<
+        VideoCreative,
+        'scanType' |
+        'analyzeAudio'
+      >
+    >
+  ) {
+    if (
+      !selectedVideoCreative
+    ) {
+      return;
+    }
+
+    setCreatives(
+      (previous) =>
+        previous.map(
+          (creative) =>
+            creative.id ===
+              selectedVideoCreative.id &&
+            creative.kind ===
+              'video'
+              ? {
+                  ...creative,
+                  ...patch,
+                }
+              : creative
+        )
+    );
+  }
+
+  function applyVideoSettingsToAll() {
+    if (
+      !selectedVideoCreative
+    ) {
+      return;
+    }
+
+    setCreatives(
+      (previous) =>
+        previous.map(
+          (creative) =>
+            creative.kind ===
+            'video'
+              ? {
+                  ...creative,
+                  scanType:
+                    selectedVideoCreative.scanType,
+                  analyzeAudio:
+                    selectedVideoCreative.analyzeAudio,
+                }
+              : creative
+        )
+    );
   }
 
   function resetForNewScan() {
-    removeFile();
-    setPlatforms([]);
-    setScanType('regular');
+    for (
+      const creative of
+      creatives
+    ) {
+      if (
+        creative.previewUrl
+          .startsWith('blob:')
+      ) {
+        URL.revokeObjectURL(
+          creative.previewUrl
+        );
+
+        previewUrlsRef.current.delete(
+          creative.previewUrl
+        );
+      }
+    }
+
+    setCreatives([]);
+    setPlatformCreativeId(
+      null
+    );
+    setVideoCreativeId(
+      null
+    );
+    setSelectedResultCreativeId(
+      null
+    );
     setResults(null);
     setBanner(null);
-  }
 
+    clearBackgroundScanState();
+    onResultsChange?.(null);
+
+    if (
+      fileInputRef.current
+    ) {
+      fileInputRef.current.value =
+        '';
+    }
+  }
   function handleCancelAnalysis() {
     if (!canCancel) {
       return;
@@ -504,145 +1317,595 @@ export function ScanWorkspace({
       null;
   }
 
-  async function performAnalysis(signal: AbortSignal) {
-    const scanStartTime = Date.now();
-    publishScanProgress(
-      'Preparing analysis...',
-      'preparing'
-    );
-
-    let frames: ExtractedFrame[] = [];
-    let framesExtractedTime: number | null = null;
-    let audio: { data: string; mimeType: string } | null = null;
-
-    if (isVideo && currentFile) {
-      publishScanProgress(
-        'Preparing your video...',
-        'preparing'
-      );
-      frames = await extractFrames(currentFile, signal, scanType);
-      framesExtractedTime = Date.now();
-      if (analyzeAudio && canAnalyzeAudio) {
-        publishScanProgress(
-          'Preparing audio track...',
-          'preparing'
-        );
-        audio = await extractAudio(currentFile, signal);
-      }
-    } else if (currentFile) {
-      publishScanProgress(
-        'Preparing your image...',
-        'preparing'
-      );
-      const imageData = await fileToBase64(currentFile);
-      frames = [{ frameNumber: 1, timestamp: '00:00.00', timestampSeconds: 0, data: imageData }];
-      framesExtractedTime = Date.now();
+  async function runBatchCooldown(
+    signal: AbortSignal,
+    messagePrefix: string
+  ) {
+    if (mountedRef.current) {
+      setCanCancel(true);
     }
 
-    // Upload one thumbnail for this scan session (same first frame across
-    // every platform being scanned) rather than once per platform — a
-    // scan against 3 platforms shouldn't upload the same image 3 times.
-    // Best-effort: a failed upload just means no thumbnail, never blocks
-    // the actual scan. Only attempted for paid users (scan_history gate)
-    // since free-tier scans never show up in history anyway.
-    let thumbnailPath: string | null = null;
-    if (profile?.scan_history && frames[0]) {
+    for (
+      let remaining =
+        BATCH_COOLDOWN_SECONDS;
+      remaining >= 1;
+      remaining--
+    ) {
+      publishScanProgress(
+        `${messagePrefix} ${remaining} second${remaining === 1 ? '' : 's'}...`,
+        'running'
+      );
+
+      await waitWithAbort(
+        1000,
+        signal
+      );
+    }
+  }
+  
+  async function performAnalysis(
+    signal: AbortSignal,
+    userId: string,
+    executionCreatives:
+      BatchCreative[]
+  ) {
+    const isBatch =
+      executionCreatives.length >
+      1;
+
+    let batchId:
+      string | null = null;
+
+    if (isBatch) {
+      batchId =
+        crypto.randomUUID();
+
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        const thumbnailScanId = crypto.randomUUID();
-        thumbnailPath = await uploadScanThumbnail(user.id, thumbnailScanId, frames[0].data);
+        error: batchError,
+      } =
+        await supabase
+          .from(
+            'scan_batches'
+          )
+          .insert({
+            id: batchId,
+            user_id: userId,
+            total_creatives:
+              executionCreatives.length,
+          });
+
+      if (batchError) {
+        console.error(
+          '[CLIENT BATCH] Could not create batch:',
+          batchError
+        );
+
+        throw new Error(
+          'Unable to create scan batch.'
+        );
       }
     }
 
-    const framesWaitMs = framesExtractedTime ? framesExtractedTime - scanStartTime : 0;
-    const platformList = platforms.join(', ').toUpperCase();
-    publishScanProgress(
-      `Analyzing your content against ${platformList} policies...`,
-      'running'
-    );
-    setCanCancel(false);
-    
-    const rawResults = await Promise.all(
-      platforms.map(async (platform) => {
-        const scanId = crypto.randomUUID();
-        // Gated the same as thumbnailPath — file names are only ever sent
-        // to the server for accounts whose plan includes Scan History,
-        // matching what the Privacy Policy now actually says.
-        const fileName = profile?.scan_history ? currentFile?.name ?? null : null;
-        let response = isVideo
-          ? await scanVideo(frames, audio, platform, scanType, null, signal, scanId, thumbnailPath, fileName)
-          : await scanImage(frames[0].data, platform, null, signal, scanId, thumbnailPath, fileName);
+    const allResults:
+      PlatformResult[] = [];
 
-        let queueEnteredAt: number | null = null;
-        let queueWaitMs = 0;
-        let jobId: string | null = null;
+    const completedScanIds:
+      string[] = [];
 
-        while ('queued' in response && response.queued) {
-          if (!queueEnteredAt) queueEnteredAt = Date.now();
-          jobId = response.jobId;
-          currentJobIdRef.current = jobId;
-          setCanCancel(true);
-          publishScanProgress(
-            `You're queued at position ${response.position}. Waiting for your turn...`,
-            'running'
-          );
+    for (
+      let creativeIndex = 0;
+      creativeIndex <
+      executionCreatives.length;
+      creativeIndex++
+    ) {
+      const creative =
+        executionCreatives[
+          creativeIndex
+        ];
 
-          await waitForQueueTurn(
-            jobId,
-            signal,
-            (position) =>
+      const batchPosition =
+        isBatch
+          ? creativeIndex + 1
+          : null;
+
+      const operationId =
+        backgroundOperationIdRef.current;
+
+      if (
+        isBatch &&
+        operationId
+      ) {
+        updateBackgroundBatchItem(
+          operationId,
+          creative.id,
+          {
+            status:
+              'processing',
+            error: null,
+          }
+        );
+      }
+
+      const label =
+        isBatch
+          ? `Creative ${creativeIndex + 1} of ${executionCreatives.length}`
+          : 'Your creative';
+
+      publishScanProgress(
+        `${label}: preparing ${creative.kind}...`,
+        'preparing'
+      );
+
+      const creativeStartTime =
+        Date.now();
+
+      let frames:
+        ExtractedFrame[] = [];
+
+      let framesExtractedTime:
+        number | null = null;
+
+      let audio:
+        {
+          data: string;
+          mimeType: string;
+        } |
+        null = null;
+
+      try {
+        if (
+          creative.kind ===
+          'video'
+        ) {
+          frames =
+            await extractFrames(
+              creative.file,
+              signal,
+              creative.scanType
+            );
+
+          framesExtractedTime =
+            Date.now();
+
+          if (
+            creative.analyzeAudio &&
+            canAnalyzeAudio
+          ) {
+            publishScanProgress(
+              `${label}: preparing audio track...`,
+              'preparing'
+            );
+
+            audio =
+              await extractAudio(
+                creative.file,
+                signal
+              );
+          }
+        } else {
+          const imageData =
+            await fileToBase64(
+              creative.file
+            );
+
+          frames = [{
+            frameNumber: 1,
+            timestamp:
+              '00:00.00',
+            timestampSeconds:
+              0,
+            data: imageData,
+          }];
+
+          framesExtractedTime =
+            Date.now();
+        }
+
+        let thumbnailPath:
+          string | null = null;
+
+        if (
+          profile?.scan_history &&
+          frames[0]
+        ) {
+          const thumbnailScanId =
+            crypto.randomUUID();
+
+          thumbnailPath =
+            await uploadScanThumbnail(
+              userId,
+              thumbnailScanId,
+              frames[0].data
+            );
+        }
+
+        const framesWaitMs =
+          framesExtractedTime
+            ? framesExtractedTime -
+              creativeStartTime
+            : 0;
+
+        const batchMeta =
+          isBatch &&
+          batchId &&
+          batchPosition
+            ? {
+                batchedByClient:
+                  true,
+                batchId,
+                batchPosition,
+              }
+            : undefined;
+
+        const creativeResults:
+          PlatformResult[] = [];
+
+        const creativeScanIds:
+          string[] = [];
+
+        let creativeError:
+          Error | null = null;
+
+        const selectedPlatforms =
+  creative.platforms.slice(
+    0,
+    1
+  );
+
+for (
+  let platformIndex = 0;
+  platformIndex <
+  selectedPlatforms.length;
+  platformIndex++
+) {
+  const platform =
+    selectedPlatforms[
+      platformIndex
+    ];
+          const scanId =
+            crypto.randomUUID();
+
+          const scanStartTime =
+            Date.now();
+
+          const fileName =
+            profile?.scan_history
+              ? creative.file.name
+              : null;
+
+          try {
+            publishScanProgress(
+              `${label}: analyzing against ${platform.toUpperCase()} policies...`,
+              'running'
+            );
+
+            if (
+              mountedRef.current
+            ) {
+              setCanCancel(
+                false
+              );
+            }
+
+            let response =
+              creative.kind ===
+              'video'
+                ? await scanVideo(
+                    frames,
+                    audio,
+                    platform,
+                    creative.scanType,
+                    null,
+                    signal,
+                    scanId,
+                    thumbnailPath,
+                    fileName,
+                    batchMeta
+                  )
+                : await scanImage(
+                    frames[0].data,
+                    platform,
+                    null,
+                    signal,
+                    scanId,
+                    thumbnailPath,
+                    fileName,
+                    batchMeta
+                  );
+
+            let queueEnteredAt:
+              number | null = null;
+
+            let queueWaitMs =
+              0;
+
+            let jobId:
+              string | null = null;
+
+            while (
+              'queued' in
+                response &&
+              response.queued
+            ) {
+              if (
+                !queueEnteredAt
+              ) {
+                queueEnteredAt =
+                  Date.now();
+              }
+
+              jobId =
+                response.jobId;
+
+              currentJobIdRef.current =
+                jobId;
+
+              if (
+                mountedRef.current
+              ) {
+                setCanCancel(
+                  true
+                );
+              }
+
               publishScanProgress(
-                `You're queued at position ${position}. Waiting for your turn...`,
+                `${label}: queued at position ${response.position}. Waiting for your turn...`,
                 'running'
+              );
+
+              await waitForQueueTurn(
+                jobId,
+                signal,
+                (position) =>
+                  publishScanProgress(
+                    `${label}: queued at position ${position}. Waiting for your turn...`,
+                    'running'
+                  )
+              );
+
+              currentJobIdRef.current =
+                null;
+
+              queueWaitMs =
+                Date.now() -
+                (
+                  queueEnteredAt as number
+                );
+
+              publishScanProgress(
+                `${label}: analyzing against ${platform.toUpperCase()} policies...`,
+                'running'
+              );
+
+              if (
+                mountedRef.current
+              ) {
+                setCanCancel(
+                  false
+                );
+              }
+
+              response =
+                creative.kind ===
+                  'video'
+                  ? await scanVideo(
+                      frames,
+                      audio,
+                      platform,
+                      creative.scanType,
+                      jobId,
+                      signal,
+                      scanId,
+                      thumbnailPath,
+                      fileName,
+                      batchMeta
+                    )
+                  : await scanImage(
+                      frames[0].data,
+                      platform,
+                      jobId,
+                      signal,
+                      scanId,
+                      thumbnailPath,
+                      fileName,
+                      batchMeta
+                    );
+            }
+
+            const completed =
+              response as Extract<
+                typeof response,
+                {
+                  success: true;
+                }
+              >;
+
+            if (jobId) {
+              reportQueueTiming(
+                jobId,
+                {
+                  totalTimeMs:
+                    Date.now() -
+                    scanStartTime,
+                  queueWaitMs,
+                  framesWaitMs,
+                }
+              );
+            }
+
+            const {
+              riskLevel,
+              riskClass,
+              processedViolations,
+            } =
+              calculateConfidenceScore(
+                completed.result
+                  .violations as Violation[]
+              );
+
+            creativeResults.push({
+              creativeId:
+                creative.id,
+              fileName:
+                creative.file.name,
+              fileKind:
+                creative.kind,
+              batchPosition,
+              scanId,
+              platform:
+                completed.result
+                  .platform,
+              riskLevel,
+              riskClass,
+              processedViolations,
+            });
+
+            creativeScanIds.push(
+              scanId
+            );
+          } catch (
+            error: any
+          ) {
+            if (
+              error?.name ===
+                'AbortError' ||
+              signal.aborted
+            ) {
+              throw error;
+            }
+
+            if (
+              isBatch &&
+              shouldStopBatch(
+                error
               )
-          );
-          currentJobIdRef.current = null;
-          queueWaitMs = Date.now() - (queueEnteredAt as number);
+            ) {
+              throw error;
+            }
 
-          publishScanProgress(
-            `Analyzing your content against ${platform.toUpperCase()} policies...`,
-            'running'
-          );
-          setCanCancel(false);
+            if (!isBatch) {
+              throw error;
+            }
 
-          response = isVideo
-            ? await scanVideo(frames, audio, platform, scanType, jobId, signal, scanId, thumbnailPath, fileName)
-            : await scanImage(frames[0].data, platform, jobId, signal, scanId, thumbnailPath, fileName);
+            if (
+              !creativeError
+            ) {
+              creativeError =
+                error instanceof
+                  Error
+                  ? error
+                  : new Error(
+                      'Creative scan failed.'
+                    );
+            }
+          }
+
+          if (
+            isBatch &&
+            platformIndex <
+              selectedPlatforms.length -
+                1
+          ) {
+            await runBatchCooldown(
+              signal,
+              `${label}: next platform scan starting in`
+            );
+          }
         }
 
-        const completed = response as Extract<typeof response, { success: true }>;
+        allResults.push(
+          ...creativeResults
+        );
 
-        if (jobId) {
-          const totalTimeMs = Date.now() - scanStartTime;
-          reportQueueTiming(jobId, { totalTimeMs, queueWaitMs, framesWaitMs });
+        completedScanIds.push(
+          ...creativeScanIds
+        );
+
+        if (
+          isBatch &&
+          operationId
+        ) {
+          updateBackgroundBatchItem(
+            operationId,
+            creative.id,
+            {
+              status:
+                creativeError
+                  ? 'error'
+                  : 'success',
+              scanIds:
+                creativeScanIds,
+              error:
+                creativeError
+                  ? 'One or more scans for this creative could not be completed.'
+                  : null,
+            }
+          );
+        }
+      } catch (
+        error: any
+      ) {
+        if (
+          error?.name ===
+            'AbortError' ||
+          signal.aborted ||
+          shouldStopBatch(
+            error
+          )
+        ) {
+          throw error;
         }
 
-        return { platform, response: completed, scanId, };
-      })
-    );
+        if (!isBatch) {
+          throw error;
+        }
 
-    // Reflect the latest scan balance immediately — the parent also
-    // refetches the full profile in onScanComplete, but this avoids a
-    // flash of the stale count while that request is in flight.
-    const last = rawResults[rawResults.length - 1]?.response;
-    if (last?.scansRemaining !== undefined) {
-      // handled by parent via onScanComplete()
+        if (
+          operationId
+        ) {
+          updateBackgroundBatchItem(
+            operationId,
+            creative.id,
+            {
+              status: 'error',
+              scanIds: [],
+              error:
+                'This creative could not be prepared or completed.',
+            }
+          );
+        }
+      }
+
+      if (
+        isBatch &&
+        creativeIndex <
+          executionCreatives.length -
+            1
+      ) {
+        const nextCreative =
+          executionCreatives[
+            creativeIndex + 1
+          ];
+
+        if (
+          operationId
+        ) {
+          updateBackgroundBatchItem(
+            operationId,
+            nextCreative.id,
+            {
+              status:
+                'cooldown',
+            }
+          );
+        }
+
+        await runBatchCooldown(
+          signal,
+          `Scan ${creativeIndex + 1} of ${executionCreatives.length} complete. Next scan starting in`
+        );
+      }
     }
-
-    const formatted: PlatformResult[] = rawResults.map(({ response }) => {
-      const { riskLevel, riskClass, processedViolations } = calculateConfidenceScore(
-        response.result.violations as Violation[]
-      );
-      return { platform: response.result.platform, riskLevel, riskClass, processedViolations };
-    });
-
-    const completedScanIds =
-      rawResults.map(
-        ({ scanId }) =>
-          scanId
-      );
 
     const operationId =
       backgroundOperationIdRef.current;
@@ -650,20 +1913,32 @@ export function ScanWorkspace({
     if (operationId) {
       completeBackgroundScan(
         operationId,
-        formatted,
+        allResults,
         completedScanIds
       );
     }
 
-    if (mountedRef.current) {
+    if (
+      mountedRef.current
+    ) {
       setResults(
-        formatted
+        allResults
       );
 
-      onResultsChange?.({
-        scanIds:
-          completedScanIds,
-      }),
+      setSelectedResultCreativeId(
+        executionCreatives[0]
+          ?.id ??
+          allResults[0]
+            ?.creativeId ??
+          null
+      );
+
+      onResultsChange?.(
+        buildFeedbackTarget(
+          allResults,
+          isBatch
+        )
+      );
 
       await onScanComplete();
     }
@@ -680,23 +1955,98 @@ export function ScanWorkspace({
       return;
     }
 
-    if (scansRemaining < totalCost) {
+     if (
+      creatives.length > 1 &&
+      !canBatchScan
+    ) {
       setBanner({
         tone: 'warning',
-        title: 'Not enough scans',
+        title:
+          'Paid plan required',
         message:
-          totalCost > platforms.length
-            ? `Deep scan requires ${scanCostPerPlatform} scans per platform. You have ${scansRemaining} remaining. Switch to regular scan or upgrade your plan.`
-            : 'You have used all your scans for this month. Upgrade your plan to continue scanning.',
-        actionLabel: 'Upgrade plan',
-        onAction: () => window.location.assign('/buy-tokens'),
+          'Batch scanning is available on paid plans only.',
+        actionLabel:
+          'Upgrade plan',
+        onAction: () =>
+          window.location.assign(
+            '/buy-tokens'
+          ),
       });
+
       return;
     }
 
+    if (
+      !allCreativesConfigured
+    ) {
+      setBanner({
+        tone: 'warning',
+        title:
+          'Choose target platforms',
+        message:
+          'Every creative needs at least one target platform before analysis can start.',
+      });
+
+      return;
+    }
+
+    if (
+      scansRemaining <
+      totalCost
+    ) {
+      setBanner({
+        tone: 'warning',
+        title:
+          'Not enough scans',
+        message:
+          creatives.length > 1
+            ? `This batch requires ${totalCost} scans. You have ${scansRemaining} remaining. Reduce the selected platforms, use Regular Scan where appropriate, or upgrade your plan.`
+            : `This scan requires ${totalCost} scan${totalCost === 1 ? '' : 's'}. You have ${scansRemaining} remaining.`,
+        actionLabel:
+          'Upgrade plan',
+        onAction: () =>
+          window.location.assign(
+            '/buy-tokens'
+          ),
+      });
+
+      return;
+    }
+
+    const executionCreatives =
+      orderCreativesForExecution(
+        creatives
+      );
+
+    const initialBatchItems:
+      BackgroundBatchItem[] =
+        executionCreatives.length >
+        1
+          ? executionCreatives.map(
+              (
+                creative,
+                index
+              ) => ({
+                creativeId:
+                  creative.id,
+                fileName:
+                  creative.file.name,
+                fileKind:
+                  creative.kind,
+                batchPosition:
+                  index + 1,
+                status:
+                  'queued',
+                scanIds: [],
+                error: null,
+              })
+            )
+          : [];
+
     const operationId =
       beginBackgroundScan(
-        'Preparing analysis...'
+        'Preparing analysis...',
+        initialBatchItems
       );
 
     backgroundOperationIdRef.current =
@@ -719,7 +2069,11 @@ export function ScanWorkspace({
     startElapsedTimer();
 
     try {
-      await performAnalysis(controller.signal);
+      await performAnalysis(
+        controller.signal,
+        session.user.id,
+        executionCreatives
+      );
     } catch (error: any) {
       if (
         error?.name ===
@@ -775,6 +2129,24 @@ export function ScanWorkspace({
       const isAudioLockedError =
         message.includes('Audio analysis unavailable') ||
         message.includes('Audio analysis is available on paid plans only');
+      const isBatchLockedError =
+        message.includes(
+          'Batch scanning unavailable'
+        ) ||
+        message.includes(
+          'Batch scanning is available on paid plans only'
+        );
+
+      const isBatchMetadataError =
+        message.includes(
+          'Invalid batch metadata'
+        ) ||
+        message.includes(
+          'Unable to validate scan batch'
+        ) ||
+        message.includes(
+          'Unable to create scan batch'
+        );
       const isTokenError = message.includes('Insufficient tokens');
       const isAuthError = message.includes('Unauthorized') || message.includes('Not authenticated');
       const isCorruptionError =
@@ -850,6 +2222,32 @@ export function ScanWorkspace({
           actionLabel: 'Upgrade plan',
           onAction: () => window.location.assign('/buy-tokens'),
         });
+      } else if (
+        isBatchLockedError
+      ) {
+        recordFailure({
+          tone: 'warning',
+          title:
+            'Paid plan required',
+          message:
+            'Batch scanning is available on paid plans only.',
+          actionLabel:
+            'Upgrade plan',
+          onAction: () =>
+            window.location.assign(
+              '/buy-tokens'
+            ),
+        });
+      } else if (
+        isBatchMetadataError
+      ) {
+        recordFailure({
+          tone: 'error',
+          title:
+            'Batch could not start',
+          message:
+            'The batch could not be validated. Please start a new batch and try again.',
+        });
       } else {
         recordFailure({
           tone: 'error',
@@ -875,200 +2273,612 @@ export function ScanWorkspace({
     }
   }
 
-  const analyzeDisabled = !currentFile || platforms.length === 0 || isAnalyzing;
+  const analyzeDisabled =
+  creatives.length === 0 ||
+  !allCreativesConfigured ||
+  isAnalyzing;
 
+const isBatchResult =
+  (backgroundScan.batchItems?.length ?? 0) > 1;
+
+const resultCreativeOptions =
+  isBatchResult
+    ? (backgroundScan.batchItems ?? []).map(
+        (item) => ({
+          creativeId:
+            item.creativeId,
+          fileName:
+            item.fileName,
+          batchPosition:
+            item.batchPosition,
+          status:
+            item.status,
+          error:
+            item.error,
+        })
+      )
+    : Array.from(
+        new Map(
+          (
+            results ?? []
+          ).map(
+            (result) => [
+              result.creativeId,
+              {
+                creativeId:
+                  result.creativeId,
+                fileName:
+                  result.fileName,
+                batchPosition:
+                  result.batchPosition,
+                status:
+                  'success' as const,
+                error:
+                  null,
+              },
+            ]
+          )
+        ).values()
+      );
+
+const activeResultCreativeId =
+  selectedResultCreativeId ??
+  resultCreativeOptions[0]
+    ?.creativeId ??
+  results?.[0]
+    ?.creativeId ??
+  null;
+
+const visibleResults =
+  (
+    results ?? []
+  ).filter(
+    (result) =>
+      result.creativeId ===
+      activeResultCreativeId
+  );
+
+const activeResultOption =
+  resultCreativeOptions.find(
+    (item) =>
+      item.creativeId ===
+      activeResultCreativeId
+  ) ??
+  null;
+  
   return (
     <div className="bg-card border border-border rounded-xl shadow-sm">
       <div className="p-6 space-y-6">
         {!isAnalyzing && !results && (
           <>
-            {/* Upload */}
-            {!currentFile ? (
+                        {/* Upload */}
+            {creatives.length <
+              (
+                canBatchScan
+                  ? MAX_BATCH_FILES
+                  : 1
+              ) && (
               <div
                 onDragOver={(e) => {
                   e.preventDefault();
                   setIsDragOver(true);
                 }}
-                onDragLeave={() => setIsDragOver(false)}
+                onDragLeave={() =>
+                  setIsDragOver(false)
+                }
                 onDrop={(e) => {
                   e.preventDefault();
                   setIsDragOver(false);
-                  const file = e.dataTransfer.files?.[0];
-                  if (file) handleFile(file);
+
+                  handleFiles(
+                    Array.from(
+                      e.dataTransfer
+                        .files ??
+                        []
+                    )
+                  );
                 }}
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() =>
+                  fileInputRef.current
+                    ?.click()
+                }
                 className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors ${
-                  isDragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/60'
+                  isDragOver
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-primary/60'
                 }`}
               >
                 <input
-                  ref={fileInputRef}
+                  ref={
+                    fileInputRef
+                  }
                   type="file"
+                  multiple={
+                    canBatchScan
+                  }
                   accept="video/mp4,video/quicktime,video/webm,image/png,image/jpeg,image/gif"
                   className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleFile(file);
-                  }}
+                  onChange={(e) =>
+                    handleFiles(
+                      Array.from(
+                        e.target
+                          .files ??
+                          []
+                      )
+                    )
+                  }
                 />
-                <p className="font-medium text-foreground">Drop a video or image here, or click to browse</p>
-                <p className="text-sm text-muted-foreground mt-1">Supported: MP4, MOV, WebM, PNG, JPG, GIF</p>
-                <p className="text-xs text-muted-foreground mt-1">For best results, use videos at 720p or higher.</p>
-              </div>
-            ) : (
-              <div className="border border-border rounded-xl p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium truncate">{currentFile.name}</span>
-                  <button onClick={removeFile} className="text-muted-foreground hover:text-foreground text-lg leading-none px-2">
-                    ×
-                  </button>
-                </div>
-                {isVideo ? (
-                  <video src={previewUrl || undefined} controls className="w-full max-h-72 rounded-lg bg-black" />
-                ) : (
-                  <img src={previewUrl || undefined} alt="preview" className="w-full max-h-72 object-contain rounded-lg" />
+
+                <p className="font-medium text-foreground">
+                  {canBatchScan
+                    ? 'Drop up to 5 videos or images here, or click to browse'
+                    : 'Drop a video or image here, or click to browse'}
+                </p>
+
+                <p className="text-sm text-muted-foreground mt-1">
+                  Supported: MP4, MOV, WebM, PNG, JPG, GIF
+                </p>
+
+                <p className="text-xs text-muted-foreground mt-1">
+                  For best results, use videos at 720p or higher.
+                </p>
+
+                {!canBatchScan && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Batch scanning is available on paid plans.
+                  </p>
                 )}
               </div>
             )}
 
-            {/* Platforms */}
-            <div>
-              <p className="text-sm font-semibold mb-2">Target Platforms</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {PLATFORMS.map((p) => (
-                  <label
-                    key={p.value}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition-colors ${
-                      platforms.includes(p.value)
-                        ? 'border-primary bg-primary/5 text-foreground'
-                        : 'border-border text-muted-foreground hover:border-primary/50'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={platforms.includes(p.value)}
-                      onChange={() => togglePlatform(p.value)}
-                      className="accent-current"
-                    />
-                    <img src={p.icon} alt="" className="w-4 h-4 object-contain" />
-                    {p.label}
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Scan type — video only */}
-            {isVideo && (
-              <div>
-                <p className="text-sm font-semibold mb-2">Scan Type</p>
+            {creatives.length >
+              0 && (
+              <>
                 <div className="space-y-2">
-                  <label className="flex items-start gap-3 p-3 rounded-lg border border-border cursor-pointer">
-                    <input
-                      type="radio"
-                      name="scanType"
-                      checked={scanType === 'regular'}
-                      onChange={() => setScanType('regular')}
-                      className="mt-1"
-                    />
-                    <span>
-                      <span className="block font-medium text-sm">Regular Scan</span>
-                      <span className="block text-xs text-muted-foreground">
-                        Fast and optimized for standard commercials, "talking head" videos, and VSLs
-                      </span>
-                    </span>
-                  </label>
-                  <label
-                    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${
-                      canDeepScan ? 'border-border' : 'border-border opacity-60 cursor-not-allowed'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="scanType"
-                      disabled={!canDeepScan}
-                      checked={scanType === 'deep'}
-                      onChange={() => setScanType('deep')}
-                      className="mt-1"
-                    />
-                    <span>
-                      <span className="block font-medium text-sm">
-                        Deep Scan{' '}
-                        {!canDeepScan && (
+                  {creatives.map(
+                    (
+                      creative
+                    ) => {
+                      const executionPosition =
+                        executionPreview.findIndex(
+                          (item) =>
+                            item.id ===
+                            creative.id
+                        ) + 1;
+
+                      return (
+                        <div
+                          key={
+                            creative.id
+                          }
+                          className="flex items-center gap-3 border border-border rounded-lg p-3"
+                        >
+                          <div className="w-16 h-12 shrink-0 rounded-md overflow-hidden bg-muted">
+                            {creative.kind ===
+                            'video' ? (
+                              <video
+                                src={
+                                  creative.previewUrl
+                                }
+                                muted
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <img
+                                src={
+                                  creative.previewUrl
+                                }
+                                alt=""
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">
+                              {
+                                creative
+                                  .file
+                                  .name
+                              }
+                            </p>
+
+                            <p className="text-xs text-muted-foreground">
+                              {creative.kind ===
+                              'video'
+                                ? 'Video'
+                                : 'Image'}
+
+                              {creatives.length >
+                                1 &&
+                                ` · Batch position ${executionPosition}`}
+                            </p>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              removeCreative(
+                                creative.id
+                              )
+                            }
+                            className="text-muted-foreground hover:text-foreground text-lg leading-none px-2"
+                            aria-label={`Remove ${creative.file.name}`}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      );
+                    }
+                  )}
+
+                  {creatives.length >
+                    1 && (
+                    <p className="text-xs text-muted-foreground">
+                      Images are processed before videos. Batch position follows execution order.
+                    </p>
+                  )}
+                </div>
+
+                {/* Target Platform */}
+<div>
+  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+    <p className="text-sm font-semibold">
+      Target Platform
+    </p>
+
+    {creatives.length > 1 && (
+      <div className="flex items-center gap-2">
+        <select
+          value={
+            platformCreative?.id ?? ''
+          }
+          onChange={(event) =>
+            setPlatformCreativeId(
+              event.target.value
+            )
+          }
+          className="max-w-52 rounded-lg border border-border bg-background px-2 py-1.5 text-xs"
+        >
+          {creatives.map(
+            (creative) => (
+              <option
+                key={creative.id}
+                value={creative.id}
+              >
+                {creative.file.name}
+              </option>
+            )
+          )}
+        </select>
+
+        <button
+          type="button"
+          onClick={
+            applyPlatformsToAll
+          }
+          disabled={
+            !platformCreative
+              ?.platforms[0]
+          }
+          className="px-2.5 py-1.5 rounded-lg border border-border text-xs font-semibold hover:bg-secondary disabled:opacity-50"
+        >
+          Apply platform to all
+        </button>
+      </div>
+    )}
+  </div>
+
+  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+    {PLATFORMS.map(
+      (platform) => {
+        const checked =
+          platformCreative
+            ?.platforms[0] ===
+          platform.value;
+
+        return (
+          <label
+            key={platform.value}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition-colors ${
+              checked
+                ? 'border-primary bg-primary/5 text-foreground'
+                : 'border-border text-muted-foreground hover:border-primary/50'
+            }`}
+          >
+            <input
+              type="radio"
+              name={`platform-${
+                platformCreative?.id ??
+                'none'
+              }`}
+              checked={checked}
+              disabled={
+                !platformCreative
+              }
+              onChange={() => {
+                if (
+                  platformCreative
+                ) {
+                  togglePlatform(
+                    platformCreative.id,
+                    platform.value
+                  );
+                }
+              }}
+              className="accent-current"
+            />
+
+            <img
+              src={platform.icon}
+              alt=""
+              className="w-4 h-4 object-contain"
+            />
+
+            {platform.label}
+          </label>
+        );
+      }
+    )}
+  </div>
+
+  <p className="text-xs text-muted-foreground mt-2">
+    Choose one target platform per creative.
+  </p>
+</div>
+
+                {/* Video-only settings */}
+                {videoCreatives.length >
+                  0 &&
+                  selectedVideoCreative && (
+                  <div className="space-y-4">
+                    {videoCreatives.length >
+                      1 && (
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={
+                            selectedVideoCreative.id
+                          }
+                          onChange={(
+                            event
+                          ) =>
+                            setVideoCreativeId(
+                              event
+                                .target
+                                .value
+                            )
+                          }
+                          className="max-w-52 rounded-lg border border-border bg-background px-2 py-1.5 text-xs"
+                        >
+                          {videoCreatives.map(
+                            (
+                              creative
+                            ) => (
+                              <option
+                                key={
+                                  creative.id
+                                }
+                                value={
+                                  creative.id
+                                }
+                              >
+                                {
+                                  creative
+                                    .file
+                                    .name
+                                }
+                              </option>
+                            )
+                          )}
+                        </select>
+
+                        <button
+                          type="button"
+                          onClick={
+                            applyVideoSettingsToAll
+                          }
+                          className="px-2.5 py-1.5 rounded-lg border border-border text-xs font-semibold hover:bg-secondary"
+                        >
+                          Apply video settings to all
+                        </button>
+                      </div>
+                    )}
+
+                    <div>
+                      <p className="text-sm font-semibold mb-2">
+                        Scan Type
+                      </p>
+
+                      <div className="space-y-2">
+                        <label className="flex items-start gap-3 p-3 rounded-lg border border-border cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`scanType-${selectedVideoCreative.id}`}
+                            checked={
+                              selectedVideoCreative.scanType ===
+                              'regular'
+                            }
+                            onChange={() =>
+                              updateSelectedVideo({
+                                scanType:
+                                  'regular',
+                              })
+                            }
+                            className="mt-1"
+                          />
+
+                          <span>
+                            <span className="block font-medium text-sm">
+                              Regular Scan
+                            </span>
+
+                            <span className="block text-xs text-muted-foreground">
+                              Fast and optimized for standard commercials, "talking head" videos, and VSLs
+                            </span>
+                          </span>
+                        </label>
+
+                        <label
+                          className={`flex items-start gap-3 p-3 rounded-lg border ${
+                            canDeepScan
+                              ? 'border-border cursor-pointer'
+                              : 'border-border opacity-60 cursor-not-allowed'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name={`scanType-${selectedVideoCreative.id}`}
+                            disabled={
+                              !canDeepScan
+                            }
+                            checked={
+                              selectedVideoCreative.scanType ===
+                              'deep'
+                            }
+                            onChange={() =>
+                              updateSelectedVideo({
+                                scanType:
+                                  'deep',
+                              })
+                            }
+                            className="mt-1"
+                          />
+
+                          <span>
+                            <span className="block font-medium text-sm">
+                              Deep Scan
+
+                              {!canDeepScan && (
+                                <span className="ml-1 text-[10px] font-semibold uppercase tracking-wide text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                                  Paid plan required
+                                </span>
+                              )}
+                            </span>
+
+                            <span className="block text-xs text-muted-foreground">
+                              Slower, but designed for fast-paced "UGC-style" ads or montages where violations might be hidden in fast cuts
+                            </span>
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <label
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm w-fit ${
+                        canAnalyzeAudio
+                          ? 'border-border cursor-pointer'
+                          : 'border-border opacity-60 cursor-not-allowed'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        disabled={
+                          !canAnalyzeAudio
+                        }
+                        checked={
+                          canAnalyzeAudio &&
+                          selectedVideoCreative.analyzeAudio
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          updateSelectedVideo({
+                            analyzeAudio:
+                              event
+                                .target
+                                .checked,
+                          })
+                        }
+                        className="accent-current"
+                      />
+
+                      <span className="font-medium">
+                        Analyze Audio Content
+
+                        {!canAnalyzeAudio && (
                           <span className="ml-1 text-[10px] font-semibold uppercase tracking-wide text-primary bg-primary/10 px-1.5 py-0.5 rounded">
                             Paid plan required
                           </span>
                         )}
                       </span>
-                      <span className="block text-xs text-muted-foreground">
-                        Slower, but designed for fast-paced "UGC-style" ads or montages where violations might be
-                        hidden in fast cuts
-                      </span>
-                    </span>
-                  </label>
-                </div>
-              </div>
+                    </label>
+                  </div>
+                )}
+              </>
             )}
-
-            {/* Audio analysis — opt-in, video only */}
-            {isVideo && (
-              <label
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm w-fit ${
-                  canAnalyzeAudio
-                    ? 'border-border cursor-pointer'
-                    : 'border-border opacity-60 cursor-not-allowed'
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  disabled={!canAnalyzeAudio}
-                  checked={canAnalyzeAudio && analyzeAudio}
-                  onChange={(e) => setAnalyzeAudio(e.target.checked)}
-                  className="accent-current"
-                />
-                <span className="font-medium">
-                  Analyze Audio Content
-                  {!canAnalyzeAudio && (
-                    <span className="ml-1 text-[10px] font-semibold uppercase tracking-wide text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                      Paid plan required
-                    </span>
-                  )}
-                </span>
-              </label>
-            )}
-
-            {/* Cost + banner */}
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">
-                Scan cost: <strong>{totalCost} scan{totalCost === 1 ? '' : 's'}</strong>
-              </span>
-              <span className="text-muted-foreground">{scansRemaining} remaining</span>
-            </div>
 
             {banner && (
               <div
                 className={`p-3 rounded-lg border text-sm ${
-                  banner.tone === 'error'
+                  banner.tone ===
+                  'error'
                     ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-400'
                     : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-400'
                 }`}
               >
-                <p className="font-semibold">{banner.title}</p>
-                {banner.message && <p className="mt-0.5">{banner.message}</p>}
-                {banner.actionLabel && banner.onAction && (
-                  <button onClick={banner.onAction} className="mt-2 text-xs font-semibold underline underline-offset-2">
-                    {banner.actionLabel}
-                  </button>
+                <p className="font-semibold">
+                  {banner.title}
+                </p>
+
+                {banner.message && (
+                  <p className="mt-0.5">
+                    {banner.message}
+                  </p>
                 )}
+
+                {banner.actionLabel &&
+                  banner.onAction && (
+                    <button
+                      type="button"
+                      onClick={
+                        banner.onAction
+                      }
+                      className="mt-2 text-xs font-semibold underline underline-offset-2"
+                    >
+                      {
+                        banner.actionLabel
+                      }
+                    </button>
+                  )}
               </div>
             )}
 
-            <button
-              onClick={handleAnalyze}
-              disabled={analyzeDisabled}
-              className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Analyze Ad
-            </button>
+            {creatives.length > 0 && (
+              <>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">
+                    Scan cost:{' '}
+                    <strong>
+                      {totalCost}{' '}
+                      scan
+                      {totalCost === 1
+                        ? ''
+                        : 's'}
+                    </strong>
+                  </span>
+
+                  <span className="text-muted-foreground">
+                    {scansRemaining}{' '}
+                    remaining
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={
+                    handleAnalyze
+                  }
+                  disabled={
+                    analyzeDisabled
+                  }
+                  className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {creatives.length > 1
+                    ? 'Analyze Batch'
+                    : 'Analyze Ad'}
+                </button>
+              </>
+            )}
           </>
         )}
 
@@ -1076,7 +2886,12 @@ export function ScanWorkspace({
         {isAnalyzing && (
           <div className="flex flex-col items-center justify-center py-10 text-center">
             <div className="flex items-center justify-between w-full mb-6">
-              <h3 className="font-bold">Analyzing Your Ad...</h3>
+              <h3 className="font-bold">
+                {backgroundScan.batchItems
+                 .length > 1
+                 ? 'Analyzing Your Batch...'
+                 : 'Analyzing Your Ad...'}
+              </h3>
               {canCancel && (
                 <button
                   onClick={handleCancelAnalysis}
@@ -1115,7 +2930,70 @@ export function ScanWorkspace({
               </button>
             </div>
 
-            {results.map((r) => {
+            {isBatchResult && (
+              <>
+                <div className="flex flex-wrap gap-2">
+                  {resultCreativeOptions.map(
+                    (item) => (
+                      <button
+                        key={
+                          item.creativeId
+                        }
+                        type="button"
+                        onClick={() =>
+                          setSelectedResultCreativeId(
+                            item.creativeId
+                          )
+                        }
+                        className={`px-3 py-2 rounded-lg border text-xs font-medium transition-colors ${
+                          activeResultCreativeId ===
+                          item.creativeId
+                            ? 'border-primary bg-primary/5 text-foreground'
+                            : 'border-border text-muted-foreground hover:border-primary/50'
+                        }`}
+                      >
+                        #{item.batchPosition}{' '}
+                        {item.fileName}{' '}
+
+                        {item.status ===
+                        'success'
+                          ? '✓'
+                          : item.status ===
+                            'error'
+                          ? '✕'
+                          : ''}
+                      </button>
+                    )
+                  )}
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  {
+                    backgroundScan.batchItems.filter(
+                      (item) =>
+                        item.status ===
+                        'success'
+                    ).length
+                  }{' '}
+                  of{' '}
+                  {
+                    backgroundScan.batchItems.length
+                  }{' '}
+                  creatives completed without errors.
+                </p>
+              </>
+            )}
+
+            {activeResultOption
+              ?.status ===
+              'error' && (
+              <div className="p-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-sm text-red-800 dark:text-red-400">
+                {activeResultOption.error ||
+                  'One or more scans for this creative could not be completed.'}
+              </div>
+            )}
+            
+            {visibleResults.map((r) => {
               const grouped = groupViolationsByType(r.processedViolations);
               const riskColorClass =
                 r.riskClass === 'confidence-low'
@@ -1123,9 +3001,12 @@ export function ScanWorkspace({
                   : r.riskClass === 'confidence-medium'
                   ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
                   : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
-
+            
               return (
-                <div key={r.platform} className="border border-border rounded-lg p-4">
+                <div
+                  key={`${r.creativeId}:${r.platform}:${r.scanId}`}
+                  className="border border-border rounded-lg p-4"
+                >
                   <div className="flex items-center justify-between mb-3">
                     <span className="font-semibold uppercase text-sm">{r.platform}</span>
                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${riskColorClass}`}>
