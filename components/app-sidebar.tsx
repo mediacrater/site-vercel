@@ -20,12 +20,14 @@ import {
   History,
   LayoutDashboard,
   Loader2,
+  Pause,
   Settings as SettingsIcon,
   XCircle,
 } from 'lucide-react';
 
 import {
   useBackgroundScanState,
+  type BackgroundScanState,
 } from '@/lib/mediacrater/backgroundScanStore';
 
 const NAV_ITEMS = [
@@ -47,18 +49,70 @@ const NAV_ITEMS = [
 ];
 
 function DashboardScanStatus({
-  status,
+  scan,
 }: {
-  status:
-    | 'idle'
-    | 'preparing'
-    | 'running'
-    | 'completed'
-    | 'error';
+  scan: BackgroundScanState;
 }) {
+  if ((scan.batchItems?.length ?? 0) > 1) {
+    return (
+      <span
+        className="ml-auto inline-flex items-center gap-1.5"
+        aria-label="Batch scan status"
+      >
+        {(scan.batchItems ?? []).map((item) => {
+          if (item.status === 'processing') {
+            return (
+              <Loader2
+                key={item.creativeId}
+                className="w-3.5 h-3.5 animate-spin text-primary"
+                aria-label={`Batch position ${item.batchPosition} processing`}
+              />
+            );
+          }
+
+          if (item.status === 'success') {
+            return (
+              <CheckCircle2
+                key={item.creativeId}
+                className="w-3.5 h-3.5 text-green-600 dark:text-green-400"
+                aria-label={`Batch position ${item.batchPosition} complete`}
+              />
+            );
+          }
+
+          if (item.status === 'error') {
+            return (
+              <XCircle
+                key={item.creativeId}
+                className="w-3.5 h-3.5 text-red-600 dark:text-red-400"
+                aria-label={`Batch position ${item.batchPosition} failed`}
+              />
+            );
+          }
+
+          return (
+            <Pause
+              key={item.creativeId}
+              className={
+                item.status === 'cooldown'
+                  ? 'w-3.5 h-3.5 text-amber-500'
+                  : 'w-3.5 h-3.5 text-muted-foreground/50'
+              }
+              aria-label={
+                item.status === 'cooldown'
+                  ? `Batch position ${item.batchPosition} waiting for cooldown`
+                  : `Batch position ${item.batchPosition} queued`
+              }
+            />
+          );
+        })}
+      </span>
+    );
+  }
+
   if (
-    status === 'preparing' ||
-    status === 'running'
+    scan.status === 'preparing' ||
+    scan.status === 'running'
   ) {
     return (
       <span
@@ -74,7 +128,7 @@ function DashboardScanStatus({
     );
   }
 
-  if (status === 'completed') {
+  if (scan.status === 'completed') {
     return (
       <span
         className="ml-auto inline-flex items-center text-green-600 dark:text-green-400"
@@ -89,7 +143,7 @@ function DashboardScanStatus({
     );
   }
 
-  if (status === 'error') {
+  if (scan.status === 'error') {
     return (
       <span
         className="ml-auto inline-flex items-center text-red-600 dark:text-red-400"
@@ -187,9 +241,7 @@ export function AppSidebar() {
                 {item.href ===
                   '/dashboard' && (
                   <DashboardScanStatus
-                    status={
-                      backgroundScan.status
-                    }
+                    scan={backgroundScan}
                   />
                 )}
               </Link>
