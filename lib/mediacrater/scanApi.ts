@@ -38,6 +38,12 @@ export interface ScanCompletedResponse {
 
 export type ScanResponse = ScanQueuedResponse | ScanCompletedResponse;
 
+export interface ClientBatchMeta {
+  batchedByClient: boolean;
+  batchId: string | null;
+  batchPosition: number | null;
+}
+
 async function requireAccessToken(): Promise<string> {
   const {
     data: { session },
@@ -80,7 +86,8 @@ export async function scanVideo(
   signal?: AbortSignal,
   scanId?: string | null,
   thumbnailUrl?: string | null,
-  fileName?: string | null
+  fileName?: string | null,
+  batchMeta?: ClientBatchMeta
 ): Promise<ScanResponse> {
   const token = await requireAccessToken();
 
@@ -102,6 +109,12 @@ export async function scanVideo(
       scanId: scanId || null,
       thumbnailUrl: thumbnailUrl || null,
       fileName: fileName || null,
+      batchedByClient:
+        batchMeta?.batchedByClient === true,
+      batchId:
+        batchMeta?.batchId ?? null,
+      batchPosition:
+        batchMeta?.batchPosition ?? null,
     }),
     signal,
   });
@@ -125,7 +138,8 @@ export async function scanImage(
   signal?: AbortSignal,
   scanId?: string | null,
   thumbnailUrl?: string | null,
-  fileName?: string | null
+  fileName?: string | null,
+  batchMeta?: ClientBatchMeta
 ): Promise<ScanResponse> {
   const token = await requireAccessToken();
 
@@ -144,6 +158,12 @@ export async function scanImage(
       scanId: scanId || null,
       thumbnailUrl: thumbnailUrl || null,
       fileName: fileName || null,
+      batchedByClient:
+        batchMeta?.batchedByClient === true,
+      batchId:
+        batchMeta?.batchId ?? null,
+      batchPosition:
+        batchMeta?.batchPosition ?? null,
     }),
     signal,
   });
