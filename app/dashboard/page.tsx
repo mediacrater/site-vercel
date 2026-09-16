@@ -318,8 +318,19 @@ function DashboardContent() {
 
       {feedbackTarget ? (
         <ScanFeedback
-          scanIds={
-            feedbackTarget.scanIds
+          key={
+            feedbackTarget.items
+              .map(
+                (item) =>
+                  item.creativeId
+              )
+              .join(':')
+          }
+          items={
+            feedbackTarget.items
+          }
+          isBatch={
+            feedbackTarget.isBatch
           }
         />
       ) : (
