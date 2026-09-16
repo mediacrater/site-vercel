@@ -89,10 +89,6 @@ const featureRows: { label: string; sub?: string; values: CellValue[] }[] = [
     values: [false, true, true, true, true],
   },
   {
-    label: 'Batch scanning',
-    values: [false, true, true, true, true],
-  },
-  {
     label: 'Scan history',
     values: [false, true, true, true, true],
   },
