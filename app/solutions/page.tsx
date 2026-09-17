@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import Script from "next/script"
 import {
   Building2,
   Code2,
@@ -9,6 +10,23 @@ import {
   ShieldCheck,
   Zap,
 } from "lucide-react"
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (
+        container: string | HTMLElement,
+        options: {
+          sitekey: string
+          callback: (token: string) => void
+          "expired-callback"?: () => void
+          "error-callback"?: () => void
+        }
+      ) => string
+      reset: (widgetId?: string) => void
+    }
+  }
+}
 
 export default function SolutionsPage() {
   const [formData, setFormData] = useState({
@@ -20,6 +38,30 @@ export default function SolutionsPage() {
   })
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const [turnstileScriptLoaded, setTurnstileScriptLoaded] = useState(false)
+  const turnstileContainerRef = useRef<HTMLDivElement>(null)
+  const turnstileWidgetIdRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!turnstileScriptLoaded) return
+    if (!turnstileContainerRef.current) return
+    if (!window.turnstile) return
+    if (turnstileWidgetIdRef.current) return // already rendered once
+
+    const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+    if (!siteKey) {
+      console.error("NEXT_PUBLIC_TURNSTILE_SITE_KEY is not set.")
+      return
+    }
+
+    turnstileWidgetIdRef.current = window.turnstile.render(turnstileContainerRef.current, {
+      sitekey: siteKey,
+      callback: (token: string) => setTurnstileToken(token),
+      "expired-callback": () => setTurnstileToken(null),
+      "error-callback": () => setTurnstileToken(null),
+    })
+  }, [turnstileScriptLoaded])
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -27,8 +69,22 @@ export default function SolutionsPage() {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
+  const resetTurnstile = () => {
+    setTurnstileToken(null)
+    if (window.turnstile && turnstileWidgetIdRef.current) {
+      window.turnstile.reset(turnstileWidgetIdRef.current)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!turnstileToken) {
+      setErrorMessage("Please complete the verification checkbox.")
+      setStatus("error")
+      return
+    }
+
     setStatus("loading")
     setErrorMessage(null)
 
@@ -36,7 +92,7 @@ export default function SolutionsPage() {
       const response = await fetch("/api/custom-solutions-form", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, turnstileToken }),
       })
 
       if (!response.ok) {
@@ -45,19 +101,27 @@ export default function SolutionsPage() {
           data?.error ?? "Something went wrong. Please try again."
         )
         setStatus("error")
+        resetTurnstile() // token is single-use; force a fresh one on retry
         return
       }
 
       setStatus("success")
       setFormData({ name: "", email: "", company: "", volume: "", message: "" })
+      resetTurnstile()
     } catch {
       setErrorMessage("Something went wrong. Please try again.")
       setStatus("error")
+      resetTurnstile()
     }
   }
 
   return (
     <main className="border-b border-border">
+      <Script
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+        strategy="afterInteractive"
+        onLoad={() => setTurnstileScriptLoaded(true)}
+      />
       {/* Hero */}
       <section className="py-24 md:py-32">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -306,9 +370,11 @@ export default function SolutionsPage() {
                     </p>
                   )}
 
+                  <div ref={turnstileContainerRef} />
+
                   <button
                     type="submit"
-                    disabled={status === "loading"}
+                    disabled={status === "loading" || !turnstileToken}
                     className="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
                   >
                     {status === "loading" ? "Sending..." : "Submit inquiry"}
