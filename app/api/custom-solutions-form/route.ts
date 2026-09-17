@@ -100,17 +100,17 @@ function validatePayload(body: unknown): { valid: true; data: FormPayload } | { 
     return { valid: false, error: "Please provide a valid email address." }
   }
 
-  if (company !== undefined && typeof company !== "string") {
-    return { valid: false, error: "Invalid company value." }
+  if (typeof company !== "string" || company.trim().length === 0) {
+    return { valid: false, error: "Company / Platform is required." }
   }
-  if (typeof company === "string" && company.length > 200) {
+  if (company.length > 200) {
     return { valid: false, error: "Company name is too long." }
   }
 
-  if (volume !== undefined && typeof volume !== "string") {
-    return { valid: false, error: "Invalid volume value." }
+  if (typeof volume !== "string" || volume.trim().length === 0) {
+    return { valid: false, error: "Please select an approximate monthly volume." }
   }
-  if (typeof volume === "string" && !VOLUME_OPTIONS.has(volume)) {
+  if (!VOLUME_OPTIONS.has(volume)) {
     return { valid: false, error: "Invalid volume selection." }
   }
 
