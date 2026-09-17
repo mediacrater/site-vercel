@@ -4,6 +4,54 @@ import { supabase } from "@/lib/mediacrater/supabaseClient"
 export const runtime = "nodejs"
 
 // ---------------------------------------------------------------------------
+// Cloudflare Turnstile verification
+// ---------------------------------------------------------------------------
+// Runs before rate limiting and before touching Supabase at all — a request
+// that fails the bot check shouldn't cost a rate-limit slot or a DB round
+// trip. The token is single-use and short-lived; siteverify is the only way
+// to confirm it's real, since it can't be validated client-side.
+// ---------------------------------------------------------------------------
+
+const TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+
+async function verifyTurnstileToken(token: string, remoteIp: string): Promise<boolean> {
+  const secretKey = process.env.TURNSTILE_SECRET_KEY
+  if (!secretKey) {
+    console.error("TURNSTILE_SECRET_KEY is not set.")
+    return false
+  }
+
+  try {
+    const params = new URLSearchParams()
+    params.append("secret", secretKey)
+    params.append("response", token)
+    if (remoteIp && remoteIp !== "unknown") {
+      params.append("remoteip", remoteIp)
+    }
+
+    const verifyResponse = await fetch(TURNSTILE_VERIFY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params.toString(),
+    })
+
+    if (!verifyResponse.ok) {
+      console.error("Turnstile siteverify HTTP error:", verifyResponse.status)
+      return false
+    }
+
+    const result = (await verifyResponse.json()) as { success: boolean; [key: string]: unknown }
+    if (!result.success) {
+      console.error("Turnstile verification failed:", result)
+    }
+    return result.success === true
+  } catch (err) {
+    console.error("Failed to reach Turnstile siteverify:", err)
+    return false
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Rate limiting (Supabase-backed, atomic via RPC)
 // ---------------------------------------------------------------------------
 // The actual count-check-and-log happens inside a single Postgres function
@@ -13,7 +61,7 @@ export const runtime = "nodejs"
 // same table, and the check + insert happen atomically in one DB round trip.
 // ---------------------------------------------------------------------------
 
-const RATE_LIMIT_MAX_REQUESTS = 8
+const RATE_LIMIT_MAX_REQUESTS = 4
 const RATE_LIMIT_WINDOW_MINUTES = 24 * 60
 
 function getClientIp(req: NextRequest): string {
@@ -72,6 +120,7 @@ type FormPayload = {
   company: string
   volume: string
   message: string
+  turnstileToken: string
 }
 
 function isValidEmail(email: string): boolean {
@@ -84,7 +133,7 @@ function validatePayload(body: unknown): { valid: true; data: FormPayload } | { 
     return { valid: false, error: "Invalid request body." }
   }
 
-  const { name, email, company, volume, message } = body as Record<string, unknown>
+  const { name, email, company, volume, message, turnstileToken } = body as Record<string, unknown>
 
   if (typeof name !== "string" || name.trim().length === 0) {
     return { valid: false, error: "Name is required." }
@@ -121,6 +170,10 @@ function validatePayload(body: unknown): { valid: true; data: FormPayload } | { 
     return { valid: false, error: "Message is too long." }
   }
 
+  if (typeof turnstileToken !== "string" || turnstileToken.trim().length === 0) {
+    return { valid: false, error: "Please complete the verification checkbox." }
+  }
+
   return {
     valid: true,
     data: {
@@ -129,6 +182,7 @@ function validatePayload(body: unknown): { valid: true; data: FormPayload } | { 
       company: typeof company === "string" ? company.trim() : "",
       volume: typeof volume === "string" ? volume : "",
       message: typeof message === "string" ? message.trim() : "",
+      turnstileToken: turnstileToken.trim(),
     },
   }
 }
@@ -182,6 +236,28 @@ function buildSlackPayload(data: FormPayload) {
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req)
 
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 })
+  }
+
+  const validation = validatePayload(body)
+  if (!validation.valid) {
+    return NextResponse.json({ error: validation.error }, { status: 400 })
+  }
+
+  // Verify the human-check token before spending a rate-limit slot or a
+  // Supabase round trip on a request that might not be a real browser.
+  const isHuman = await verifyTurnstileToken(validation.data.turnstileToken, ip)
+  if (!isHuman) {
+    return NextResponse.json(
+      { error: "Verification failed. Please try the checkbox again." },
+      { status: 400 }
+    )
+  }
+
   const rateLimit = await checkRateLimit(ip)
   if (!rateLimit.allowed) {
     if (rateLimit.error) {
@@ -205,18 +281,6 @@ export async function POST(req: NextRequest) {
         },
       }
     )
-  }
-
-  let body: unknown
-  try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 })
-  }
-
-  const validation = validatePayload(body)
-  if (!validation.valid) {
-    return NextResponse.json({ error: validation.error }, { status: 400 })
   }
 
   const webhookUrl = process.env.SLACK_FORM_WEBHOOK_URL
