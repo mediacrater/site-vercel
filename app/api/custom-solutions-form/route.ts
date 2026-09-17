@@ -1,80 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
+import { supabase } from "@/lib/mediacrater/supabaseClient"
 
 export const runtime = "nodejs"
 
 // ---------------------------------------------------------------------------
-// Rate limiting (in-memory, per-instance)
+// Rate limiting (Supabase-backed, atomic via RPC)
 // ---------------------------------------------------------------------------
-// NOTE: This is an in-memory rate limiter. It works correctly as long as
-// requests land on the same warm serverless instance, but Vercel can run
-// multiple instances of a function concurrently and instances are recycled
-// periodically — so under real traffic this limit is "best effort," not a
-// hard guarantee. If you need an accurate, durable limit across all
-// instances, swap this block out for a shared store like Upstash Redis
-// (e.g. @upstash/ratelimit) and keep the rest of this file unchanged.
+// The actual count-check-and-log happens inside a single Postgres function
+// (check_and_log_form_attempt), called via supabase.rpc(). This avoids the
+// race conditions and per-instance drift that an in-memory rate limiter has
+// on serverless: every invocation, on every instance, reads and writes the
+// same table, and the check + insert happen atomically in one DB round trip.
 // ---------------------------------------------------------------------------
 
-const RATE_LIMIT_MAX_REQUESTS = 3
-const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000 // 60 minutes
-
-type RateLimitEntry = {
-  count: number
-  windowStart: number
-}
-
-// Persist the map across hot invocations on the same instance using a global,
-// since module-level state can be reset by bundling/HMR in some environments.
-const globalForRateLimit = globalThis as unknown as {
-  __customSolutionsRateLimit?: Map<string, RateLimitEntry>
-}
-
-const rateLimitStore =
-  globalForRateLimit.__customSolutionsRateLimit ?? new Map<string, RateLimitEntry>()
-globalForRateLimit.__customSolutionsRateLimit = rateLimitStore
-
-// Periodically clear out stale entries so the map doesn't grow unbounded.
-function pruneRateLimitStore(now: number) {
-  for (const [key, entry] of rateLimitStore.entries()) {
-    if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
-      rateLimitStore.delete(key)
-    }
-  }
-}
-
-function checkRateLimit(identifier: string): {
-  allowed: boolean
-  remaining: number
-  resetAt: number
-} {
-  const now = Date.now()
-  pruneRateLimitStore(now)
-
-  const existing = rateLimitStore.get(identifier)
-
-  if (!existing || now - existing.windowStart > RATE_LIMIT_WINDOW_MS) {
-    rateLimitStore.set(identifier, { count: 1, windowStart: now })
-    return {
-      allowed: true,
-      remaining: RATE_LIMIT_MAX_REQUESTS - 1,
-      resetAt: now + RATE_LIMIT_WINDOW_MS,
-    }
-  }
-
-  if (existing.count >= RATE_LIMIT_MAX_REQUESTS) {
-    return {
-      allowed: false,
-      remaining: 0,
-      resetAt: existing.windowStart + RATE_LIMIT_WINDOW_MS,
-    }
-  }
-
-  existing.count += 1
-  return {
-    allowed: true,
-    remaining: RATE_LIMIT_MAX_REQUESTS - existing.count,
-    resetAt: existing.windowStart + RATE_LIMIT_WINDOW_MS,
-  }
-}
+const RATE_LIMIT_MAX_REQUESTS = 4
+const RATE_LIMIT_WINDOW_MINUTES = 60
 
 function getClientIp(req: NextRequest): string {
   // Vercel populates x-forwarded-for with the client IP first in the list.
@@ -87,6 +27,22 @@ function getClientIp(req: NextRequest): string {
     return realIp.trim()
   }
   return "unknown"
+}
+
+async function checkRateLimit(ip: string): Promise<{ allowed: boolean; error?: string }> {
+  const { data, error } = await supabase.rpc("check_and_log_form_attempt", {
+    p_ip: ip,
+    p_user_id: null,
+    p_max_attempts: RATE_LIMIT_MAX_REQUESTS,
+    p_window_minutes: RATE_LIMIT_WINDOW_MINUTES,
+  })
+
+  if (error) {
+    console.error("Rate limit RPC error:", error)
+    return { allowed: false, error: error.message }
+  }
+
+  return { allowed: data === true }
 }
 
 // ---------------------------------------------------------------------------
@@ -226,15 +182,24 @@ function buildSlackPayload(data: FormPayload) {
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req)
 
-  const rateLimit = checkRateLimit(ip)
+  const rateLimit = await checkRateLimit(ip)
   if (!rateLimit.allowed) {
-    const retryAfterSeconds = Math.max(0, Math.ceil((rateLimit.resetAt - Date.now()) / 1000))
+    if (rateLimit.error) {
+      // The RPC itself failed (e.g. permissions, connectivity) rather than
+      // the limit being legitimately hit. Fail closed but return a generic
+      // message — don't leak internal error details to the client.
+      return NextResponse.json(
+        { error: "Something went wrong. Please try again." },
+        { status: 500 }
+      )
+    }
+
     return NextResponse.json(
       { error: "Too many requests. Please try again later." },
       {
         status: 429,
         headers: {
-          "Retry-After": String(retryAfterSeconds),
+          "Retry-After": String(RATE_LIMIT_WINDOW_MINUTES * 60),
           "X-RateLimit-Limit": String(RATE_LIMIT_MAX_REQUESTS),
           "X-RateLimit-Remaining": "0",
         },
@@ -286,14 +251,5 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  return NextResponse.json(
-    { success: true },
-    {
-      status: 200,
-      headers: {
-        "X-RateLimit-Limit": String(RATE_LIMIT_MAX_REQUESTS),
-        "X-RateLimit-Remaining": String(rateLimit.remaining),
-      },
-    }
-  )
+  return NextResponse.json({ success: true }, { status: 200 })
 }
