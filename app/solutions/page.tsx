@@ -251,6 +251,7 @@ export default function SolutionsPage() {
                     <input
                       id="company"
                       name="company"
+                      required
                       value={formData.company}
                       onChange={handleChange}
                       className="mt-1.5 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
@@ -267,6 +268,7 @@ export default function SolutionsPage() {
                     <select
                       id="volume"
                       name="volume"
+                      required
                       value={formData.volume}
                       onChange={handleChange}
                       className="mt-1.5 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
