@@ -14,7 +14,7 @@ export const runtime = "nodejs"
 // (e.g. @upstash/ratelimit) and keep the rest of this file unchanged.
 // ---------------------------------------------------------------------------
 
-const RATE_LIMIT_MAX_REQUESTS = 4
+const RATE_LIMIT_MAX_REQUESTS = 3
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000 // 60 minutes
 
 type RateLimitEntry = {
