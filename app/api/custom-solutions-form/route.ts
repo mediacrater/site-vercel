@@ -13,8 +13,8 @@ export const runtime = "nodejs"
 // same table, and the check + insert happen atomically in one DB round trip.
 // ---------------------------------------------------------------------------
 
-const RATE_LIMIT_MAX_REQUESTS = 4
-const RATE_LIMIT_WINDOW_MINUTES = 60
+const RATE_LIMIT_MAX_REQUESTS = 8
+const RATE_LIMIT_WINDOW_MINUTES = 24 * 60
 
 function getClientIp(req: NextRequest): string {
   // Vercel populates x-forwarded-for with the client IP first in the list.
