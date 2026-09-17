@@ -116,6 +116,10 @@ export function Footer() {
           </p>
         </div>  
         {/* Copyright */}
+        <div className="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p className="text-sm text-background/60">
+            © {currentYear} Mediacrater. All rights reserved.
+          </p>
           <div className="flex items-center gap-6">
             <a
               href="https://x.com/Mediacraterads"
