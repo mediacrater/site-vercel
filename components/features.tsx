@@ -31,6 +31,14 @@ export function Features() {
         <div className="mt-6 grid gap-px overflow-hidden border border-border bg-border md:grid-cols-3">
           {[{icon:Layers3,title:"Platform-specific analysis",text:"Compare creative risk against the policies that matter to each advertising platform."},{icon:FileText,title:"Timestamped findings",text:"Go straight to the moment that needs attention instead of reviewing an entire ad manually."},{icon:Lock,title:"Privacy-first processing",text:"Your creative is analyzed with privacy in mind, because ad assets are valuable business data."}].map(({icon:Icon,title,text})=><div key={title} className="bg-background p-7"><Icon className="h-5 w-5 text-primary"/><h3 className="mt-5 font-semibold">{title}</h3><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{text}</p></div>)}
         </div>
+        <div className="mt-8 text-center">
+          <a
+            href="https://mediacrater.com/solutions"
+            className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+          >
+            Looking for a custom or high-volume solution? →
+          </a>
+        </div>
       </div>
     </section>
   )
