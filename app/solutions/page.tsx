@@ -19,6 +19,7 @@ export default function SolutionsPage() {
     message: "",
   })
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -29,15 +30,28 @@ export default function SolutionsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setStatus("loading")
+    setErrorMessage(null)
 
-    // Replace this with your actual form handling (API route, Formspree, Resend, etc.)
     try {
-      // Example:
-      // await fetch("/api/contact", { method: "POST", body: JSON.stringify(formData) })
-      await new Promise((resolve) => setTimeout(resolve, 1000)) // simulate
+      const response = await fetch("/api/custom-solutions-form", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null)
+        setErrorMessage(
+          data?.error ?? "Something went wrong. Please try again."
+        )
+        setStatus("error")
+        return
+      }
+
       setStatus("success")
       setFormData({ name: "", email: "", company: "", volume: "", message: "" })
     } catch {
+      setErrorMessage("Something went wrong. Please try again.")
       setStatus("error")
     }
   }
@@ -286,7 +300,7 @@ export default function SolutionsPage() {
 
                   {status === "error" && (
                     <p className="text-sm text-red-500">
-                      Something went wrong. Please try again.
+                      {errorMessage ?? "Something went wrong. Please try again."}
                     </p>
                   )}
 
