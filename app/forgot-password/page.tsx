@@ -1,12 +1,23 @@
 // app/forgot-password/page.tsx
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Script from 'next/script';
 import Link from 'next/link';
 import { Header } from '@/components/header';
 
-const RESEND_COOLDOWN_SECONDS = 60;
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!;
+
+type TurnstileAPI = {
+  render: (container: HTMLElement, options: Record<string, unknown>) => string;
+  reset: (widgetId: string) => void;
+  remove: (widgetId: string) => void;
+};
+
+function getTurnstile(): TurnstileAPI | undefined {
+  return (window as unknown as { turnstile?: TurnstileAPI }).turnstile;
+}
 
 function ForgotPasswordForm() {
   const searchParams = useSearchParams();
@@ -15,10 +26,22 @@ function ForgotPasswordForm() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  // Resend recovery link state (matching signup flow)
+  // Resend recovery link state. resendCooldown is a fixed 60s client-side
+  // pacing cooldown — deliberately NOT tied to the server's 10/24hr
+  // reset_password rate limit (that limit is backend abuse protection and
+  // has no sane UI countdown), and NOT tied to Supabase's own internal
+  // per-email send cooldown either (undocumented, not worth parsing from
+  // its error response). This is just "don't let someone mash the button,"
+  // shown clearly so the button's state is never a silent mystery.
+  const RESEND_COOLDOWN_SECONDS = 90;
   const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [resendError, setResendError] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  const [scriptReady, setScriptReady] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const widgetIdRef = useRef<string | null>(null);
 
   // Pre-fill email from extension URL query if available
   useEffect(() => {
@@ -37,16 +60,63 @@ function ForgotPasswordForm() {
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
+  useEffect(() => {
+    if (!scriptReady) return;
+    const turnstile = getTurnstile();
+    if (!turnstile || !widgetRef.current) return;
+
+    // Re-render whenever the active container changes (the initial form
+    // and the post-submit success view each have their own
+    // <div ref={widgetRef}>, and only one is mounted at a time — success
+    // swaps the entire returned JSX tree). Tearing down any previous
+    // widget first avoids the original bug: checking only
+    // widgetIdRef.current caused the effect to no-op after the first
+    // render, leaving the success view's container permanently empty and
+    // turnstileToken stuck null — which is why the resend button never
+    // showed a countdown, just stayed disabled.
+    if (widgetIdRef.current) {
+      turnstile.remove(widgetIdRef.current);
+      widgetIdRef.current = null;
+    }
+
+    widgetIdRef.current = turnstile.render(widgetRef.current, {
+      sitekey: TURNSTILE_SITE_KEY,
+      theme: 'auto',
+      size: 'flexible',
+      callback: (token: string) => setTurnstileToken(token),
+      'expired-callback': () => setTurnstileToken(null),
+      'error-callback': () => setTurnstileToken(null),
+    });
+    setTurnstileToken(null);
+
+    return () => {
+      if (widgetIdRef.current) {
+        turnstile.remove(widgetIdRef.current);
+        widgetIdRef.current = null;
+      }
+    };
+  }, [scriptReady, success]);
+
+  function resetTurnstile() {
+    const id = widgetIdRef.current;
+    if (id) getTurnstile()?.reset(id);
+    setTurnstileToken(null);
+  }
+
   const handleResetRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!turnstileToken) {
+      setError('Please complete the verification check.');
+      return;
+    }
     setLoading(true);
 
     try {
       const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, turnstileToken }),
       });
 
       const data = await response.json();
@@ -56,8 +126,15 @@ function ForgotPasswordForm() {
       }
 
       setSuccess(true);
+      resetTurnstile();
+      // Start the cooldown immediately on the original send, not just on
+      // resend — this is the gap that caused the confusing "Email limit
+      // exceeded" flash: the button was fully clickable with no visible
+      // state right after the first email went out.
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
     } catch (err: any) {
       setError(err.message || 'Failed to request password reset. Please try again.');
+      resetTurnstile();
     } finally {
       setLoading(false);
     }
@@ -66,6 +143,10 @@ function ForgotPasswordForm() {
   // Resend recovery link handler
   const handleResendReset = async () => {
     if (resendCooldown > 0 || resendStatus === 'sending') return;
+    if (!turnstileToken) {
+      setResendError('Please complete the verification check.');
+      return;
+    }
 
     setResendStatus('sending');
     setResendError('');
@@ -74,20 +155,25 @@ function ForgotPasswordForm() {
       const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, turnstileToken }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to resend recovery email');
+        setResendStatus('error');
+        setResendError(data.error || 'Failed to resend recovery email');
+        resetTurnstile();
+        return;
       }
 
       setResendStatus('sent');
+      resetTurnstile();
       setResendCooldown(RESEND_COOLDOWN_SECONDS);
     } catch (err: any) {
       setResendStatus('error');
       setResendError(err.message || 'Failed to resend recovery email');
+      resetTurnstile();
     }
   };
 
@@ -95,6 +181,11 @@ function ForgotPasswordForm() {
     return (
       <div className="min-h-screen bg-background">
         <Header />
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+          strategy="afterInteractive"
+          onReady={() => setScriptReady(true)}
+        />
         <div className="flex items-center justify-center min-h-screen px-4 pt-16">
           <div className="w-full max-w-md">
             <div className="bg-card border border-border rounded-lg shadow-lg p-8 text-center">
@@ -121,10 +212,12 @@ function ForgotPasswordForm() {
 
               <p className="text-xs text-muted-foreground mb-2">Don't see the email? Check your spam folder.</p>
 
+              <div ref={widgetRef} className="flex justify-center mb-4" />
+
               {/* Resend recovery link button */}
               <button
                 onClick={handleResendReset}
-                disabled={resendCooldown > 0 || resendStatus === 'sending'}
+                disabled={resendCooldown > 0 || resendStatus === 'sending' || !turnstileToken}
                 className="text-sm font-semibold text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline mb-6 block w-full text-center"
               >
                 {resendStatus === 'sending'
@@ -134,7 +227,7 @@ function ForgotPasswordForm() {
                   : 'Resend recovery email'}
               </button>
 
-              {resendStatus === 'sent' && resendCooldown === RESEND_COOLDOWN_SECONDS && (
+              {resendStatus === 'sent' && (
                 <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mb-4">
                   <p className="text-sm text-green-800 dark:text-green-400">Recovery link resent. Check your inbox.</p>
                 </div>
@@ -159,6 +252,11 @@ function ForgotPasswordForm() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      <Script
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+        strategy="afterInteractive"
+        onReady={() => setScriptReady(true)}
+      />
       <div className="flex items-center justify-center min-h-screen px-4 pt-16">
         <div className="w-full max-w-md">
           <div className="bg-card border border-border rounded-lg shadow-lg p-8">
@@ -179,6 +277,13 @@ function ForgotPasswordForm() {
                 />
               </div>
 
+              <div ref={widgetRef} />
+              {!TURNSTILE_SITE_KEY && (
+                <p className="text-xs text-red-600 dark:text-red-400">
+                  Turnstile site key is missing. Set NEXT_PUBLIC_TURNSTILE_SITE_KEY and redeploy.
+                </p>
+              )}
+
               {error && (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
                   <p className="text-sm text-red-800 dark:text-red-400">{error}</p>
@@ -187,7 +292,7 @@ function ForgotPasswordForm() {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !turnstileToken}
                 className="w-full bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Sending Recovery Link...' : 'Send Recovery Link'}
