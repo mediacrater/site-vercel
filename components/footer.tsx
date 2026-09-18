@@ -71,7 +71,7 @@ export function Footer() {
               </li>
                 <li>
                 <Link href="/solutions" className="text-background/70 hover:text-background transition-colors">
-                  Custom products and solutions
+                  Custom solutions
                 </Link>
               </li>
             </ul>
