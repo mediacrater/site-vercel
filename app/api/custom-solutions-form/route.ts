@@ -1,5 +1,8 @@
+// --- app/api/custom-solutions-form/route.ts
+
 import { NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/mediacrater/supabaseClient"
+import { createClient } from "@supabase/supabase-js"
+import { checkAndLogRateLimit } from "@/lib/rate-limit"
 
 export const runtime = "nodejs"
 
@@ -61,7 +64,7 @@ async function verifyTurnstileToken(token: string, remoteIp: string): Promise<bo
 // same table, and the check + insert happen atomically in one DB round trip.
 // ---------------------------------------------------------------------------
 
-const RATE_LIMIT_MAX_REQUESTS = 4
+const RATE_LIMIT_MAX_REQUESTS = 10
 const RATE_LIMIT_WINDOW_MINUTES = 24 * 60
 
 function getClientIp(req: NextRequest): string {
@@ -77,20 +80,13 @@ function getClientIp(req: NextRequest): string {
   return "unknown"
 }
 
-async function checkRateLimit(ip: string): Promise<{ allowed: boolean; error?: string }> {
-  const { data, error } = await supabase.rpc("check_and_log_form_attempt", {
-    p_ip: ip,
-    p_user_id: null,
-    p_max_attempts: RATE_LIMIT_MAX_REQUESTS,
-    p_window_minutes: RATE_LIMIT_WINDOW_MINUTES,
-  })
-
-  if (error) {
-    console.error("Rate limit RPC error:", error)
-    return { allowed: false, error: error.message }
-  }
-
-  return { allowed: data === true }
+async function checkRateLimit(ip: string) {
+  return checkAndLogRateLimit(
+    "solutions_form",
+    ip,
+    RATE_LIMIT_MAX_REQUESTS,
+    RATE_LIMIT_WINDOW_MINUTES * 60
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -209,7 +205,7 @@ function buildSlackPayload(data: FormPayload) {
   const blocks: Record<string, unknown>[] = [
     {
       type: "header",
-      text: { type: "plain_text", text: "New custom solutions inquiry", emoji: true },
+      text: { type: "plain_text", text: `${process.env.NEXT_PUBLIC_STATE} New custom solutions inquiry`, emoji: true }
     },
     { type: "section", fields },
   ]
@@ -224,7 +220,7 @@ function buildSlackPayload(data: FormPayload) {
   blocks.push({ type: "divider" })
 
   return {
-    text: `New custom solutions inquiry from ${data.name} (${data.email})`,
+    text: `${process.env.NEXT_PUBLIC_STATE} New custom solutions inquiry from ${data.name} (${data.email})`,
     blocks,
   }
 }
@@ -276,6 +272,7 @@ export async function POST(req: NextRequest) {
         status: 429,
         headers: {
           "Retry-After": String(RATE_LIMIT_WINDOW_MINUTES * 60),
+          "X-RateLimit-Action": "solutions_form",
           "X-RateLimit-Limit": String(RATE_LIMIT_MAX_REQUESTS),
           "X-RateLimit-Remaining": "0",
         },
@@ -315,5 +312,22 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  return NextResponse.json({ success: true }, { status: 200 })
+  // Fixed: previously sent a nonsensical Retry-After header on a 200
+  // success response, and hardcoded X-RateLimit-Remaining to "0" on every
+  // successful submission (including the very first of 10 allowed). Since
+  // an allowed request always has retryAfterSeconds === 0 (see the RPC's
+  // `return query select true, 0`), there's no meaningful "remaining"
+  // count available from this call to report — it's dropped rather than
+  // reported as a wrong number. Retry-After is dropped entirely, since it
+  // only makes sense on a throttled (429) response.
+  return NextResponse.json(
+    { success: true },
+    {
+      status: 200,
+      headers: {
+        "X-RateLimit-Action": "solutions_form",
+        "X-RateLimit-Limit": String(RATE_LIMIT_MAX_REQUESTS),
+      },
+    }
+  )
 }
