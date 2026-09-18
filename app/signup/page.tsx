@@ -22,6 +22,16 @@
 // the HTML snippet; we call turnstile.render() ourselves because
 // implicit scan-on-load misses a React-hydrated form.
 //
+// Resend verification now uses a server-driven countdown: /api/
+// resend-verification returns retryAfterSeconds (100 on success, or the
+// actual remaining wait on a 429), and resendCooldown counts that down
+// to 0 once per second. This replaced a flat client-side 60s timer that
+// had no relationship to the server's actual rate limit window and
+// didn't survive a page refresh. The resend call now also requires a
+// fresh Turnstile token, since /api/resend-verification enforces
+// verification server-side — the signup widget is reused for this by
+// re-rendering it in the checkEmail view.
+//
 // TODO (Phase C): referral attribution (reading the mc_referrer cookie)
 // still not built — hook point is wherever signup succeeds below.
 import { useState, useEffect, useRef } from 'react';
@@ -32,8 +42,13 @@ import { useTheme } from 'next-themes';
 import { AuthShowcasePanel } from '@/components/auth-showcase-panel';
 import { collectDeviceClient } from '@/lib/collect-device-client';
 import { supabase } from "@/lib/mediacrater/supabaseClient"
-const RESEND_COOLDOWN_SECONDS = 100;
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!;
+// Mirrors RESEND_WINDOW_SECONDS in app/api/resend-verification/route.ts.
+// Kept as a constant here (rather than only trusting the server's
+// response) so the countdown can start immediately after the original
+// signup send, before any /api/resend-verification call has happened to
+// return a real retryAfterSeconds value.
+const RESEND_WINDOW_SECONDS = 100;
 
 type TurnstileAPI = {
   render: (container: HTMLElement, options: Record<string, unknown>) => string;
@@ -84,8 +99,9 @@ export default function SignUpPage() {
     }
   }, [router])
   
-  // Cooldown ticker — ported directly from the live signup page's
-  // mechanism (60s, one-second interval, counts down to 0).
+  // Cooldown ticker — counts down whatever retryAfterSeconds the server
+  // last returned (from a successful send, or from a 429's actual
+  // remaining wait), one second at a time, down to 0.
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = setInterval(() => {
@@ -96,9 +112,23 @@ export default function SignUpPage() {
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    if (!mounted || !scriptReady || checkEmail) return;
+    if (!mounted || !scriptReady) return;
     const turnstile = getTurnstile();
-    if (!turnstile || !widgetRef.current || widgetIdRef.current) return;
+    if (!turnstile || !widgetRef.current) return;
+
+    // Re-render whenever the active container changes (form view vs.
+    // checkEmail view each have their own <div ref={widgetRef}>, and only
+    // one is mounted in the DOM at a time). Tearing down any previous
+    // widget first avoids silently no-op'ing because widgetIdRef.current
+    // was already set from a render into the *other* view's now-unmounted
+    // div — that was the original bug: the effect only checked
+    // widgetIdRef.current and returned early, so switching views left the
+    // new container empty and turnstileToken permanently null.
+    if (widgetIdRef.current) {
+      turnstile.remove(widgetIdRef.current);
+      widgetIdRef.current = null;
+    }
+
     widgetIdRef.current = turnstile.render(widgetRef.current, {
       sitekey: TURNSTILE_SITE_KEY,
       theme: resolvedTheme === 'dark' ? 'dark' : 'light',
@@ -107,14 +137,15 @@ export default function SignUpPage() {
       'expired-callback': () => setTurnstileToken(null),
       'error-callback': () => setTurnstileToken(null),
     });
+    setTurnstileToken(null); // fresh container, no token until user completes it
+
     return () => {
       if (widgetIdRef.current) {
         turnstile.remove(widgetIdRef.current);
         widgetIdRef.current = null;
       }
-      setTurnstileToken(null);
     };
-  }, [mounted, scriptReady, checkEmail, resolvedTheme]);
+  }, [mounted, scriptReady, resolvedTheme, checkEmail]);
 
   const logoSrc = mounted && resolvedTheme === 'dark' ? '/images/header-logo-dark.png' : '/images/header-logo.png';
   function resetTurnstile() {
@@ -170,6 +201,13 @@ export default function SignUpPage() {
         router.push('/dashboard');
       } else {
         setCheckEmail(true);
+        resetTurnstile(); // fresh token required for the resend action
+        // Start the same cooldown that /api/resend-verification enforces
+        // (1 per 100s) immediately, since the original signup call just
+        // sent the first confirmation email — the resend button should
+        // reflect that from the moment this screen appears, not stay
+        // silently clickable until the first rejected click reveals it.
+        setResendCooldown(RESEND_WINDOW_SECONDS);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to create account. Please try again.');
@@ -178,28 +216,40 @@ export default function SignUpPage() {
       setLoading(false);
     }
   }
-  // Now calls the real /api/resend-verification route (server-side,
-  // service-role, includes the already-confirmed gate) instead of
-  // hitting Supabase's /auth/v1/resend directly from the client.
+  // Calls /api/resend-verification, which now enforces Turnstile and a
+  // 1-per-100-second rate limit server-side. retryAfterSeconds drives the
+  // countdown in both the success and 429 cases, so the displayed number
+  // always reflects the server's real state rather than a client guess.
   async function handleResendVerification() {
     if (resendCooldown > 0 || resendState === 'sending') return;
+    if (!turnstileToken) {
+      setResendError('Please complete the verification check.');
+      return;
+    }
     setResendError(null);
     setResendState('sending');
     try {
       const response = await fetch('/api/resend-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, turnstileToken }),
       });
       const data = await response.json();
       if (!response.ok) {
+        // Even on a 429, the server tells us the real remaining wait —
+        // reflect it in the countdown rather than leaving it at 0.
+        if (typeof data.retryAfterSeconds === 'number') {
+          setResendCooldown(data.retryAfterSeconds);
+        }
         throw new Error(data.error || 'Failed to resend verification email');
       }
       setResendState('sent');
-      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+      setResendCooldown(data.retryAfterSeconds ?? RESEND_WINDOW_SECONDS);
+      resetTurnstile();
     } catch (err: any) {
       setResendError(err.message || 'Failed to resend verification email. Please try again.');
       setResendState('idle');
+      resetTurnstile();
     }
   }
   if (checkingSession) {
@@ -234,17 +284,25 @@ export default function SignUpPage() {
                 <p className="text-sm text-muted-foreground mb-5">
                   We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
                 </p>
+                <div ref={widgetRef} className="flex justify-center mb-4" />
                 <button
                   onClick={handleResendVerification}
-                  disabled={resendState === 'sending'}
+                  disabled={resendState === 'sending' || resendCooldown > 0 || !turnstileToken}
                   className="text-sm font-medium text-primary hover:underline disabled:opacity-50 disabled:no-underline disabled:cursor-not-allowed"
                 >
-                  {resendState === 'sending' ? 'Sending...' : 'Resend Email'}
+                  {resendState === 'sending'
+                    ? 'Sending...'
+                    : resendCooldown > 0
+                    ? `Resend available in ${resendCooldown}s`
+                    : 'Resend Email'}
                 </button>
                 {resendState === 'sent' && (
                   <p className="text-sm text-green-600 dark:text-green-400 mt-2">✓ Verification email sent!</p>
                 )}
-                {resendError && (
+                {/* Red error text disappears once the countdown reaches 0,
+                    since at that point a fresh attempt is allowed again
+                    and the stale error no longer reflects current state. */}
+                {resendError && resendCooldown > 0 && (
                   <p className="text-sm text-red-600 dark:text-red-400 mt-2">{resendError}</p>
                 )}
               </div>
