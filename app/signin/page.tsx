@@ -6,6 +6,14 @@
 // from a page whose only job is "get this person signed in." Just a
 // minimal top strip: logo (links home) + dark mode toggle. Full nav
 // comes back the moment they're actually inside the dashboard.
+//
+// handleSubmit now calls /api/signin instead of calling
+// supabase.auth.signInWithPassword() directly — the direct-from-client
+// call had no server-side chokepoint to rate-limit at. The route
+// verifies Turnstile and enforces the rate limit, then returns the
+// session, which we set locally via supabase.auth.setSession() so the
+// existing checkingSession/getSession() redirect logic below is
+// unaffected.
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
@@ -91,8 +99,22 @@ export default function SignInPage() {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      const res = await fetch('/api/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, turnstileToken }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error || 'Failed to sign in. Please check your credentials.');
+      }
+      if (json.session) {
+        const { error: setSessionError } = await supabase.auth.setSession({
+          access_token: json.session.access_token,
+          refresh_token: json.session.refresh_token,
+        });
+        if (setSessionError) throw setSessionError;
+      }
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Failed to sign in. Please check your credentials.');
