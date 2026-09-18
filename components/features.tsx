@@ -33,7 +33,7 @@ export function Features() {
         </div>
         <div className="mt-8 text-center">
           <a
-            href="https://mediacrater.com/solutions"
+            href="/solutions"
             className="text-sm font-medium text-primary underline-offset-4 hover:underline"
           >
             Looking for a custom or high-volume solution? →
