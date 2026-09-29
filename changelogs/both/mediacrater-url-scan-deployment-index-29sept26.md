@@ -1,8 +1,8 @@
 # Mediacrater URL Scan Deployment Index
 
-conversation link:
+conversation link: https://chatgpt.com/c/6abbd973-f948-83ea-b16c-b21ff74048c1
 
-Date: 2026-09-29
+Date: 2026-Sept-29
 
 ## Scope
 
