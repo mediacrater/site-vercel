@@ -45,31 +45,33 @@ export function calculateConfidenceScore(violations: Violation[] | null | undefi
 
   const processedViolations = deduplicateViolations(violations);
 
-  const hasHighSeverity = processedViolations.some(
-    (v) => (v.severity || '').toString().toLowerCase() === 'high'
-  );
+  const sevRank = (v: Violation) => {
+    switch ((v.severity || '').toString().toLowerCase()) {
+      case 'high': return 3;
+      case 'medium': return 2;
+      case 'low': return 1;
+      default: return 2; // unrecognized severity treated as medium, matching severityBorderClass's fallback
+    }
+  };
+
+  const highest = Math.max(...processedViolations.map(sevRank));
   const count = processedViolations.length;
 
   let riskLevel: RiskResult['riskLevel'];
   let riskClass: RiskResult['riskClass'];
 
-  if (hasHighSeverity || count >= 2) {
+  if (highest === 3 || (highest === 2 && count >= 2)) {
     riskLevel = 'High Risk';
-    riskClass = 'confidence-low'; // red
-  } else if (count === 1) {
+    riskClass = 'confidence-low';
+  } else if (highest === 2 || (highest === 1 && count >= 2)) {
     riskLevel = 'Medium Risk';
-    riskClass = 'confidence-medium'; // amber
+    riskClass = 'confidence-medium';
   } else {
     riskLevel = 'Low Risk';
-    riskClass = 'confidence-high'; // green
+    riskClass = 'confidence-high';
   }
 
-  return {
-    confidenceScore: null,
-    riskLevel,
-    riskClass,
-    processedViolations,
-  };
+  return { confidenceScore: null, riskLevel, riskClass, processedViolations };
 }
 
 /**
