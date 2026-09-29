@@ -448,6 +448,9 @@ export function ScanWorkspace({
     videoCreatives[0] ??
     null;
 
+  const selectedVideoIsUrl =
+  selectedVideoCreative?.kind === 'video_url';
+  
   const executionPreview =
     orderCreativesForExecution(
       creatives
@@ -1995,8 +1998,7 @@ for (
                       null,
                       fileName,
                       batchMeta,
-                      creative.analyzeAudio &&
-                        canAnalyzeAudio
+                      false
                     )
                   : creative.kind ===
                     'image_url'
@@ -2120,8 +2122,7 @@ for (
                         null,
                         fileName,
                         batchMeta,
-                        creative.analyzeAudio &&
-                          canAnalyzeAudio
+                        false
                       )
                     : creative.kind ===
                       'image_url'
@@ -3260,18 +3261,20 @@ const activeResultOption =
 
                     <label
                       className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm w-fit ${
-                        canAnalyzeAudio
-                          ? 'border-border cursor-pointer'
-                          : 'border-border opacity-60 cursor-not-allowed'
+                        canAnalyzeAudio && !selectedVideoIsUrl
+                           ? 'border-border cursor-pointer'
+                           : 'border-border opacity-60 cursor-not-allowed'
                       }`}
                     >
                       <input
                         type="checkbox"
                         disabled={
-                          !canAnalyzeAudio
+                          !canAnalyzeAudio ||
+                          selectedVideoIsUrl
                         }
                         checked={
                           canAnalyzeAudio &&
+                          !selectedVideoIsUrl &&
                           selectedVideoCreative.analyzeAudio
                         }
                         onChange={(
@@ -3293,6 +3296,11 @@ const activeResultOption =
                         {!canAnalyzeAudio && (
                           <span className="ml-1 text-[10px] font-semibold uppercase tracking-wide text-primary bg-primary/10 px-1.5 py-0.5 rounded">
                             Paid plan required
+                          </span>
+                        )}
+                        {selectedVideoIsUrl && (
+                          <span className="ml-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
+                            File upload only
                           </span>
                         )}
                       </span>
