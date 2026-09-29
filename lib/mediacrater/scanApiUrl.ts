@@ -1,3 +1,5 @@
+//scanApiUrl.ts
+
 import { supabase } from '@/lib/mediacrater/supabaseClient';
 
 const API_BASE_URL =
@@ -81,14 +83,14 @@ async function postJson<T>(
 
   const payload =
     await response.json().catch(
-      () => ({})
+      () => null
     );
 
   if (!response.ok) {
     throw new Error(
-      payload.message ||
-      payload.error ||
-      'Request failed'
+      payload?.message ||
+        payload?.error ||
+        'URL scan failed. Please try again.'
     );
   }
 
