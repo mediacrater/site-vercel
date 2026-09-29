@@ -47,6 +47,7 @@ interface UserProfile
     | null;
 }
 
+
 export default function DashboardPage() {
   return (
     <Suspense
@@ -70,6 +71,15 @@ function DashboardContent() {
   const searchParams =
     useSearchParams();
 
+  const getSigninRedirectUrl = () => {
+    const scanUrl =
+      searchParams.get('scan_url');
+
+    return scanUrl
+      ? '/signin?reason=scan_login_required'
+      : '/signin';
+  };
+  
   const [
     showCheckoutSuccess,
     setShowCheckoutSuccess,
@@ -133,10 +143,7 @@ function DashboardContent() {
           await supabase.auth.getSession();
 
         if (!session) {
-          router.push(
-            '/signin'
-          );
-
+          router.replace(getSigninRedirectUrl());
           return;
         }
 
@@ -170,8 +177,8 @@ function DashboardContent() {
           ) {
             setUser(null);
 
-            router.push(
-              '/signin'
+            router.replace(
+              getSigninRedirectUrl()
             );
           } else {
             setUser(
@@ -183,7 +190,7 @@ function DashboardContent() {
 
     return () =>
       subscription.unsubscribe();
-  }, [router]);
+  }, [router, searchParams]);
 
   const fetchUserData =
     async (
