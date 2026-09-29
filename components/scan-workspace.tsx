@@ -18,6 +18,11 @@ import {
   waitForQueueTurn,
 } from '@/lib/mediacrater/scanApi';
 import {
+  resolveCreativeUrl,
+  scanImageUrl,
+  scanVideoUrl,
+} from '@/lib/mediacrater/scanApiUrl';
+import {
   beginBackgroundScan,
   clearBackgroundScanState,
   completeBackgroundScan,
@@ -56,11 +61,13 @@ export interface WorkspaceProfile {
 
 type CreativeKind =
   | 'video'
-  | 'image';
+  | 'image'
+  | 'video_url'
+  | 'image_url';
 
 interface CreativeBase {
   id: string;
-  file: File;
+  displayName: string;
   previewUrl: string;
   platforms: string[];
 }
@@ -68,18 +75,36 @@ interface CreativeBase {
 interface ImageCreative
   extends CreativeBase {
   kind: 'image';
+  file: File;
 }
 
 interface VideoCreative
   extends CreativeBase {
   kind: 'video';
+  file: File;
+  scanType: ScanType;
+  analyzeAudio: boolean;
+}
+
+interface ImageUrlCreative
+  extends CreativeBase {
+  kind: 'image_url';
+  sourceUrl: string;
+}
+
+interface VideoUrlCreative
+  extends CreativeBase {
+  kind: 'video_url';
+  sourceUrl: string;
   scanType: ScanType;
   analyzeAudio: boolean;
 }
 
 type BatchCreative =
   | ImageCreative
-  | VideoCreative;
+  | VideoCreative
+  | ImageUrlCreative
+  | VideoUrlCreative;
 
 export interface CompletedScanFeedbackItem {
   creativeId: string;
@@ -113,17 +138,37 @@ interface Banner {
   onAction?: () => void;
 }
 
+function isVideoCreative(
+  creative: BatchCreative
+): creative is
+  | VideoCreative
+  | VideoUrlCreative {
+  return (
+    creative.kind === 'video' ||
+    creative.kind === 'video_url'
+  );
+}
+
+function isImageCreative(
+  creative: BatchCreative
+): creative is
+  | ImageCreative
+  | ImageUrlCreative {
+  return (
+    creative.kind === 'image' ||
+    creative.kind === 'image_url'
+  );
+}
+
 function orderCreativesForExecution(
   creatives: BatchCreative[]
 ) {
   return [
     ...creatives.filter(
-      (creative) =>
-        creative.kind === 'image'
+      isImageCreative
     ),
     ...creatives.filter(
-      (creative) =>
-        creative.kind === 'video'
+      isVideoCreative
     ),
   ];
 }
@@ -298,6 +343,18 @@ export function ScanWorkspace({
     useState<BatchCreative[]>([]);
 
   const [
+    urlInput,
+    setUrlInput,
+  ] =
+    useState('');
+
+  const [
+    resolvingUrl,
+    setResolvingUrl,
+  ] =
+    useState(false);
+
+  const [
     platformCreativeId,
     setPlatformCreativeId,
   ] =
@@ -367,8 +424,10 @@ export function ScanWorkspace({
     creatives.filter(
       (
         creative
-      ): creative is VideoCreative =>
-        creative.kind === 'video'
+      ): creative is
+        | VideoCreative
+        | VideoUrlCreative =>
+        isVideoCreative(creative)
     );
 
   const platformCreative =
@@ -412,7 +471,7 @@ export function ScanWorkspace({
         }
 
         const creativeCost =
-          creative.kind === 'video' &&
+          isVideoCreative(creative) &&
           creative.scanType === 'deep'
             ? 2
             : 1;
@@ -460,8 +519,7 @@ export function ScanWorkspace({
       (previous) =>
         previous.map(
           (creative) =>
-            creative.kind ===
-            'video'
+            isVideoCreative(creative)
               ? {
                   ...creative,
                   analyzeAudio:
@@ -597,6 +655,17 @@ export function ScanWorkspace({
   }, [
     backgroundScan.updatedAt,
   ]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const scanUrl = params.get('scan_url');
+    if (scanUrl) {
+      setUrlInput(scanUrl);
+      handleUrlSubmit(scanUrl);
+    // clean the URL so a refresh doesn't re-trigger it
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
   
   function startElapsedTimer(
     startTime = Date.now()
@@ -673,6 +742,162 @@ export function ScanWorkspace({
       reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsDataURL(file);
     });
+  }
+
+  async function createVideoUrlThumbnail(
+    videoUrl: string
+  ): Promise<string | null> {
+    return new Promise(
+      (resolve) => {
+        const video =
+          document.createElement(
+            'video'
+          );
+
+        const canvas =
+          document.createElement(
+            'canvas'
+          );
+
+        const timeout =
+          window.setTimeout(
+            () => {
+              cleanup();
+              resolve(null);
+            },
+            8000
+          );
+
+        const cleanup = () => {
+          window.clearTimeout(
+            timeout
+          );
+
+          video.removeAttribute(
+            'src'
+          );
+
+          video.load();
+        };
+
+        video.crossOrigin =
+          'anonymous';
+        video.muted = true;
+        video.playsInline = true;
+        video.preload =
+          'metadata';
+
+        video.addEventListener(
+          'loadedmetadata',
+          () => {
+            if (
+              Number.isFinite(
+                video.duration
+              ) &&
+              video.duration > 0
+            ) {
+              video.currentTime =
+                Math.min(
+                  0.1,
+                  video.duration / 2
+                );
+            }
+          },
+          {
+            once: true,
+          }
+        );
+
+        video.addEventListener(
+          'seeked',
+          () => {
+            try {
+              const ctx =
+                canvas.getContext(
+                  '2d'
+                );
+
+              if (
+                !ctx ||
+                !video.videoWidth ||
+                !video.videoHeight
+              ) {
+                cleanup();
+                resolve(null);
+                return;
+              }
+
+              const maxLongEdge =
+                180;
+
+              const scale =
+                Math.min(
+                  1,
+                  maxLongEdge /
+                    Math.max(
+                      video.videoWidth,
+                      video.videoHeight
+                    )
+                );
+
+              canvas.width =
+                Math.max(
+                  1,
+                  Math.round(
+                    video.videoWidth *
+                      scale
+                  )
+                );
+
+              canvas.height =
+                Math.max(
+                  1,
+                  Math.round(
+                    video.videoHeight *
+                      scale
+                  )
+                );
+
+              ctx.drawImage(
+                video,
+                0,
+                0,
+                canvas.width,
+                canvas.height
+              );
+
+              const dataUrl =
+                canvas.toDataURL(
+                  'image/jpeg',
+                  0.55
+                );
+
+              cleanup();
+              resolve(dataUrl);
+            } catch {
+              cleanup();
+              resolve(null);
+            }
+          },
+          {
+            once: true,
+          }
+        );
+
+        video.addEventListener(
+          'error',
+          () => {
+            cleanup();
+            resolve(null);
+          },
+          {
+            once: true,
+          }
+        );
+
+        video.src = videoUrl;
+      }
+    );
   }
 
   async function prepareCreative(
@@ -866,6 +1091,8 @@ export function ScanWorkspace({
       const base = {
         id:
           crypto.randomUUID(),
+        displayName:
+          file.name,
         file,
         previewUrl:
           objectUrl,
@@ -891,6 +1118,156 @@ export function ScanWorkspace({
       );
 
       throw error;
+    }
+  }
+
+  async function handleUrlSubmit(
+    providedUrl?: string
+  ) {
+    const sourceUrl =
+      (providedUrl ?? urlInput).trim();
+
+    if (!sourceUrl) {
+      return;
+    }
+
+    clearBackgroundScanState();
+    setBanner(null);
+    setResults(null);
+    setSelectedResultCreativeId(
+      null
+    );
+    onResultsChange?.(null);
+
+    if (
+      !canBatchScan &&
+      creatives.length > 0
+    ) {
+      setBanner({
+        tone: 'warning',
+        title:
+          'Paid plan required',
+        message:
+          'Batch scanning is available on paid plans. Free accounts can scan one creative at a time.',
+        actionLabel:
+          'Upgrade plan',
+        onAction: () =>
+          window.location.assign(
+            '/buy-tokens'
+          ),
+      });
+
+      return;
+    }
+
+    const maxFiles =
+      canBatchScan
+        ? MAX_BATCH_FILES
+        : 1;
+
+    if (
+      creatives.length + 1 >
+      maxFiles
+    ) {
+      setBanner({
+        tone: 'warning',
+        title:
+          'Batch limit reached',
+        message:
+          `You can add up to ${maxFiles} creative${maxFiles === 1 ? '' : 's'} at a time.`,
+      });
+
+      return;
+    }
+
+    setResolvingUrl(true);
+
+    try {
+      const resolved =
+        await resolveCreativeUrl(
+          sourceUrl
+        );
+
+      const displayName =
+        resolved.fileName ||
+        new URL(
+          resolved.url
+        ).hostname;
+
+      const previewUrl =
+        resolved.kind === 'video'
+          ? await createVideoUrlThumbnail(
+              resolved.url
+            )
+          : resolved.url;
+
+      const creative:
+        BatchCreative =
+        resolved.kind === 'video'
+          ? {
+              id:
+                crypto.randomUUID(),
+              kind: 'video_url',
+              sourceUrl:
+                resolved.url,
+              displayName,
+              previewUrl:
+                previewUrl || '',
+              platforms: [],
+              scanType:
+                'regular',
+              analyzeAudio:
+                false,
+            }
+          : {
+              id:
+                crypto.randomUUID(),
+              kind: 'image_url',
+              sourceUrl:
+                resolved.url,
+              displayName,
+              previewUrl:
+                resolved.url,
+              platforms: [],
+            };
+
+      setCreatives(
+        (previous) => [
+          ...previous,
+          creative,
+        ]
+      );
+
+      setPlatformCreativeId(
+        (previous) =>
+          previous ??
+          creative.id
+      );
+
+      if (
+        isVideoCreative(
+          creative
+        )
+      ) {
+        setVideoCreativeId(
+          (previous) =>
+            previous ??
+            creative.id
+        );
+      }
+
+      setUrlInput('');
+    } catch (error: any) {
+      setBanner({
+        tone: 'error',
+        title:
+          'URL not supported',
+        message:
+          error?.message ||
+          'This URL could not be resolved. Please use a direct image or video URL from a supported source.',
+      });
+    } finally {
+      setResolvingUrl(false);
     }
   }
 
@@ -1051,8 +1428,7 @@ export function ScanWorkspace({
         (
           creative
         ): creative is VideoCreative =>
-          creative.kind ===
-          'video'
+          isVideoCreative(creative)
       );
 
     if (firstNewVideo) {
@@ -1116,9 +1492,10 @@ export function ScanWorkspace({
       next.filter(
         (
           item
-        ): item is VideoCreative =>
-          item.kind ===
-          'video'
+        ): item is
+          | VideoCreative
+          | VideoUrlCreative =>
+          isVideoCreative(item)
       );
 
     setVideoCreativeId(
@@ -1206,8 +1583,7 @@ export function ScanWorkspace({
           (creative) =>
             creative.id ===
               selectedVideoCreative.id &&
-            creative.kind ===
-              'video'
+            isVideoCreative(creative)
               ? {
                   ...creative,
                   ...patch,
@@ -1228,8 +1604,7 @@ export function ScanWorkspace({
       (previous) =>
         previous.map(
           (creative) =>
-            creative.kind ===
-            'video'
+            isVideoCreative(creative)
               ? {
                   ...creative,
                   scanType:
@@ -1482,7 +1857,10 @@ export function ScanWorkspace({
                 signal
               );
           }
-        } else {
+        } else if (
+          creative.kind ===
+          'image'
+        ) {
           const imageData =
             await fileToBase64(
               creative.file
@@ -1497,6 +1875,9 @@ export function ScanWorkspace({
             data: imageData,
           }];
 
+          framesExtractedTime =
+            Date.now();
+        } else {
           framesExtractedTime =
             Date.now();
         }
@@ -1570,7 +1951,7 @@ for (
 
           const fileName =
             profile?.scan_history
-              ? creative.file.name
+              ? creative.displayName
               : null;
 
           try {
@@ -1602,6 +1983,33 @@ for (
                     fileName,
                     batchMeta
                   )
+                : creative.kind ===
+                  'video_url'
+                  ? await scanVideoUrl(
+                      creative.sourceUrl,
+                      platform,
+                      creative.scanType,
+                      null,
+                      signal,
+                      scanId,
+                      null,
+                      fileName,
+                      batchMeta,
+                      creative.analyzeAudio &&
+                        canAnalyzeAudio
+                    )
+                  : creative.kind ===
+                    'image_url'
+                    ? await scanImageUrl(
+                        creative.sourceUrl,
+                        platform,
+                        null,
+                        signal,
+                        scanId,
+                        null,
+                        fileName,
+                        batchMeta
+                      )
                 : await scanImage(
                     frames[0].data,
                     platform,
@@ -1687,7 +2095,7 @@ for (
 
               response =
                 creative.kind ===
-                  'video'
+                'video'
                   ? await scanVideo(
                       frames,
                       audio,
@@ -1700,6 +2108,33 @@ for (
                       fileName,
                       batchMeta
                     )
+                  : creative.kind ===
+                    'video_url'
+                    ? await scanVideoUrl(
+                        creative.sourceUrl,
+                        platform,
+                        creative.scanType,
+                        jobId,
+                        signal,
+                        scanId,
+                        null,
+                        fileName,
+                        batchMeta,
+                        creative.analyzeAudio &&
+                          canAnalyzeAudio
+                      )
+                    : creative.kind ===
+                      'image_url'
+                      ? await scanImageUrl(
+                          creative.sourceUrl,
+                          platform,
+                          jobId,
+                          signal,
+                          scanId,
+                          null,
+                          fileName,
+                          batchMeta
+                        )
                   : await scanImage(
                       frames[0].data,
                       platform,
@@ -1747,7 +2182,7 @@ for (
               creativeId:
                 creative.id,
               fileName:
-                creative.file.name,
+                creative.displayName,
               fileKind:
                 creative.kind,
               batchPosition,
@@ -2030,7 +2465,7 @@ for (
                 creativeId:
                   creative.id,
                 fileName:
-                  creative.file.name,
+                  creative.displayName,
                 fileKind:
                   creative.kind,
                 batchPosition:
@@ -2408,6 +2843,65 @@ const activeResultOption =
                     )
                   }
                 />
+                <div
+                  className="max-w-3xl mx-auto mb-5"
+                  onClick={(event) =>
+                    event.stopPropagation()
+                  }
+                  onPointerDown={(event) =>
+                    event.stopPropagation()
+                  }
+                >
+                  <label
+                    htmlFor="creative-url"
+                    className="block text-sm font-semibold text-foreground mb-2"
+                  >
+                    Paste a video or image URL
+                  </label>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      id="creative-url"
+                      type="url"
+                      placeholder="https://..."
+                      value={urlInput}
+                      onChange={(event) =>
+                        setUrlInput(
+                          event.target.value
+                        )
+                      }
+                      onKeyDown={(event) => {
+                        event.stopPropagation();
+
+                        if (
+                          event.key ===
+                          'Enter'
+                        ) {
+                          event.preventDefault();
+                          handleUrlSubmit();
+                        }
+                      }}
+                      className="min-w-0 flex-1 rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/60"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleUrlSubmit();
+                      }}
+                      disabled={
+                        !urlInput ||
+                        resolvingUrl
+                      }
+                      className="rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {resolvingUrl
+                        ? 'Checking...'
+                        : 'Add URL'}
+                    </button>
+                  </div>
+                </div>
 
                 <p className="font-medium text-foreground">
                   {canBatchScan
@@ -2463,7 +2957,7 @@ const activeResultOption =
                                 muted
                                 className="w-full h-full object-cover"
                               />
-                            ) : (
+                            ) : creative.previewUrl ? (
                               <img
                                 src={
                                   creative.previewUrl
@@ -2471,6 +2965,10 @@ const activeResultOption =
                                 alt=""
                                 className="w-full h-full object-cover"
                               />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground">
+                                URL
+                              </div>
                             )}
                           </div>
 
@@ -2478,14 +2976,12 @@ const activeResultOption =
                             <p className="text-sm font-medium truncate">
                               {
                                 creative
-                                  .file
-                                  .name
+                                  .displayName
                               }
                             </p>
 
                             <p className="text-xs text-muted-foreground">
-                              {creative.kind ===
-                              'video'
+                              {isVideoCreative(creative)
                                 ? 'Video'
                                 : 'Image'}
 
@@ -2503,7 +2999,7 @@ const activeResultOption =
                               )
                             }
                             className="text-muted-foreground hover:text-foreground text-lg leading-none px-2"
-                            aria-label={`Remove ${creative.file.name}`}
+                            aria-label={`Remove ${creative.displayName}`}
                           >
                             ×
                           </button>
@@ -2546,7 +3042,7 @@ const activeResultOption =
                 key={creative.id}
                 value={creative.id}
               >
-                {creative.file.name}
+                {creative.displayName}
               </option>
             )
           )}
@@ -2664,8 +3160,7 @@ const activeResultOption =
                               >
                                 {
                                   creative
-                                    .file
-                                    .name
+                                    .displayName
                                 }
                               </option>
                             )
