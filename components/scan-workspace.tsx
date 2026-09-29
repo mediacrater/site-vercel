@@ -2685,10 +2685,15 @@ for (
             'The batch could not be validated. Please start a new batch and try again.',
         });
       } else {
+        const message =
+          error instanceof Error && error.message
+            ? error.message
+            : 'Something went wrong. Please try again or contact support.';
+
         recordFailure({
           tone: 'error',
           title: 'Analysis failed',
-          message: 'Something went wrong. Please try again or contact support.',
+          message,
         });
       }
     } finally {
