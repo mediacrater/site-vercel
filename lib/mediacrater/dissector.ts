@@ -122,7 +122,7 @@ function extractFramesCanvas(
           try {
             await seekToTime(video, time);
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.15);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.30);
 
             frames.push({
               frameNumber,
