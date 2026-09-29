@@ -151,6 +151,18 @@ export default function PrivacyPolicy() {
               </a>
         </p>
       <section className="mb-10">
+        <h2 className="text-xl font-semibold mb-3">AI model providers</h2>
+        <ul className="list-disc list-inside space-y-2">
+          <p>
+            To analyze your ad content, we send your uploaded video or image, along with related 
+            text instructions, to third-party AI model providers. We delete the original file from 
+            our systems once your results are returned. Our providers do not use your content to train 
+            their models without separate consent, but they may retain and store it, may process it in 
+            countries other than your own, and may disclose it where required by law.
+         </p>       
+        </ul>
+      </section>
+      <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">How We Use Your Data</h2>
         <ul className="list-disc list-inside space-y-2">
           <li>To authenticate you and maintain your account session</li>
