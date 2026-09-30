@@ -87,6 +87,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/chrome-extension-privacy" className="text-background/70 hover:text-background transition-colors">
+                  Extension Privacy Policy
+                </Link>
+              </li>
+              <li>
                 <Link href="/terms" className="text-background/70 hover:text-background transition-colors">
                   Terms of Service
                 </Link>
