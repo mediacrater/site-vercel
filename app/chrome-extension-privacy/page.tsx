@@ -5,7 +5,7 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Chrome Extension Privacy Policy | Mediacrater',
   description:
-    'How the Mediacrater Chrome extension handles account data, Facebook Ads Library videos, local storage, downloads, and optional policy scans.',
+    'How the Mediacrater Chrome extension handles account data, Facebook Ads Library images and videos, local storage, downloads, and optional policy scans.',
   robots: { index: true, follow: true },
 }
 
@@ -14,14 +14,14 @@ export default function ExtensionPrivacyPolicy() {
     <main className="max-w-3xl mx-auto px-6 py-16 text-base leading-relaxed">
       <h1 className="text-3xl font-bold mb-2">Chrome Extension Privacy Policy</h1>
       <p className="text-sm text-muted-foreground mb-10">
-        Effective date: 1st of October, 2026
+        Effective date: September 30, 2026
       </p>
 
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">Who We Are</h2>
         <p className="mb-4">
           Mediacrater provides a Chrome extension that lets users select, preview, download,
-          organize, and optionally scan video advertisements found in the Facebook Ads Library.
+          organize, and optionally scan image and video advertisements found in the Facebook Ads Library.
           We are operated as Mediacrater and can be reached at{' '}
           <a href="mailto:hello.mediacrater@gmail.com" className="underline">
             hello.mediacrater@gmail.com
@@ -79,15 +79,18 @@ export default function ExtensionPrivacyPolicy() {
         <h3 className="text-lg font-semibold mb-2">Facebook Ads Library content</h3>
         <ul className="list-disc list-inside space-y-2 mb-6">
           <li>
-            <strong>Visible video information</strong> — when you activate selection mode on a
-            Facebook Ads Library page, the extension examines visible video elements so you can
-            select a specific advertisement. It may access the video source URL and poster image
-            URL made available to your browser by Facebook.
+            <strong>Visible creative information</strong> — when you activate selection mode on a
+            Facebook Ads Library page, the extension examines visible image and video elements so
+            you can select a specific advertisement. It may access an image source URL, video
+            source URL, video poster URL, the visible numeric Facebook Library ID, and the
+            corresponding public Ads Library details URL made available to your browser by Facebook.
           </li>
           <li>
-            <strong>Selected-video records</strong> — the source URL, poster URL, selection time,
-            and a randomly generated local record ID are stored in Chrome extension local storage
-            so your selections remain available in the side panel until you remove or clear them.
+            <strong>Selected-creative records</strong> — the creative type, source URL, optional
+            poster URL, Facebook Library ID and details URL when available, creative position,
+            selection time, URL refresh time, and a randomly generated local record ID are stored in Chrome extension
+            local storage so your selections remain available in the side panel until you remove
+            or clear them.
           </li>
           <li>
             <strong>Page access limitations</strong> — the selector operates only on Facebook Ads
@@ -99,14 +102,24 @@ export default function ExtensionPrivacyPolicy() {
         <h3 className="text-lg font-semibold mb-2">Downloads and previews</h3>
         <ul className="list-disc list-inside space-y-2 mb-6">
           <li>
-            <strong>Video downloads</strong> — when you click Download, the selected video URL is
-            passed to Chrome's download manager and the file is saved to your device. Mediacrater
-            does not receive or retain an ordinary download merely because you downloaded it.
+            <strong>Image and video downloads</strong> — when you click Download, the selected
+            source URL is passed to Chrome's download manager and the file is saved to your device.
+            For a paid batch download, the extension fetches the selected files in your browser and
+            creates a local ZIP containing separate Images and Videos folders. Mediacrater does not
+            receive or retain an ordinary download merely because you downloaded it.
           </li>
           <li>
-            <strong>Video previews</strong> — previews load the selected video from its source URL
-            directly into the extension interface. Previewing does not upload the video to
-            Mediacrater.
+            <strong>Creative previews</strong> — previews load the selected image or video from its
+            source URL directly into the extension interface. Previewing does not upload the file
+            to Mediacrater.
+          </li>
+          <li>
+            <strong>Ad details and URL refresh</strong> — when you choose Ad details or Refresh URL,
+            the extension opens the public Facebook Ads Library page identified by the saved
+            Facebook Library ID. A refresh examines the matching ad card after it loads and updates
+            the locally stored temporary image or video source URL and poster URL. This operation
+            communicates directly with Facebook in your browser and does not upload the creative
+            to Mediacrater.
           </li>
         </ul>
 
@@ -116,22 +129,23 @@ export default function ExtensionPrivacyPolicy() {
           on your device using the browser's IndexedDB storage:
         </p>
         <ul className="list-disc list-inside space-y-2 mb-6">
-          <li>The saved video file and its locally generated low-resolution thumbnail</li>
-          <li>The source URL, source host, poster URL, file type, file size, and saved date</li>
+          <li>The saved image or video file and its locally generated low-resolution thumbnail</li>
+          <li>The source URL, source host, poster URL, Facebook Library ID and details URL when available, URL refresh time, file type, file size, and saved date</li>
           <li>The title, folder assignment, folder colour, tags, notes, and favourite status</li>
           <li>Your Mediacrater user ID, used locally to separate libraries between signed-in users</li>
         </ul>
         <p className="mb-6">
-          Local-library videos and organizational information are not uploaded to Mediacrater
+          Local-library files and organizational information are not uploaded to Mediacrater
           merely because you save or organize them. They remain on the device where they were
-          saved unless you explicitly choose to scan a video.
+          saved unless you explicitly choose to scan a creative. Folder ZIP exports and bulk
+          folder assignments are also performed locally in your browser.
         </p>
 
         <h3 className="text-lg font-semibold mb-2">Extension settings and technical data</h3>
         <ul className="list-disc list-inside space-y-2 mb-6">
           <li>
             <strong>Extension settings</strong> — your selector shortcut, theme preference,
-            selector state, and selected-video list are stored locally so the extension functions
+            selector state, and selected-creative list are stored locally so the extension functions
             as configured.
           </li>
           <li>
@@ -149,12 +163,13 @@ export default function ExtensionPrivacyPolicy() {
         <h3 className="text-lg font-semibold mb-2">Optional policy scans</h3>
         <ul className="list-disc list-inside space-y-2">
           <li>
-            <strong>Scan content</strong> — a video is submitted for analysis only when you click
-            Scan. The extension loads the selected video in your browser, extracts representative
-            video frames, and may extract its audio track if audio analysis is enabled for your
-            account. The extracted frames and optional audio are transmitted securely to
-            Mediacrater for analysis. The extension does not transmit the complete original video
-            file to Mediacrater as part of this extension scan workflow.
+            <strong>Scan content</strong> — an image or video is submitted for analysis only when
+            you click Scan. For an image scan, the selected image data is transmitted securely to
+            Mediacrater for analysis. For a video scan, the extension loads the selected video in
+            your browser, extracts representative video frames, and may extract its audio track if
+            audio analysis is enabled for your account. The extracted frames and optional audio are
+            transmitted securely to Mediacrater. The extension does not transmit the complete
+            original video file as part of this video scan workflow.
           </li>
           <li>
             <strong>Scan metadata</strong> — we may process and store your user ID, plan, selected
@@ -165,12 +180,13 @@ export default function ExtensionPrivacyPolicy() {
             refund requests.
           </li>
           <li>
-            <strong>AI processing</strong> — the extracted frames, optional audio, and related text
-            instructions are sent to third-party AI model providers solely to perform the scan.
+            <strong>AI processing</strong> — selected image data or extracted video frames,
+            optional audio, and related text instructions are sent to third-party AI model
+            providers solely to perform the scan.
             These providers may process data in countries other than your own and may retain it
             according to their own terms and legal obligations. They do not receive ordinary
-            downloaded or locally organized videos unless you explicitly submit the video for a
-            scan.
+            downloaded or locally organized creatives unless you explicitly submit the creative
+            for a scan.
           </li>
         </ul>
       </section>
@@ -203,7 +219,8 @@ export default function ExtensionPrivacyPolicy() {
         <ul className="list-disc list-inside space-y-2">
           <li>To authenticate you and maintain your extension session</li>
           <li>To display your plan, scan balance, and available extension features</li>
-          <li>To let you select, preview, copy, and download Ads Library video URLs</li>
+          <li>To let you select, preview, copy, refresh, and download Ads Library image and video URLs</li>
+          <li>To let you reopen the public Ads Library entry associated with a saved creative</li>
           <li>To provide the on-device creative library and organization tools</li>
           <li>To process policy scans that you explicitly request</li>
           <li>To manage scan queues, token usage, subscriptions, and billing</li>
@@ -216,7 +233,7 @@ export default function ExtensionPrivacyPolicy() {
         <h2 className="text-xl font-semibold mb-3">Data We Do Not Sell or Use for Advertising</h2>
         <p>
           We do not sell or rent extension user data. We do not use Facebook Ads Library content,
-          downloaded videos, locally saved library content, authentication information, or scan
+          downloaded images or videos, locally saved library content, authentication information, or scan
           content for targeted advertising, credit decisions, or purposes unrelated to the
           extension's disclosed features.
         </p>
@@ -247,8 +264,8 @@ export default function ExtensionPrivacyPolicy() {
             address, User-Agent, and TLS or network information.
           </li>
           <li>
-            <strong>AI model providers</strong> — processing extracted video frames, optional
-            audio, and scan instructions when you explicitly request a policy scan.
+            <strong>AI model providers</strong> — processing selected image data, extracted video
+            frames, optional audio, and scan instructions when you explicitly request a policy scan.
           </li>
           <li>
             <strong>Google Chrome</strong> — browser APIs used for local storage, IndexedDB,
@@ -256,8 +273,9 @@ export default function ExtensionPrivacyPolicy() {
           </li>
           <li>
             <strong>Meta and its content-delivery services</strong> — your browser communicates
-            directly with Facebook and fbcdn.net to display, preview, and download Ads Library
-            videos that are already available in your browser session.
+            directly with Facebook and fbcdn.net to display, preview, refresh source links for,
+            download, and reopen Ads Library images, videos, and ad details that are already
+            available in your browser session.
           </li>
         </ul>
         <p className="mt-4">
@@ -275,8 +293,8 @@ export default function ExtensionPrivacyPolicy() {
             and communicates with that page when you activate the selector.
           </li>
           <li>
-            <strong>downloads</strong> — saves videos selected by you through Chrome's download
-            manager.
+            <strong>downloads</strong> — saves images, videos, and locally generated ZIP archives
+            selected by you through Chrome's download manager.
           </li>
           <li>
             <strong>scripting</strong> — loads the selector script and styles into the active Ads
@@ -284,16 +302,16 @@ export default function ExtensionPrivacyPolicy() {
           </li>
           <li>
             <strong>storage and unlimitedStorage</strong> — stores authentication sessions,
-            settings, selected-video information, and paid local-library videos and metadata on
-            your device.
+            settings, selected-creative information, and paid local-library images, videos, and
+            metadata on your device.
           </li>
           <li>
             <strong>sidePanel</strong> — displays the Mediacrater interface in Chrome's side panel.
           </li>
           <li>
             <strong>Host access</strong> — limited to Mediacrater services, Facebook Ads Library
-            pages, and Facebook content-delivery domains needed to identify, preview, download,
-            and scan user-selected videos.
+            pages, and Facebook content-delivery domains needed to identify, reopen, preview,
+            refresh source links for, download, and scan user-selected images and videos.
           </li>
         </ul>
       </section>
@@ -302,11 +320,11 @@ export default function ExtensionPrivacyPolicy() {
         <h2 className="text-xl font-semibold mb-3">Data Retention and Deletion</h2>
         <ul className="list-disc list-inside space-y-2">
           <li>
-            <strong>Selected-video records</strong> — remain in extension local storage until you
+            <strong>Selected-creative records</strong> — remain in extension local storage until you
             remove them, clear the selection, clear extension data, or uninstall the extension.
           </li>
           <li>
-            <strong>Local creative library</strong> — videos, thumbnails, folders, tags, notes, and
+            <strong>Local creative library</strong> — images, videos, thumbnails, folders, tags, notes, and
             related metadata remain in IndexedDB until you delete them, clear extension storage,
             or uninstall the extension. Signing out does not automatically erase the local
             library.
@@ -357,9 +375,9 @@ export default function ExtensionPrivacyPolicy() {
         <h2 className="text-xl font-semibold mb-3">Your Choices and Rights</h2>
         <p className="mb-4">You may:</p>
         <ul className="list-disc list-inside space-y-2">
-          <li>Remove individual selected videos or clear the current selection</li>
-          <li>Delete locally saved videos, folders, tags, notes, and favourites</li>
-          <li>Choose whether to submit any selected video for a policy scan</li>
+          <li>Remove individual selected images or videos or clear the current selection</li>
+          <li>Delete locally saved images, videos, folders, tags, notes, and favourites</li>
+          <li>Choose whether to submit any selected creative for a policy scan</li>
           <li>Sign out to remove locally stored authentication tokens</li>
           <li>Clear extension storage or uninstall the extension to remove local extension data</li>
           <li>Request access to, correction of, or deletion of eligible server-side personal data</li>
