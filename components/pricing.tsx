@@ -59,7 +59,7 @@ const plans = [
 
 type CellValue = boolean | string
 
-const featureRows: { label: string; sub?: string; values: CellValue[] }[] = [
+const scanFeatureRows: { label: string; sub?: string; values: CellValue[] }[] = [
   {
     label: 'Video & image scanning',
     values: [true, true, true, true, true],
@@ -98,6 +98,21 @@ const featureRows: { label: string; sub?: string; values: CellValue[] }[] = [
   },
 ]
 
+const extensionFeatureRows: { label: string; sub?: string; values: CellValue[] }[] = [
+  {
+    label: 'Unlimited individual downloads',
+    values: [true, true, true, true, true],
+  },
+  {
+    label: 'Batch ZIP downloads',
+    values: [false, true, true, true, true],
+  },
+  {
+    label: 'Local creative library storage',
+    values: [false, true, true, true, true],
+  },
+]
+
 function Cell({ value }: { value: CellValue }) {
   if (typeof value === 'boolean') {
     return value ? (
@@ -110,6 +125,31 @@ function Cell({ value }: { value: CellValue }) {
     <span className="text-sm font-medium text-foreground">
       {value}
     </span>
+  )
+}
+
+function FeatureSectionRow({
+  title,
+  description,
+  colSpan,
+}: {
+  title: string
+  description: string
+  colSpan: number
+}) {
+  return (
+    <tr className="border-y border-primary/20 bg-primary/[0.04]">
+      <th colSpan={colSpan} scope="colgroup" className="px-6 py-4 text-left">
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-bold uppercase tracking-widest text-primary">
+            {title}
+          </span>
+          <span className="text-xs font-normal normal-case tracking-normal text-muted-foreground">
+            {description}
+          </span>
+        </div>
+      </th>
+    </tr>
   )
 }
 
@@ -227,12 +267,43 @@ export function Pricing() {
 
                 {/* Feature rows */}
                 <tbody>
-                  {featureRows.map((row, rowIdx) => (
+                  {scanFeatureRows.map((row, rowIdx) => (
                     <tr
                       key={row.label}
                       className={rowIdx % 2 === 0 ? 'bg-card' : 'bg-secondary/40'}
                     >
                       {/* Feature label */}
+                      <td className="px-6 py-4 border-r border-border">
+                        <span className="text-sm text-foreground/80 font-medium">{row.label}</span>
+                        {row.sub && (
+                          <p className="text-xs text-muted-foreground mt-0.5">{row.sub}</p>
+                        )}
+                      </td>
+
+                      {plans.map((plan, planIdx) => (
+                        <td
+                          key={plan.name}
+                          className={`px-4 py-4 text-center border-r last:border-r-0 border-border ${
+                            plan.popular ? 'bg-primary/5' : ''
+                          }`}
+                        >
+                          <Cell value={row.values[planIdx]} />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+
+                  <FeatureSectionRow
+                    title="Extension Features"
+                    description="Unlimited individual downloads on every plan; batch tools and local storage on paid plans"
+                    colSpan={plans.length + 1}
+                  />
+
+                  {extensionFeatureRows.map((row, rowIdx) => (
+                    <tr
+                      key={row.label}
+                      className={rowIdx % 2 === 0 ? 'bg-card' : 'bg-secondary/40'}
+                    >
                       <td className="px-6 py-4 border-r border-border">
                         <span className="text-sm text-foreground/80 font-medium">{row.label}</span>
                         {row.sub && (
