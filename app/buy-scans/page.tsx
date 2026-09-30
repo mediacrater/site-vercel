@@ -56,7 +56,7 @@ const PLANS = [
 
 type CellValue = boolean | string;
 
-const featureRows: { label: string; values: CellValue[] }[] = [
+const scanFeatureRows: { label: string; values: CellValue[] }[] = [
   { label: 'Video & image scanning', values: [true, true, true, true] },
   { label: 'All platforms supported', values: [true, true, true, true] },
   { label: 'Violation timestamps & fixes', values: [true, true, true, true] },
@@ -64,6 +64,12 @@ const featureRows: { label: string; values: CellValue[] }[] = [
   { label: 'Monthly scans', values: ['20', '100', '250', '1000'] },
   { label: 'Priority support', values: [true, true, true, true] },
   { label: 'Audio analysis', values: [true, true, true, true] },
+];
+
+const extensionFeatureRows: { label: string; values: CellValue[] }[] = [
+  { label: 'Unlimited individual downloads', values: [true, true, true, true] },
+  { label: 'Batch ZIP downloads', values: [true, true, true, true] },
+  { label: 'Local creative library storage', values: [true, true, true, true] },
 ];
 
 const FAQ_ITEMS = [
@@ -97,6 +103,31 @@ function Cell({ value }: { value: CellValue }) {
     );
   }
   return <span className="text-sm font-medium text-foreground">{value}</span>;
+}
+
+function FeatureSectionRow({
+  title,
+  description,
+  colSpan,
+}: {
+  title: string;
+  description: string;
+  colSpan: number;
+}) {
+  return (
+    <tr className="border-y border-primary/20 bg-primary/[0.04]">
+      <th colSpan={colSpan} scope="colgroup" className="px-6 py-4 text-left">
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-bold uppercase tracking-widest text-primary">
+            {title}
+          </span>
+          <span className="text-xs font-normal normal-case tracking-normal text-muted-foreground">
+            {description}
+          </span>
+        </div>
+      </th>
+    </tr>
+  );
 }
 
 function FAQItem({ question, answer }: { question: string; answer: string }) {
@@ -246,7 +277,26 @@ export default function BuyScansPage() {
                 </tr>
               </thead>
               <tbody>
-                {featureRows.map((row, rowIdx) => (
+                {scanFeatureRows.map((row, rowIdx) => (
+                  <tr key={row.label} className={rowIdx % 2 === 0 ? 'bg-card' : 'bg-secondary/40'}>
+                    <td className="px-6 py-3 border-r border-border">
+                      <span className="text-foreground/80 font-medium">{row.label}</span>
+                    </td>
+                    {PLANS.map((plan, planIdx) => (
+                      <td key={plan.id} className="px-4 py-3 text-center border-r last:border-r-0 border-border">
+                        <Cell value={row.values[planIdx]} />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+
+                <FeatureSectionRow
+                  title="Extension Features"
+                  description="Included with every paid Mediacrater plan"
+                  colSpan={PLANS.length + 1}
+                />
+
+                {extensionFeatureRows.map((row, rowIdx) => (
                   <tr key={row.label} className={rowIdx % 2 === 0 ? 'bg-card' : 'bg-secondary/40'}>
                     <td className="px-6 py-3 border-r border-border">
                       <span className="text-foreground/80 font-medium">{row.label}</span>
