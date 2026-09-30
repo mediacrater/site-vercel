@@ -14,43 +14,122 @@ function PurchaseSuccessContent() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const verifyPurchase = async () => {
-      const sessionId = searchParams.get('session_id');
+  let cancelled = false;
 
-      if (!sessionId) {
-        setErrorMessage('No session ID found in the URL. If you completed a purchase, please contact support.');
+  const wait = (milliseconds: number) =>
+    new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+
+  const verifyPurchase = async () => {
+    const sessionId = searchParams.get('session_id');
+
+    if (!sessionId) {
+      if (!cancelled) {
+        setErrorMessage(
+          'No session ID was found. If you completed a purchase, please contact support.'
+        );
         setStatus('error');
-        return;
       }
+      return;
+    }
+
+    const maximumAttempts = 12;
+    const retryDelayMs = 1500;
+    let lastError = '';
+
+    for (let attempt = 1; attempt <= maximumAttempts; attempt++) {
+      if (cancelled) return;
 
       try {
         const response = await fetch(
-          `${SUPABASE_URL}/functions/v1/verify-session?session_id=${sessionId}`,
+          `${SUPABASE_URL}/functions/v1/verify-session`,
           {
+            method: 'POST',
             headers: {
-              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            }
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+              apikey: SUPABASE_ANON_KEY,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ sessionId }),
           }
         );
 
-        const data = await response.json();
+        const responseText = await response.text();
+        let data: {
+          success?: boolean;
+          status?: string;
+          tokens?: number;
+          scans?: number;
+          error?: string;
+        } = {};
+
+        if (responseText) {
+          try {
+            data = JSON.parse(responseText);
+          } catch {
+            throw new Error(
+              `Verification returned an invalid response (${response.status})`
+            );
+          }
+        }
 
         if (response.ok && data.success) {
-          setScanAmount(data.tokens);
-          setStatus('success');
-        } else {
-          setErrorMessage(data.error || `Verification failed (${response.status}). If you were charged, please contact support.`);
-          setStatus('error');
+          if (!cancelled) {
+            setScanAmount(data.scans ?? data.tokens ?? 0);
+            setStatus('success');
+          }
+          return;
         }
-      } catch (error: any) {
-        console.error('Verification error:', error);
-        setErrorMessage('A network error occurred while verifying your purchase. Please check your connection and try again, or contact support if you were charged.');
-        setStatus('error');
-      }
-    };
 
-    verifyPurchase();
-  }, [searchParams]);
+        if (response.status === 202 || data.status === 'pending') {
+          if (attempt < maximumAttempts) {
+            await wait(retryDelayMs);
+            continue;
+          }
+
+          lastError =
+            'Your payment was completed, but your plan is still being activated.';
+          break;
+        }
+
+        lastError =
+          data.error || `Verification failed (${response.status}).`;
+
+        if (
+          response.status >= 400 &&
+          response.status < 500 &&
+          response.status !== 429
+        ) {
+          break;
+        }
+      } catch (error) {
+        console.error('Purchase verification attempt failed:', error);
+
+        lastError =
+          error instanceof Error
+            ? error.message
+            : 'Purchase verification request failed.';
+      }
+
+      if (attempt < maximumAttempts) {
+        await wait(retryDelayMs);
+      }
+    }
+
+    if (!cancelled) {
+      setErrorMessage(
+        lastError ||
+          'Your payment was completed, but your updated plan could not be confirmed. Reopen the Mediacrater extension in a moment.'
+      );
+      setStatus('error');
+    }
+  };
+
+  verifyPurchase();
+
+  return () => {
+    cancelled = true;
+  };
+}, [searchParams]);
 
   return (
     <div className="min-h-screen bg-background">
