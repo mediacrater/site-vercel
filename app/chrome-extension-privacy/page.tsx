@@ -5,7 +5,7 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Chrome Extension Privacy Policy | Mediacrater',
   description:
-    'How the Mediacrater Chrome extension handles account data, Facebook Ads Library images and videos, local storage, downloads, and optional policy scans.',
+    'How the Mediacrater Chrome extension handles local data, Facebook Ads Library images and videos, local IndexedDB storage, downloads, and optional policy scans.',
   robots: { index: true, follow: true },
 }
 
@@ -20,16 +20,16 @@ export default function ExtensionPrivacyPolicy() {
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">Who We Are</h2>
         <p className="mb-4">
-          Mediacrater provides a Chrome extension that lets users select, preview, download,
+          Mediacrater provides a Chrome extension that lets users select, preview, download, and
           organize ad media content found in the Facebook Ads Library.
-          We are operated as Mediacrater and can be reached at{' '}
+          We can be reached at{' '}
           <a href="mailto:hello.mediacrater@gmail.com" className="underline">
             hello.mediacrater@gmail.com
           </a>.
         </p>
         <p>
           This policy applies specifically to the Mediacrater Chrome extension. Our web app is
-          also governed by the main Mediacrater{' '}
+          governed by the main Mediacrater{' '}
           <a href="/privacy" className="underline">
             Privacy Policy
           </a>.
@@ -39,97 +39,51 @@ export default function ExtensionPrivacyPolicy() {
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">What Data the Extension Handles</h2>
         <p className="mb-4">
-          The Mediacrater extension does not send data and works independently from our servers. All features and usage remains local on the client's machine and we never see it.
+          By default, the Mediacrater extension operates locally on your machine. We do not require account creation or user sign-in to use the extension.
         </p>
-
-        <h3 className="text-lg font-semibold mb-2">Account and authentication data</h3>
-        <ul className="list-disc list-inside space-y-2 mb-6">
-          <li>
-            N/A
-          </li>
-        </ul>
 
         <h3 className="text-lg font-semibold mb-2">Facebook Ads Library content</h3>
         <ul className="list-disc list-inside space-y-2 mb-6">
           <li>
             <strong>Visible creative information</strong> — when you activate selection mode on a
             Facebook Ads Library page, the extension examines visible image and video elements so
-            you can select a specific advertisement. It may access an image source URL, video
-            source URL, video poster URL, the visible numeric Facebook Library ID, and the
-            corresponding public Ads Library details URL made available to your browser by Facebook.
+            you can select a specific advertisement. It accesses image source URLs, video source URLs, poster URLs, visible numeric Facebook Library IDs, and public Ads Library detail URLs.
           </li>
           <li>
-            <strong>Selected-creative records</strong> — the creative type, source URL, optional
-            poster URL, Facebook Library ID and details URL when available, creative position,
-            selection time, URL refresh time, and a randomly generated local record ID are stored in Chrome extension
-            local storage so your selections remain available in the side panel until you remove
-            or clear them.
+            <strong>Selected-creative records</strong> — creative type, source URL, poster URL, Facebook Library ID, selection time, and a local record ID are stored in Chrome extension local storage so your selections remain available in your side panel.
           </li>
           <li>
-            <strong>Page access limitations</strong> — the selector operates only on Facebook Ads
-            Library pages. The extension does not read Facebook messages, account credentials,
-            private posts, or general browsing history.
+            <strong>Page access limitations</strong> — the selector operates strictly on Facebook Ads Library pages. The extension does not read messages, private posts, account credentials, or general browsing history.
           </li>
         </ul>
 
         <h3 className="text-lg font-semibold mb-2">Downloads and previews</h3>
         <ul className="list-disc list-inside space-y-2 mb-6">
           <li>
-            <strong>Image and video downloads</strong> — when you click Download, the selected
-            source URL is passed to Chrome's download manager and the file is saved to your device.
-            For a paid batch download, the extension fetches the selected files in your browser and
-            creates a local ZIP containing separate Images and Videos folders. Mediacrater does not
-            receive or retain an ordinary download merely because you downloaded it.
+            <strong>Image and video downloads</strong> — when downloading single files or batch ZIP archives, media files are fetched directly within your browser context and saved to your device via Chrome’s download manager.
           </li>
           <li>
-            <strong>Creative previews</strong> — previews load the selected image or video from its
-            source URL directly into the extension interface. Previewing does not upload the file
-            to Mediacrater.
-          </li>
-          <li>
-            <strong>Ad details and URL refresh</strong> — when you choose Ad details or Refresh URL,
-            the extension opens the public Facebook Ads Library page identified by the saved
-            Facebook Library ID. A refresh examines the matching ad card after it loads and updates
-            the locally stored temporary image or video source URL and poster URL. This operation
-            communicates directly with Facebook in your browser and does not upload the creative
-            to Mediacrater.
+            <strong>Creative previews and link refreshing</strong> — previewing media and refreshing expired Facebook CDN URLs operates directly between your browser and Facebook’s public servers.
           </li>
         </ul>
 
         <h3 className="text-lg font-semibold mb-2">Local creative library</h3>
         <p className="mb-4">
-          If your plan includes the local creative library, the following information is stored
-          on your device using the browser's IndexedDB storage:
+          Saved images, videos, low-resolution thumbnails, folder structures, hex colors, tags, notes, and favorites are stored entirely on your device using browser IndexedDB storage.
         </p>
-        <ul className="list-disc list-inside space-y-2 mb-6">
-          <li>The saved image or video file and its locally generated low-resolution thumbnail</li>
-          <li>The source URL, source host, poster URL, Facebook Library ID and details URL when available, URL refresh time, file type, file size, and saved date</li>
-          <li>The title, folder assignment, folder colour, tags, notes, and favourite status</li>
-          <li>Your Mediacrater user ID, used locally to separate libraries between signed-in users</li>
-        </ul>
+
+        <h3 className="text-lg font-semibold mb-2">Optional Policy Scanning</h3>
         <p className="mb-6">
-          Local-library files and organizational information are not uploaded to Mediacrater
-          merely because you save or organize them. They remain on the device where they were
-          saved unless you explicitly choose to scan a creative. Folder ZIP exports and bulk
-          folder assignments are also performed locally in your browser.
+          If you explicitly choose to run an advertising policy risk scan on a selected creative, the creative URL and associated text data are transmitted to Mediacrater’s scanning API strictly to analyze policy risks and return scan results.
         </p>
 
         <h3 className="text-lg font-semibold mb-2">Extension settings and technical data</h3>
         <ul className="list-disc list-inside space-y-2 mb-6">
           <li>
-            <strong>Extension settings</strong> — your selector shortcut, theme preference,
-            selector state, and selected-creative list are stored locally so the extension functions
-            as configured.
+            <strong>Extension settings</strong> — your preferred activation key shortcut (A–Z), theme preferences, and current UI state are saved locally.
           </li>
           <li>
-            <strong>Browser identifier</strong> — the extension generates a random identifier and
-            stores it locally. It is not used to monitor your activity on other websites.
-          </li>
-          <li>
-            <strong>Security and request information</strong> — our infrastructure providers may
-            process standard technical information such as IP address, User-Agent, timestamps,
-            request headers, and security signals when you authenticate, manage billing, or run a
-            scan. This information is used to deliver and protect the service.
+            <strong>Security and request information</strong> — standard technical metadata (IP address, User-Agent, request headers) may be processed by our infrastructure providers only when you interact with server-side endpoints like policy scans.
           </li>
         </ul>
       </section>
@@ -137,17 +91,16 @@ export default function ExtensionPrivacyPolicy() {
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">How We Use Extension Data</h2>
         <ul className="list-disc list-inside space-y-2">
-          <li>N/A</li>
+          <li>To display selected ad creatives in your browser side panel.</li>
+          <li>To package batch downloads and manage your local offline swipe file.</li>
+          <li>To process ad policy compliance checks when explicitly requested by you.</li>
         </ul>
       </section>
 
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">Data We Do Not Sell or Use for Advertising</h2>
         <p>
-          We do not sell or rent extension user data as we do not collect any. We do not collect, use or 
-          store Facebook Ads Library content,downloaded images or videos or locally saved library content
-          for targeted advertising, credit decisions, or purposes unrelated to the
-          extension's disclosed features.
+          We do not sell, rent, or trade user data. Locally saved library content and downloaded media are never used for targeted advertising, tracking, or profiling.
         </p>
       </section>
 
@@ -155,95 +108,58 @@ export default function ExtensionPrivacyPolicy() {
         <h2 className="text-xl font-semibold mb-3">Chrome Extension Permissions</h2>
         <ul className="list-disc list-inside space-y-2">
           <li>
-            <strong>activeTab</strong> — verifies that the active page is the Facebook Ads Library
-            and communicates with that page when you activate the selector.
+            <strong>activeTab</strong> — detects when you are viewing the Facebook Ads Library and communicates with the page when activating selection mode.
           </li>
           <li>
-            <strong>downloads</strong> — saves images, videos, and locally generated ZIP archives
-            selected by you through Chrome's download manager.
+            <strong>downloads</strong> — saves images, videos, and locally constructed ZIP archives to your computer.
           </li>
           <li>
-            <strong>scripting</strong> — loads the selector script and styles into the active Ads
-            Library page when required.
+            <strong>scripting</strong> — injects the element selector interface into the active Ads Library page.
           </li>
           <li>
-            <strong>storage and unlimitedStorage</strong> — stores authentication sessions,
-            settings, selected-creative information, and paid local-library images, videos, and
-            metadata on your device.
+            <strong>storage and unlimitedStorage</strong> — stores your extension preferences, selected ads, and local IndexedDB creative library on your device.
           </li>
           <li>
-            <strong>sidePanel</strong> — displays the Mediacrater interface in Chrome's side panel.
+            <strong>sidePanel</strong> — renders the Mediacrater interface inside Chrome’s native side panel.
           </li>
         </ul>
       </section>
 
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">Data Retention and Deletion</h2>
-        <ul className="list-disc list-inside space-y-2">
-          <li>
-            <strong>Selected-creative records</strong> — remain in extension local storage until you
-            remove them, clear the selection, clear extension data, or uninstall the extension.
-          </li>
-          <li>
-            <strong>Local creative library</strong> — images, videos, thumbnails, folders, tags, notes, and
-            related metadata remain in IndexedDB until you delete them, clear extension storage,
-            or uninstall the extension. Signing out does not automatically erase the local
-            library.
-          </li>
-        </ul>
-        <p className="mt-4">
-          You may request deletion of your Mediacrater account and associated server-side data by
-          emailing us. Local extension data must be deleted through the extension where controls
-          are available, by clearing the extension's site data in Chrome, or by uninstalling the
-          extension.
+        <p className="mb-4">
+          All selected ads, custom folders, tags, notes, and local library media remain in your browser storage (IndexedDB & Chrome Local Storage) until you manually delete them inside the extension, clear your browser storage, or uninstall the extension.
         </p>
       </section>
 
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">Your Choices and Rights</h2>
-        <p className="mb-4">You may:</p>
+        <p className="mb-4">You can:</p>
         <ul className="list-disc list-inside space-y-2">
-          <li>Remove individual selected images or videos or clear the current selection</li>
-          <li>Delete locally saved images, videos, folders, tags, notes, and favourites</li>
-          <li>Choose whether to submit any selected creative for a policy scan</li>
-          <li>Sign out to remove locally stored authentication tokens</li>
-          <li>Clear extension storage or uninstall the extension to remove local extension data</li>
-          <li>Request access to, correction of, or deletion of eligible server-side personal data</li>
-          <li>Withdraw consent by discontinuing use of the extension and closing your account</li>
-          <li>Lodge a complaint with your applicable privacy or data-protection authority</li>
+          <li>Remove individual saved ads or clear your local creative library at any time.</li>
+          <li>Choose whether or not to submit any selected ad creative for a policy risk scan.</li>
+          <li>Completely erase all local data by uninstalling the extension or clearing extension site data in Chrome settings.</li>
         </ul>
-        <p className="mt-4">
-          To exercise a privacy right concerning server-side information, email us at{' '}
-          <a href="mailto:hello.mediacrater@gmail.com" className="underline">
-            hello.mediacrater@gmail.com
-          </a>.
-        </p>
       </section>
 
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">Chrome Web Store Limited Use</h2>
         <p>
-          Mediacrater's use of information received from Google APIs will adhere to the Chrome Web
-          Store User Data Policy, including the Limited Use requirements.
+          Mediacrater’s use of information received from Google APIs adheres to the Chrome Web Store User Data Policy, including the Limited Use requirements.
         </p>
       </section>
 
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">Changes to This Policy</h2>
         <p>
-          If we materially change how the extension handles user data, we will update this policy's
-          effective date and provide any additional notice or consent required by applicable law or
-          Chrome Web Store policy. Continued use after an effective policy change constitutes
-          acceptance where permitted by law.
+          If we materially change how the extension handles user data, we will update this policy’s effective date. Continued use of the extension after an updated effective date indicates acceptance of the revised policy.
         </p>
       </section>
 
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">Relationship With Meta</h2>
         <p>
-          Mediacrater is not affiliated with, endorsed by, or sponsored by Meta Platforms, Inc.
-          Facebook and Meta are trademarks of Meta Platforms, Inc. Users are responsible for
-          ensuring they have permission to download, store, and use advertising content.
+          Mediacrater is not affiliated with, endorsed by, or sponsored by Meta Platforms, Inc. Facebook and Meta are trademarks of Meta Platforms, Inc.
         </p>
       </section>
 
