@@ -17,6 +17,42 @@ export default function ChangelogPage() {
         {/* Alpha Section */}
         <section>
           <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-xl font-semibold">Alpha 2.0 to 2.1</h2>
+            <span className="text-xs text-muted-foreground">October 2026</span>
+          </div>
+          
+            <section>
+              <div className="mb-1">
+                <h3 className="text-lg font-semibold">Alpha 2.1</h3>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
+                <li>No more account login required: all features unlocked for all users</li>
+
+              </ul>
+            </section>
+          
+            <section>
+              <div className="mb-1">
+                <h3 className="text-lg font-semibold">Alpha 2.0</h3>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
+                <li>Pivot to a more local and useful extension. Checking ads now happens on the webapp.</li>
+                <li>NEW: Download videos from Meta Ads Library</li>
+                <li>NEW: Batch ZIP exports organized into dedicated Images and Videos subdirectories</li>
+                <li>NEW: Built-in local creative library backed by browser-based IndexedDB storage</li>
+                <li>NEW: Custom folders with hex color coding, notes, tags, and favorites</li>
+                <li>NEW: Bulk folder exports to ZIP and multi-file folder transfers</li>
+                <li>NEW: Reopen saved ads via Facebook Ad ID and refresh expired CDN media URLs</li>
+                <li>NEW: Configurable selector hotkey (A–Z) and Chrome Side Panel support</li>
+              </ul>
+            </section>
+        </section>
+      
+      {/* Single container for all sections */}
+      <div className="space-y-12">
+        {/* Alpha Section */}
+        <section>
+          <div className="flex items-center gap-3 mb-6">
             <h2 className="text-xl font-semibold">Alpha 1.6.3 to 1.6.3.1</h2>
             <span className="text-xs text-muted-foreground">September 2026</span>
           </div>
