@@ -11,10 +11,11 @@ export default function ChangelogPage() {
       <p className="text-muted-foreground mb-12">
         Everything we&apos;ve added to Mediacrater so far.
       </p>
-
+      
       {/* Single container for all sections */}
       <div className="space-y-12">
-        {/* Alpha Section */}
+
+        {/* V2 Section */}
         <section>
           <div className="flex items-center gap-3 mb-6">
             <h2 className="text-xl font-semibold">Alpha 2.0 to 2.1</h2>
@@ -47,9 +48,7 @@ export default function ChangelogPage() {
               </ul>
             </section>
         </section>
-      
-      {/* Single container for all sections */}
-      <div className="space-y-12">
+        
         {/* Alpha Section */}
         <section>
           <div className="flex items-center gap-3 mb-6">
