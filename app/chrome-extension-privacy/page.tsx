@@ -39,7 +39,7 @@ export default function ExtensionPrivacyPolicy() {
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">What Data the Extension Handles</h2>
         <p className="mb-4">
-          In short, the Mediacrater extension does not collect any data whatsoever and works independently from our servers. All features and usage remains local on the client's machine and we never see it.
+          The Mediacrater extension does not send data and works independently from our servers. All features and usage remains local on the client's machine and we never see it.
         </p>
 
         <h3 className="text-lg font-semibold mb-2">Account and authentication data</h3>
@@ -137,24 +137,16 @@ export default function ExtensionPrivacyPolicy() {
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">How We Use Extension Data</h2>
         <ul className="list-disc list-inside space-y-2">
-          <li>To authenticate you and maintain your extension session</li>
-          <li>To display your plan, scan balance, and available extension features</li>
-          <li>To let you select, preview, copy, refresh, and download Ads Library image and video URLs</li>
-          <li>To let you reopen the public Ads Library entry associated with a saved creative</li>
-          <li>To provide the on-device creative library and organization tools</li>
-          <li>To process policy scans that you explicitly request</li>
-          <li>To manage scan queues, token usage, subscriptions, and billing</li>
-          <li>To maintain compatibility and diagnose technical or support issues</li>
-          <li>To prevent fraud, abuse, and unauthorized access to the service</li>
+          <li>N/A</li>
         </ul>
       </section>
 
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">Data We Do Not Sell or Use for Advertising</h2>
         <p>
-          We do not sell or rent extension user data. We do not use Facebook Ads Library content,
-          downloaded images or videos, locally saved library content, authentication information, or scan
-          content for targeted advertising, credit decisions, or purposes unrelated to the
+          We do not sell or rent extension user data as we do not collect any. We do not collect, use or 
+          store Facebook Ads Library content,downloaded images or videos or locally saved library content
+          for targeted advertising, credit decisions, or purposes unrelated to the
           extension's disclosed features.
         </p>
       </section>
