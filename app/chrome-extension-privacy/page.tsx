@@ -39,40 +39,13 @@ export default function ExtensionPrivacyPolicy() {
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">What Data the Extension Handles</h2>
         <p className="mb-4">
-          The extension handles only the information needed to provide its user-facing features.
-          Some information is stored locally in your browser, while account, billing, and
-          user-requested scan information is transmitted to Mediacrater service providers.
+          In short, the Mediacrater extension does not collect any data whatsoever and works independently from our servers. All features and usage remains local on the client's machine and we never see it.
         </p>
 
         <h3 className="text-lg font-semibold mb-2">Account and authentication data</h3>
         <ul className="list-disc list-inside space-y-2 mb-6">
           <li>
-            <strong>Email address and user ID</strong> — used to authenticate you, associate the
-            extension with your Mediacrater account, and retrieve your plan and feature access.
-            Stored and processed through Supabase.
-          </li>
-          <li>
-            <strong>Password</strong> — transmitted directly to Supabase when you sign in. Supabase
-            processes and protects your password through its authentication system. Mediacrater
-            cannot view your password in plain text.
-          </li>
-          <li>
-            <strong>Authentication tokens</strong> — session and refresh tokens are stored in
-            Chrome extension local storage to keep you signed in. They are transmitted to
-            Supabase and Mediacrater services only when required to authenticate an account
-            request. They are removed from extension storage when you sign out.
-          </li>
-          <li>
-            <strong>Plan and account information</strong> — your plan name, remaining scan balance,
-            audio-analysis availability, batch-download access, local-library access, and Stripe
-            customer status may be retrieved to display and enforce the features included with
-            your account.
-          </li>
-          <li>
-            <strong>Extension version</strong> — the installed extension version is associated with
-            your user ID in Supabase so we can manage compatibility, entitlement changes, and
-            support issues. The last reported version is also stored locally to prevent redundant
-            reports.
+            N/A
           </li>
         </ul>
 
@@ -159,59 +132,6 @@ export default function ExtensionPrivacyPolicy() {
             scan. This information is used to deliver and protect the service.
           </li>
         </ul>
-
-        <h3 className="text-lg font-semibold mb-2">Optional policy scans</h3>
-        <ul className="list-disc list-inside space-y-2">
-          <li>
-            <strong>Scan content</strong> — an image or video is submitted for analysis only when
-            you click Scan. For an image scan, the selected image data is transmitted securely to
-            Mediacrater for analysis. For a video scan, the extension loads the selected video in
-            your browser, extracts representative video frames, and may extract its audio track if
-            audio analysis is enabled for your account. The extracted frames and optional audio are
-            transmitted securely to Mediacrater. The extension does not transmit the complete
-            original video file as part of this video scan workflow.
-          </li>
-          <li>
-            <strong>Scan metadata</strong> — we may process and store your user ID, plan, selected
-            platform, scan type, generated scan and queue identifiers, file name, timestamps,
-            processing duration, payload size, scan status, token usage, and returned results.
-            This information is used to provide scan results, manage queues and balances, display
-            scan history where available, diagnose technical problems, and evaluate support or
-            refund requests.
-          </li>
-          <li>
-            <strong>AI processing</strong> — selected image data or extracted video frames,
-            optional audio, and related text instructions are sent to third-party AI model
-            providers solely to perform the scan.
-            These providers may process data in countries other than your own and may retain it
-            according to their own terms and legal obligations. They do not receive ordinary
-            downloaded or locally organized creatives unless you explicitly submit the creative
-            for a scan.
-          </li>
-        </ul>
-      </section>
-
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-3">Payment Data</h2>
-        <ul className="list-disc list-inside space-y-2">
-          <li>
-            <strong>Checkout and billing portal</strong> — when you choose to purchase or manage a
-            plan, the extension requests a secure Stripe checkout or billing-portal session and
-            opens the Stripe-hosted page in your browser.
-          </li>
-          <li>
-            <strong>Credit card and billing information</strong> — payment details are collected
-            and processed exclusively by Stripe. Mediacrater does not receive or store your full
-            card number or security code.
-          </li>
-          <li>
-            <strong>Purchase and subscription records</strong> — we store information needed to
-            identify your subscription, apply your plan and scan balance, provide billing support,
-            and comply with tax and accounting obligations. Records required for Canadian tax and
-            accounting compliance may be retained for six years from the end of the applicable tax
-            year, including after account deletion.
-          </li>
-        </ul>
       </section>
 
       <section className="mb-10">
@@ -240,52 +160,6 @@ export default function ExtensionPrivacyPolicy() {
       </section>
 
       <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-3">Data Sharing and Third-Party Services</h2>
-        <p className="mb-4">
-          We disclose data only to the service providers needed to deliver the requested feature,
-          protect the service, process payments, or comply with law.
-        </p>
-        <ul className="list-disc list-inside space-y-2">
-          <li>
-            <strong>Supabase</strong> — authentication, account information, plan entitlements,
-            extension-version records, scan records, and related database services.
-          </li>
-          <li>
-            <strong>Stripe</strong> — checkout, subscription management, billing, and payment
-            processing.
-          </li>
-          <li>
-            <strong>Cloud and server infrastructure providers</strong> — hosting and processing
-            account, queue, scan, and security requests.
-          </li>
-          <li>
-            <strong>Cloudflare</strong> — network security, bot protection, traffic management, and
-            related security challenges. Cloudflare may process technical signals including IP
-            address, User-Agent, and TLS or network information.
-          </li>
-          <li>
-            <strong>AI model providers</strong> — processing selected image data, extracted video
-            frames, optional audio, and scan instructions when you explicitly request a policy scan.
-          </li>
-          <li>
-            <strong>Google Chrome</strong> — browser APIs used for local storage, IndexedDB,
-            downloads, tab access, scripting, and the extension side panel.
-          </li>
-          <li>
-            <strong>Meta and its content-delivery services</strong> — your browser communicates
-            directly with Facebook and fbcdn.net to display, preview, refresh source links for,
-            download, and reopen Ads Library images, videos, and ad details that are already
-            available in your browser session.
-          </li>
-        </ul>
-        <p className="mt-4">
-          Each provider maintains its own privacy policy and security standards. We may also
-          disclose information where required by law or where reasonably necessary to protect the
-          rights, safety, and security of users, Mediacrater, or the public.
-        </p>
-      </section>
-
-      <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">Chrome Extension Permissions</h2>
         <ul className="list-disc list-inside space-y-2">
           <li>
@@ -308,11 +182,6 @@ export default function ExtensionPrivacyPolicy() {
           <li>
             <strong>sidePanel</strong> — displays the Mediacrater interface in Chrome's side panel.
           </li>
-          <li>
-            <strong>Host access</strong> — limited to Mediacrater services, Facebook Ads Library
-            pages, and Facebook content-delivery domains needed to identify, reopen, preview,
-            refresh source links for, download, and scan user-selected images and videos.
-          </li>
         </ul>
       </section>
 
@@ -329,45 +198,12 @@ export default function ExtensionPrivacyPolicy() {
             or uninstall the extension. Signing out does not automatically erase the local
             library.
           </li>
-          <li>
-            <strong>Authentication tokens</strong> — retained locally until they expire, are
-            invalidated, or you sign out.
-          </li>
-          <li>
-            <strong>Account, entitlement, and extension-version information</strong> — retained
-            while your account remains active and as needed to operate and secure the service.
-          </li>
-          <li>
-            <strong>Scan metadata and results</strong> — retained with your account as needed to
-            provide scan history, diagnostics, security, balance accounting, and support.
-          </li>
-          <li>
-            <strong>Extracted scan media</strong> — used to complete the requested analysis and not
-            intentionally retained by Mediacrater after processing is complete. AI and
-            infrastructure providers may retain information according to their own policies and
-            legal obligations.
-          </li>
-          <li>
-            <strong>Legally required records</strong> — billing, transaction, fraud-prevention, and
-            other records may be retained where required by tax, accounting, security, or other
-            applicable law.
-          </li>
         </ul>
         <p className="mt-4">
           You may request deletion of your Mediacrater account and associated server-side data by
           emailing us. Local extension data must be deleted through the extension where controls
           are available, by clearing the extension's site data in Chrome, or by uninstalling the
           extension.
-        </p>
-      </section>
-
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-3">Security</h2>
-        <p>
-          We use HTTPS and modern encrypted connections when the extension communicates with
-          Supabase, Mediacrater services, Stripe, and supported third-party providers. No method of
-          transmission or storage is completely secure, but we use administrative, technical, and
-          organizational safeguards appropriate to the information processed.
         </p>
       </section>
 
