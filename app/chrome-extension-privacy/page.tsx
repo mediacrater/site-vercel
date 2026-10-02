@@ -21,7 +21,7 @@ export default function ExtensionPrivacyPolicy() {
         <h2 className="text-xl font-semibold mb-3">Who We Are</h2>
         <p className="mb-4">
           Mediacrater provides a Chrome extension that lets users select, preview, download,
-          organize, and optionally scan image and video advertisements found in the Facebook Ads Library.
+          organize ad media content found in the Facebook Ads Library.
           We are operated as Mediacrater and can be reached at{' '}
           <a href="mailto:hello.mediacrater@gmail.com" className="underline">
             hello.mediacrater@gmail.com
