@@ -26,7 +26,7 @@ export default function ChangelogPage() {
                 <h3 className="text-lg font-semibold">Alpha 2.1</h3>
               </div>
               <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
-                <li>No more account login required: all features unlocked for all users</li>
+                <li>No more account login required: All extension features unlocked at no cost to the client</li>
 
               </ul>
             </section>
