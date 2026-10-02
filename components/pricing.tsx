@@ -168,7 +168,7 @@ export function Pricing() {
           </h2>
           <p className="mt-4 text-lg text-muted-foreground text-pretty">
             Pick a plan based on how many campaigns you run per month.
-            Cancel or change anytime. The {' '}
+            Cancel or change anytime. {' '}
             <a
               href={SITE_SIGNUP}
               target="_blank"
@@ -177,7 +177,6 @@ export function Pricing() {
             >
               Chrome extension
             </a> 
-            is free to use.
           </p>
         </div>
 
