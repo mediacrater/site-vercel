@@ -29,6 +29,7 @@
 ## 1. Summary
 
 We reviewed a Grok export about blocking subdomain probes, found gaps in its advice, and hardened the VPS step by step.
+Grok conversation link: https://grok.com/share/c2hhcmQtNA_e9b5a19f-3fac-4dc1-8f9f-cfdd6951efba
 
 **Main outcomes**
 
