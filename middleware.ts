@@ -1,21 +1,27 @@
-// middleware.ts (optional)
-// Mints mc_device_id on the first page view so the cookie already exists
-// before /api/signup. If you skip this file, the signup route still mints
-// the cookie on the POST — you only miss linking a signup to an earlier visit.
-//
-// Merge with your existing Supabase middleware if you have one: read/mint
-// the device cookie on the same NextResponse you already return.
-
+// middleware.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { attachDeviceCookie, readOrMintDeviceId } from '@/lib/account-device';
 
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|images).*)',
+  ],
+};
+
 export function middleware(req: NextRequest) {
+  // 1. Origin-secret check (blocks direct *.vercel.app access)
+  const secret = process.env.CLOUDFLARE_PROXY_SECRET;
+  if (secret && req.headers.get('x-mediacrater-proxy-secret') !== secret) {
+    if (req.nextUrl.pathname.startsWith('/api/')) {
+      return new NextResponse('Forbidden', { status: 403 });
+    }
+  }
+
+  // 2. Device cookie
   const { deviceId, minted } = readOrMintDeviceId(req);
   const res = NextResponse.next();
-  if (minted) attachDeviceCookie(res, deviceId);
+  if (minted) {
+    attachDeviceCookie(res, deviceId);
+  }
   return res;
 }
-
-export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|images|api/resend-verification).*)'],
-};
