@@ -1,22 +1,7 @@
 // app/api/signin/route.ts
-//
-// New route — previously signin/page.tsx called
-// supabase.auth.signInWithPassword() directly from the client, which meant
-// there was no server-side chokepoint to rate-limit at. This route moves
-// that call server-side; the page now calls this endpoint instead. Turnstile
-// verification (already present client-side on the sign-in page) is now
-// also enforced here, server-side, before the rate limit and before the
-// Supabase auth call — a request that isn't a verified human shouldn't
-// burn a rate-limit slot or reach Supabase auth at all.
-//
-// Rate limit: 10 attempts / 60 seconds / IP. user_id is not used — a
-// failed sign-in attempt must not be able to burn a real account's rate
-// limit budget by an attacker entering someone else's email with wrong
-// passwords, so this is IP-only, matching signup/reset-password/
-// resend-verification.
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
-import { checkAndLogRateLimit, clientIpFrom, verifyTurnstileToken } from "@/lib/rate-limit"
+import { checkAndLogRateLimit, clientIpFrom } from "@/lib/rate-limit"
 
 const supabaseAnon = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,7 +9,7 @@ const supabaseAnon = createClient(
 )
 
 const SIGNIN_MAX_ATTEMPTS = 8
-const SIGNIN_WINDOW_SECONDS = 120 //seconds
+const SIGNIN_WINDOW_SECONDS = 120
 
 export async function POST(req: NextRequest) {
   const { email, password, turnstileToken } = await req.json()
@@ -36,15 +21,15 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const ip = clientIpFrom(req)
-
-  const isHuman = await verifyTurnstileToken(turnstileToken, ip)
-  if (!isHuman) {
+  // Supabase verifies the token itself (it is single-use), so we only check it exists.
+  if (!turnstileToken) {
     return NextResponse.json(
       { error: "Verification failed. Please try again." },
       { status: 400 }
     )
   }
+
+  const ip = clientIpFrom(req)
 
   const rateLimit = await checkAndLogRateLimit(
     "signin",
@@ -82,9 +67,16 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabaseAnon.auth.signInWithPassword({
     email,
     password,
+    options: { captchaToken: turnstileToken },
   })
 
   if (error) {
+    if (/captcha/i.test(error.message)) {
+      return NextResponse.json(
+        { error: "Verification failed. Please try again." },
+        { status: 400, headers: rateLimitHeaders }
+      )
+    }
     return NextResponse.json(
       { error: error.message },
       { status: 400, headers: rateLimitHeaders }
