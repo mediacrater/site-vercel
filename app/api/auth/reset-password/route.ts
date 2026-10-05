@@ -1,11 +1,11 @@
 // app/api/auth/reset-password/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { checkAndLogRateLimit, clientIpFrom, verifyTurnstileToken } from '@/lib/rate-limit';
+import { checkAndLogRateLimit, clientIpFrom } from '@/lib/rate-limit';
 
-const supabaseAdmin = createClient(
+const supabaseAnon = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
 const RESET_MAX_ATTEMPTS = 8;
@@ -18,24 +18,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Email address is required' }, { status: 400 });
   }
 
-  const ip = clientIpFrom(req);
-
-  // Verify Turnstile before touching the rate limiter.
-  const isHuman = await verifyTurnstileToken(turnstileToken, ip);
-  if (!isHuman) {
+  // Supabase verifies the token itself (single-use)
+  if (!turnstileToken) {
     return NextResponse.json(
       { error: 'Verification failed. Please try again.' },
       { status: 400 }
     );
   }
 
-  // ── Per-IP password reset rate limit (shared rate_limits table) ──
+  const ip = clientIpFrom(req);
+
   const rateLimit = await checkAndLogRateLimit(
     'reset_password',
     ip,
     RESET_MAX_ATTEMPTS,
     RESET_WINDOW_SECONDS
   );
+
   if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: 'Too many password reset requests. Please try again later.' },
@@ -46,14 +45,18 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Use the admin client (or a standard client) to trigger the password reset email.
-  // Note: Standard Supabase auth uses the default redirect url unless configured otherwise.
-  const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
+  const { error: resetError } = await supabaseAnon.auth.resetPasswordForEmail(email, {
+    captchaToken: turnstileToken,
     redirectTo: `${new URL(req.url).origin}/auth/update-password`,
   });
 
   if (resetError) {
-    // If the error is a Supabase level rate limit, forward a clean message
+    if (/captcha/i.test(resetError.message)) {
+      return NextResponse.json(
+        { error: 'Verification failed. Please try again.' },
+        { status: 400 }
+      );
+    }
     if (resetError.status === 429) {
       return NextResponse.json(
         { error: 'Email limit exceeded. Please try again later.' },
