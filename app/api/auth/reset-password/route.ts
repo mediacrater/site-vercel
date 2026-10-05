@@ -1,15 +1,4 @@
 // app/api/auth/reset-password/route.ts
-//
-// Two changes from the previous version:
-//   1. Turnstile verification added — this route previously had none.
-//   2. Rate limiting migrated from the dedicated password_reset_rate_limits
-//      table (single row per IP, attempt_count + last_attempt_at) onto the
-//      shared rate_limits table via check_and_log_rate_limit(), matching
-//      the pattern used by signup, signin, and the custom-solutions form.
-//      Limit changed from 3/60min to 10/24hr per the new settled numbers.
-//
-// Everything else — the resetPasswordForEmail call, the redirect URL, the
-// Supabase-level 429 passthrough — is unchanged.
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { checkAndLogRateLimit, clientIpFrom, verifyTurnstileToken } from '@/lib/rate-limit';
