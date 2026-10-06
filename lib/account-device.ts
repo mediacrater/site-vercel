@@ -31,7 +31,7 @@ export type IpIntel = {
 };
 
 const HOSTING_ORG_RE =
-  /\b(amazon|aws|google cloud|gcp|microsoft azure|azure|digitalocean|linode|akamai|ovh|hetzner|vultr|cloudflare|datacamp|m247|choopa|leaseweb|hivelocity|contabo|oracle cloud|alibaba)\b/i;
+  /\b(amazon|aws|google cloud|gcp|microsoft azure|azure|digitalocean|linode|akamai|ovh|hetzner|vultr|datacamp|m247|choopa|leaseweb|hivelocity|contabo|oracle cloud|alibaba)\b/i;
 
 const VPN_ORG_RE =
   /\b(nordvpn|nord vpn|expressvpn|mullvad|surfshark|protonvpn|proton vpn|cyberghost|private internet access|\bpia\b|windscribe|ipvanish|tunnelbear|purevpn|ivpn|m247|datacamp|packethub|vpn)\b/i;
@@ -114,17 +114,11 @@ function parseSecChUa(header: string | null): { browser: string | null; browser_
 }
 
 function vercelGeo(req: NextRequest): Pick<IpIntel, 'country' | 'city'> {
-  const country = asText(req.headers.get('x-vercel-ip-country') || req.headers.get('cf-ipcountry'));
-  const rawCity = req.headers.get('x-vercel-ip-city');
-  let city: string | null = null;
-  if (rawCity) {
-    try {
-      city = decodeURIComponent(rawCity);
-    } catch {
-      city = rawCity;
-    }
-  }
-  return { country: country && country !== 'XX' ? country : null, city };
+  const country = asText(req.headers.get('cf-ipcountry') || req.headers.get('x-vercel-ip-country'));
+  return {
+    country: country && country !== 'XX' && country !== 'T1' ? country : null,
+    city: null, // Vercel's city header describes the edge, so city comes from ipinfo only
+  };
 }
 
 function parseAsnOrg(org: string | null): { asn: number | null; asn_org: string | null } {
@@ -217,16 +211,17 @@ export function mergeDeviceFields(
   req: NextRequest,
   client: DeviceClientFields
 ): Required<DeviceClientFields> {
+  const cap = (v: unknown, n: number) => asText(v)?.slice(0, n) ?? null;
   const uaParsed = parseUserAgent(req.headers.get('user-agent'));
   const ch = parseSecChUa(req.headers.get('sec-ch-ua'));
   const chOs = asText(req.headers.get('sec-ch-ua-platform'))?.replace(/"/g, '') ?? null;
 
   return {
-    timezone: asText(client.timezone),
-    browser: asText(client.browser) || ch.browser || uaParsed.browser,
-    browser_version: asText(client.browser_version) || ch.browser_version || uaParsed.browser_version,
-    os: asText(client.os) || chOs || uaParsed.os,
-    device_fp: asText(client.device_fp),
+    timezone: cap(client.timezone, 64),
+    browser: uaParsed.browser || ch.browser || cap(client.browser, 64),
+    browser_version: uaParsed.browser_version || ch.browser_version || cap(client.browser_version, 32),
+    os: chOs || uaParsed.os || cap(client.os, 32),
+    device_fp: cap(client.device_fp, 128),
   };
 }
 
