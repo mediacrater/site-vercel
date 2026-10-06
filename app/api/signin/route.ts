@@ -8,7 +8,7 @@ const supabaseAnon = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-const SIGNIN_MAX_ATTEMPTS = 10
+const SIGNIN_MAX_ATTEMPTS = 8
 const SIGNIN_WINDOW_SECONDS = 120
 
 export async function POST(req: NextRequest) {
