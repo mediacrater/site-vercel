@@ -43,8 +43,8 @@ function asText(value: unknown): string | null {
 }
 
 export function clientIpFrom(req: NextRequest): string {
-  const cf = req.headers.get('cf-connecting-ip')?.trim() ?? ''
-  return /^[0-9a-fA-F:.]{3,45}$/.test(cf) ? cf : 'unknown'
+  const cf = req.headers.get('cf-connecting-ip')?.trim() ?? '';
+  return /^[0-9a-fA-F:.]{3,45}$/.test(cf) ? cf : '';
 }
 
 export function readOrMintDeviceId(req: NextRequest): { deviceId: string; minted: boolean } {
