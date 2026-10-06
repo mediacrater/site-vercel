@@ -97,15 +97,8 @@ export async function checkAndLogRateLimit(
 }
 
 export function clientIpFrom(req: NextRequest): string {
-  const forwardedFor = req.headers.get("x-forwarded-for")
-  if (forwardedFor) {
-    return forwardedFor.split(",")[0].trim()
-  }
-  const realIp = req.headers.get("x-real-ip")
-  if (realIp) {
-    return realIp.trim()
-  }
-  return "unknown"
+  const cf = req.headers.get('cf-connecting-ip')?.trim() ?? ''
+  return /^[0-9a-fA-F:.]{3,45}$/.test(cf) ? cf : 'unknown'
 }
 
 const TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
