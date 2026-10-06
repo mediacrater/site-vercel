@@ -9,19 +9,17 @@ export const config = {
 };
 
 export function middleware(req: NextRequest) {
-  // 1. Origin-secret check (blocks direct *.vercel.app access)
   const secret = process.env.CLOUDFLARE_PROXY_SECRET;
-  if (secret && req.headers.get('x-mediacrater-proxy-secret') !== secret) {
-    if (req.nextUrl.pathname.startsWith('/api/')) {
-      return new NextResponse('Forbidden', { status: 403 });
+
+  if (req.nextUrl.pathname.startsWith('/api/')) {
+    const misconfigured = !secret && process.env.VERCEL_ENV === 'production';
+    if (misconfigured || (secret && req.headers.get('x-mediacrater-proxy-secret') !== secret)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
   }
 
-  // 2. Device cookie
   const { deviceId, minted } = readOrMintDeviceId(req);
   const res = NextResponse.next();
-  if (minted) {
-    attachDeviceCookie(res, deviceId);
-  }
+  if (minted) attachDeviceCookie(res, deviceId);
   return res;
 }
