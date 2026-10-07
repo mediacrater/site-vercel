@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Date** | 7 October 2026 (`07oct26`) |
-| **Conversation** | _(add this chat's link)_ |
+| **Conversation** | https://claude.ai/chat/06d9294b-c507-4c97-8ebc-771e5088b96d |
 | **Related prior work** | None referenced in this conversation |
 | **Stack** | Next.js web app on Vercel (TEST repo `mediacrater/test-site-vercel`), Node/Express API on the VPS behind nginx + Cloudflare (PM2: `mediacrater-api` LIVE on `:3000`, `mediacrater-api-test` TEST on `:3001`), Supabase (**separate projects for TEST and LIVE**), Stripe (Edge Functions), drift monitor (systemd, `:3876`) |
 | **Starting trigger** | You asked for a review of the project's security: what was done wrong and what was done right. Phase 1 (VPS lockdown) was ranked hardest and implemented first |
