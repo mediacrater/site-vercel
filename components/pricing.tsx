@@ -105,11 +105,11 @@ const extensionFeatureRows: { label: string; sub?: string; values: CellValue[] }
   },
   {
     label: 'Batch ZIP downloads',
-    values: [false, true, true, true, true],
+    values: [true, true, true, true, true],
   },
   {
     label: 'Local creative library storage',
-    values: [false, true, true, true, true],
+    values: [true, true, true, true, true],
   },
 ]
 
@@ -168,15 +168,7 @@ export function Pricing() {
           </h2>
           <p className="mt-4 text-lg text-muted-foreground text-pretty">
             Pick a plan based on how many campaigns you run per month.
-            Cancel or change anytime. Download the free{' '}
-            <a
-              href={SITE_SIGNUP}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-foreground transition-colors"
-            >
-              Chrome extension here
-            </a>
+            Cancel or change anytime.
           </p>
         </div>
 
