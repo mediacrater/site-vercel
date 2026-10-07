@@ -168,15 +168,14 @@ export function Pricing() {
           </h2>
           <p className="mt-4 text-lg text-muted-foreground text-pretty">
             Pick a plan based on how many campaigns you run per month.
-            Cancel or change anytime. Extension users: Subscriptions are 
-            upgradable and managed through the{' '}
+            Cancel or change anytime. Download the free{' '}
             <a
               href={SITE_SIGNUP}
               target="_blank"
               rel="noopener noreferrer"
               className="underline hover:text-foreground transition-colors"
             >
-              Chrome extension
+              Chrome extension here
             </a>
           </p>
         </div>
