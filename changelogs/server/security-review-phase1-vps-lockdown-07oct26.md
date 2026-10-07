@@ -69,9 +69,12 @@ The review found a mix of strong work and real gaps. Phase 1 closed the gaps on 
 | `scanIdentity.js` thumbnail fix (own-folder UUID) | ⚠️ Not confirmed | Expected: a new paid-plan scan shows its thumbnail in history |
 | `utils/netGuard.js` (ipaddr-backed) | ✅ Deployed | |
 | `security/ssrf.js` + `npm i undici ipaddr.js` | ✅ Deployed | App runs on Node 24 |
-| `node --test security/ssrf.test.js` | ⚠️ Not confirmed | Expected: `# pass 28`, `# fail 0` |
+| `node --test security/ssrf.test.js` | ✅ 28/28 | Run with `/usr/local/bin/node`; your shell was still on nvm's Node 20 |
+| `npm audit fix` | ✅ | `proxy-addr`, `body-parser`, `qs` fixed; 4 scan types pass afterwards |
+| `uuid@8.3.2` (direct dependency, moderate) | ✅ Removed | Not used anywhere (`grep` found nothing); `npm uninstall uuid`. Both PM2 apps restarted cleanly |
+| `npm audit --omit=dev` after the fixes | ⚠️ Not shown | Expected: `found 0 vulnerabilities` |
 | `checkout.js` deleted | ✅ | 404 confirmed |
-| `npm uninstall node-fetch` | ⚠️ Not confirmed | Expected: `grep -rn node-fetch --exclude-dir=node_modules .` prints nothing |
+| `npm uninstall node-fetch` | ✅ | `up to date`: `node-fetch` was never a TEST dependency |
 | `MAX_IMAGE_MB` in `.env` | ⚠️ Default 20 | Set above your largest real image |
 | `SSRF_BLOCKED_IPS` in `.env` | ⚠️ Not set | Optional: the VPS's own public IPv4/IPv6 |
 
@@ -118,7 +121,8 @@ The review found a mix of strong work and real gaps. Phase 1 closed the gaps on 
 | Drift monitor on `127.0.0.1:3876` | ✅ | |
 | Drift monitor as `echobeehive223` on Node 24 | ✅ | systemd override |
 | Drift monitor login | ✅ | `401` without credentials |
-| `nvm uninstall 20` | ⏳ Optional | Now safe |
+| `nvm use 24 && nvm uninstall 20` | ⚠️ Not confirmed | First attempt refused (Node 20 was active). Expected afterwards: `node -v` → `v24.21.0` in a new terminal |
+| Drift monitor base unit still names nvm Node 20 | ⚠️ Not confirmed | Override already replaces it. Expected after the `sed`: `grep -rn v20.20.2 /etc/systemd/system/ ~/mediacrater-drift-monitor-live/*.service` prints nothing |
 
 ### Web app (TEST repo)
 
@@ -281,6 +285,22 @@ TEST first returned `exit 0` (config not active yet; you fixed it, cause not rep
 | `stripe-webhook` | Signature + 5-minute replay window, dedup by session ID, old subscription cancelled only after the new one is paid. Two issues open ([§7](#7-open-items-checklist)) |
 | Customer portal | LIVE: no plan switching. TEST: **just enabled** for testing |
 
+### Step 17 – After the first version of this index
+
+| What | Result |
+|---|---|
+| `node --test security/ssrf.test.js` | Failed again with `this server runs 20.20.2`: the terminal (VS Code) still had nvm's Node 20 first in its PATH. `/usr/local/bin/node --test security/ssrf.test.js` → **28/28** |
+| `pm2 show mediacrater-api-test` | `node.js version 24.21.0`, so the app itself was never affected |
+| `grep -rn "v20.20.2" /etc/systemd/system/` | Found line 8 of the drift monitor's **base** unit. Expected: the override's empty `ExecStart=` replaces it. I had said "expected: no output", which was wrong. Advised updating the base file and the repo copy with `sed` so the old path can't come back |
+| `crontab`, `.nvmrc` | Nothing references Node 20 |
+| `nvm uninstall 20` | `Cannot uninstall currently-active node version`. Fix: `nvm use 24` first |
+| URL scans have no thumbnails | **Not caused by Phase 1.** `scan-workspace.tsx` passes `null` as the thumbnail for `video_url` / `image_url`, and frames are only extracted for uploaded files. You're handling this yourself (server-side first-frame capture is the reliable route, since most CDNs block reading other sites' video frames in the browser) |
+| `npm uninstall node-fetch` (TEST) | `up to date`: it was never a TEST dependency |
+| `npm audit --omit=dev` | TEST and LIVE: `proxy-addr` (critical), `qs` and `uuid` (moderate), `body-parser` (low). None exploitable as configured: no `trust proxy` / `req.ip` (nginx's `X-Real-IP` is used), fixed body limits, Express 5's default query parser. Fixed anyway |
+| `npm audit fix` (TEST) | Fixed `proxy-addr`, `body-parser`, `qs`; 4 scan types pass. `uuid` remained (fix needs `--force`, a major-version jump) |
+| `npm ls uuid` | `uuid@8.3.2` is a **direct** dependency |
+| `grep … require('uuid') …` | No output: unused. `npm uninstall uuid`, both PM2 apps restarted without a restart loop |
+
 ---
 
 ## 5. Errors and surprises
@@ -308,7 +328,14 @@ TEST first returned `exit 0` (config not active yet; you fixed it, cause not rep
 | 19 | First `tee` heredoc cancelled with `^C` | — | Nothing written; second run worked |
 | 20 | `grep … real_ip`: `Permission denied` on the snippet | Snippet is `chmod 600` (root only) | Expected |
 | 21 | Drift monitor ran as root from your home folder | Unit had no `User=` | Override sets `User=echobeehive223` |
-| 22 | Sandbox-only: nginx test needed `server_names_hash_bucket_size 128` and no IPv6 `listen` | My test machine, not your server | Not applicable to your server |
+| 22a | `ssrf.test.js` still reported Node 20.20.2 after `nvm alias default 24` | VS Code's terminal keeps the PATH from when its server started | Run with `/usr/local/bin/node`; remove Node 20; reconnect the terminal |
+| 22b | `grep v20.20.2` found the drift monitor's base unit | My "expected: no output" was wrong: the override replaces `ExecStart` but the base file still contains it | `sed` the base file and repo copy to `/usr/local/bin/node` |
+| 22c | URL scans show no thumbnail | Pre-existing: the web app sends `null` for URL scans | You're handling it (not a Phase 1 regression) |
+| 22d | `npm uninstall node-fetch` printed `up to date` | It was never a TEST dependency | Nothing to do |
+| 22e | `uuid@8.3.2` vulnerability needed `--force` | Direct dependency, unused | `npm uninstall uuid` |
+| 22 | `nvm: Cannot uninstall currently-active node version` | The shell was still using Node 20 | `nvm use 24` first |
+| 23 | `npm audit`: 1 critical (`proxy-addr`), 2 moderate (`qs`, `uuid`), 1 low (`body-parser`) | Outdated transitive and direct dependencies | `npm audit fix`; none were exploitable as configured (no `trust proxy`, fixed body limits). `uuid` pending |
+| 24 | Sandbox-only: nginx test needed `server_names_hash_bucket_size 128` and no IPv6 `listen` | My test machine, not your server | Not applicable to your server |
 
 ---
 
@@ -327,6 +354,7 @@ TEST first returned `exit 0` (config not active yet; you fixed it, cause not rep
 9. **Origin curl** used `-s` and the wrong Host header.
 10. **`verify-session`** deletion was suggested conditionally without seeing its code. Reviewed afterwards: read-only, no callers.
 11. **`systemctl edit` instructions** didn't warn about the "discarded" marker.
+12. **"Expected: no output" for `grep v20.20.2 /etc/systemd/system/`** ignored the base unit file, which the override replaces but doesn't change.
 
 ### Decisions
 
@@ -358,6 +386,8 @@ TEST first returned `exit 0` (config not active yet; you fixed it, cause not rep
 
 ### Do next
 
+- [x] **`uuid@8.3.2`** removed from TEST (unused). LIVE: same step in [Appendix A.2](#a2-live-api-code)
+- [x] `npm audit fix` on TEST
 - [ ] **LIVE rollout** ([Appendix A](#appendix-a--live-rollout-runbook))
 - [ ] **Stripe webhook: derive the plan from the price ID** (`items.data[0].price.id` matched against `STARTUP_PID` etc.) in all four handlers. TEST is exploitable now that portal plan switching is on; **don't enable plan switching in LIVE until this is fixed**
 - [ ] **Stripe webhook API version:** check Stripe → Developers → Webhooks → your endpoint. On `2025-03-31.basil` or later, `invoice.subscription_details` moved to `invoice.parent.subscription_details` and renewals are skipped. Search the webhook logs for `Renewal invoice is missing valid subscription metadata`
@@ -366,8 +396,9 @@ TEST first returned `exit 0` (config not active yet; you fixed it, cause not rep
 ### Verify
 
 - [ ] Thumbnail fix: a new paid-plan scan on TEST shows its thumbnail in history
-- [ ] `node --test security/ssrf.test.js` on TEST. Expected: `# pass 28`, `# fail 0`
-- [ ] `grep -rn node-fetch --exclude-dir=node_modules .` in TEST prints nothing; then `npm uninstall node-fetch`
+- [x] `node --test security/ssrf.test.js` on TEST: 28/28
+- [x] `npm uninstall node-fetch` on TEST (was never a dependency)
+- [ ] `npm audit --omit=dev` on TEST. Expected: `found 0 vulnerabilities`
 - [ ] Re-run audit 3c on TEST. Expected rows (only `authenticated`, no `anon`): `extension_versions` INSERT, SELECT, UPDATE · `profiles` SELECT · `purchases` SELECT · `scan_batches` DELETE, INSERT, SELECT · `scan_queue` SELECT · `scans` SELECT
 - [ ] Edge Functions `create-checkout`, `create-checkout-extension`, `verify-session` are gone in **both** Supabase projects
 - [ ] The leaked `sb_secret_…` key no longer appears in Supabase → API Keys
@@ -379,11 +410,13 @@ TEST first returned `exit 0` (config not active yet; you fixed it, cause not rep
 - [ ] Set `MAX_IMAGE_MB` and `SSRF_BLOCKED_IPS` (the VPS's own public IPs) in both `.env` files
 - [ ] Lower `bigJson` from 150 MB to just above your largest real payload
 - [ ] `"engines": { "node": ">=22.19" }` in the API's `package.json`
-- [ ] `nvm uninstall 20`
+- [ ] `nvm use 24 && nvm uninstall 20` (nvm refuses to remove the active version)
+- [ ] Drift monitor base unit: replace the nvm Node 20 path with `/usr/local/bin/node` in `/etc/systemd/system/mediacrater-drift-monitor.service` and the repo copy, then `sudo systemctl daemon-reload`
 - [ ] Pin each PM2 app's interpreter (`--interpreter /usr/local/bin/node`) so TEST and LIVE can be upgraded separately in future
 - [ ] Drift monitor: long random Basic Auth password, delete `public/codediff.html.backup`, send `src/slack.js` to check the Slack timestamp window
 - [ ] Stripe webhook: constant-time signature compare (`crypto.subtle.verify`), stop logging the full subscription object, unique constraint on `purchases.stripe_session_id`
 - [ ] Automate the Cloudflare IP list (ufw + `cloudflare-realip.conf`)
+- [ ] **URL scan thumbnails** (you're handling it): the web app sends `null` for `video_url` / `image_url`
 
 ### Next phases
 
@@ -407,7 +440,7 @@ TEST first returned `exit 0` (config not active yet; you fixed it, cause not rep
 | Drift monitor | systemd `mediacrater-drift-monitor`, `~/mediacrater-drift-monitor-live`, `127.0.0.1:3876`, `<tools hostname>`, Basic Auth |
 | Node | PM2 + drift monitor: `/usr/local/bin/node` v24.21.0. Shell: nvm, default 24 |
 | Minimum Node for the API | 22.19 (`undici` 8) |
-| New npm packages | `undici`, `ipaddr.js`. Removed: `node-fetch` |
+| npm packages | Added: `undici`, `ipaddr.js`. Removed: `node-fetch` (LIVE), `uuid` (TEST done, LIVE in rollout). `npm audit fix` applied |
 | nginx | `/etc/nginx/sites-available/mediacrater-api`, `…/mediacrater-test`, `/etc/nginx/snippets/cloudflare-origin-auth.conf` (`chmod 600`), `/etc/nginx/conf.d/cloudflare-realip.conf` |
 | Origin secret | Header `X-Origin-Auth`, added by a Cloudflare Request Header Transform Rule for the three API hostnames; stripped before reaching the apps |
 | Firewall | Default deny; 80/443 from Cloudflare ranges only; `22/tcp LIMIT`; `51820/udp` open |
@@ -469,7 +502,11 @@ pm2 save
 
 ```bash
 cd /var/www/mediacrater-api
+cp package-lock.json package-lock.json.bak
 npm i undici ipaddr.js
+npm audit fix                                # no --force; fixes proxy-addr, body-parser, qs
+grep -rn "require('uuid')\|require(\"uuid\")\|from 'uuid'" --exclude-dir=node_modules .   # expected: no output
+npm uninstall uuid                           # only if the grep printed nothing
 mkdir -p security routes/_shared utils
 
 T=/var/www/mediacrater-api-test
@@ -484,7 +521,8 @@ rm checkout.js
 grep -rn "node-fetch\|require('./checkout')" --exclude-dir=node_modules .   # expected: no output
 npm uninstall node-fetch
 
-node --test security/ssrf.test.js            # expected: # pass 28, # fail 0
+/usr/local/bin/node --test security/ssrf.test.js   # expected: # pass 28, # fail 0
+npm audit --omit=dev                         # expected: found 0 vulnerabilities
 node --check server.js                       # expected: no output
 node -e "require.resolve('undici'); require.resolve('ipaddr.js'); console.log('deps ok')"
 ```
