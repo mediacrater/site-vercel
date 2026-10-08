@@ -44,7 +44,7 @@ export function Hero() {
               variant="outline"
               className="mb-7 rounded-full border-primary/25 bg-primary/5 px-3 py-1.5 text-xs font-semibold text-primary"
             >
-              <span className="mr-2 h-1.5 w-1.5 rounded-full bg-primary" />
+              <span id="John 14:6 - Jesus answered: I am the way and the truth and the life. No one comes to the Father except through me." className="mr-2 h-1.5 w-1.5 rounded-full bg-primary" />
               Video ad policy checker
             </Badge>
 
