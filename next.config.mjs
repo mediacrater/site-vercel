@@ -52,15 +52,18 @@ function buildCsp() {
     'script-src': ["'self'", "'unsafe-inline'", TURNSTILE, CF_INSIGHTS_SCRIPT],
     // React style={} attributes and the chart component's <style> need this.
     'style-src': ["'self'", "'unsafe-inline'"],
-    // data:/blob: = canvas and video thumbnails; Supabase = signed thumbnail URLs.
-    'img-src': ["'self'", 'data:', 'blob:', supabaseOrigin],
+    // data:/blob: = canvas and video thumbnails; Supabase = signed thumbnail URLs;
+    // https: = previews of image URLs users paste into the scanner, which can be
+    // on any host (e.g. fbcdn.net). Images can't run code.
+    'img-src': ["'self'", 'data:', 'blob:', supabaseOrigin, 'https:'],
     'font-src': ["'self'", 'data:'],
     'connect-src': ["'self'", supabaseOrigin, vpsOrigin, TURNSTILE, CF_INSIGHTS_CONNECT],
     // Turnstile widget + the VPS cf-ok clearance iframe (ApiHostClearance.tsx).
     'frame-src': [TURNSTILE, vpsOrigin],
     // Audio extraction worker; blob: covers bundlers that start workers from blob URLs.
     'worker-src': ["'self'", 'blob:'],
-    'media-src': ["'self'", 'blob:'],
+    // https: = createVideoUrlThumbnail() loads pasted video URLs to grab a frame.
+    'media-src': ["'self'", 'blob:', 'https:'],
     'manifest-src': ["'self'"],
     'object-src': ["'none'"],
     'base-uri': ["'self'"],
