@@ -163,7 +163,7 @@ export function Pricing() {
 
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold text-foreground font-[family-name:var(--font-display)] text-balance">
+          <h2 id="Matthew 6:33" className="text-3xl sm:text-4xl font-bold text-foreground font-[family-name:var(--font-display)] text-balance">
             Simple, Transparent Pricing
           </h2>
           <p className="mt-4 text-lg text-muted-foreground text-pretty">
