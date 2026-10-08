@@ -213,7 +213,7 @@ export default function BuyScansPage() {
       <main className="max-w-6xl mx-auto px-4 pt-32 pb-16 space-y-14">
         <div className="text-center space-y-3 max-w-2xl mx-auto">
           <h1 className="text-3xl font-bold">Choose your plan</h1>
-          <p className="text-muted-foreground text-sm">
+          <p id="Romans 8:28" className="text-muted-foreground text-sm">
             Pick a plan based on how many ad campaigns you run per month. Change or cancel anytime.
           </p>
         </div>
