@@ -179,7 +179,7 @@ export function Hero() {
                 className="h-12 rounded-xl bg-background px-6 text-base"
               >
                 <a
-                  href="https://www.youtube.com/watch?v=Jk_XtsN1N9I&utm_medium=website_hero"
+                  href="https://www.youtube.com/watch?v=t8k6-XgiBig?utm_source=website_hero"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
