@@ -62,7 +62,7 @@ export function Header() {
     : "/images/header-logo.png"
   const navLinks = [
     { href: "#features", label: "Features" },
-    { href: "https://www.youtube.com/watch?v=Jk_XtsN1N9I?utm_medium=website_how-it-works", label: "How It Works" },
+    { href: "https://www.youtube.com/watch?v=t8k6-XgiBig?utm_medium=website_how-it-works", label: "How It Works" },
     { href: "#pricing", label: "Pricing" },
     { href: "#faq", label: "FAQ" },
   ]
