@@ -184,7 +184,7 @@ export async function getQueueStatus(
   jobId: string
 ): Promise<{ status: 'running' | 'queued' | 'not_found'; position?: number }> {
   const token = await requireAccessToken();
-  const response = await fetch(`${VPS_URL}/queue-status/${jobId}`, {
+  const response = await fetch(`${VPS_URL}/queue-status/${encodeURIComponent(jobId)}`, {
     credentials: 'include',
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -194,7 +194,7 @@ export async function getQueueStatus(
 
 export async function cancelQueuedScan(jobId: string): Promise<{ success: boolean }> {
   const token = await requireAccessToken();
-  const response = await fetch(`${VPS_URL}/queue-cancel/${jobId}`, {
+  const response = await fetch(`${VPS_URL}/queue-cancel/${encodeURIComponent(jobId)}`, {
     method: 'POST',
     credentials: 'include',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -212,7 +212,7 @@ export async function reportQueueTiming(
 ): Promise<void> {
   try {
     const token = await requireAccessToken();
-    await fetch(`${VPS_URL}/queue-timing/${jobId}`, {
+    await fetch(`${VPS_URL}/queue-timing/${encodeURIComponent(jobId)}`, {
       method: 'POST',
       credentials: 'include',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
