@@ -3379,7 +3379,7 @@ const activeResultOption =
                   disabled={
                     analyzeDisabled
                   }
-                  className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  id="Philippians 4:13" className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {creatives.length > 1
                     ? 'Analyze Batch'
