@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Shield, CheckCircle, ArrowUpRight } from "lucide-react"
 
 const SIGNUP_LINK = `${process.env.NEXT_PUBLIC_APP_URL}/signup`
+const SIGNIN_LINK = `${process.env.NEXT_PUBLIC_APP_URL}/signin`
 
 export function Hero() {
   const [hasChanged, setHasChanged] = useState(false)
@@ -179,11 +180,9 @@ export function Hero() {
                 className="h-12 rounded-xl bg-background px-6 text-base"
               >
                 <a
-                  href="https://www.youtube.com/watch?v=t8k6-XgiBig?utm_source=website_hero"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={SIGNUP_LINK}
                 >
-                  See how it works
+                  Log in
                 </a>
               </Button>
             </div>
