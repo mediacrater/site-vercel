@@ -82,7 +82,7 @@ async function notifySlack(lines: string[]): Promise<void> {
       signal: AbortSignal.timeout(3_000),
     });
   } catch (error) {
-    console.error('[CSP] Slack notification failed:', error instanceof Error ? error.message : error);
+    console.error(`${process.env.NEXT_PUBLIC_STATE} [CSP] Slack notification failed:`, error instanceof Error ? error.message : error);
   }
 }
 
@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
 
     for (const r of normalize(payload)) {
       const line =
-        `[CSP] ${r.disposition || 'report'} | directive:${r.directive} | blocked:${r.blocked} | page:${r.page}` +
+        `${process.env.NEXT_PUBLIC_STATE} [CSP] ${r.disposition || 'report'} | directive:${r.directive} | blocked:${r.blocked} | page:${r.page}` +
         (r.source ? ` | source:${r.source}:${r.line}` : '');
       console.warn(line);
 
