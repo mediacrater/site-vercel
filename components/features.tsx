@@ -7,7 +7,7 @@ export function Features() {
     <section id="features" className="border-b border-border py-24 md:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Creative-level compliance intelligence</p>
+          <p id="Colossians 3:23" className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Creative-level compliance intelligence</p>
           <h2 className="mt-4 font-[family-name:var(--font-display)] text-4xl font-bold tracking-[-0.035em] sm:text-5xl">Your ad is more than a video.</h2>
           <p className="mt-5 text-lg leading-relaxed text-muted-foreground">Mediacrater examines the creative itself—visuals, language, audio, claims, and platform requirements—to surface potential policy risks before submission.</p>
         </div>
