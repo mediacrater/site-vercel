@@ -62,10 +62,16 @@ export function Header() {
     : "/images/header-logo.png"
   const navLinks = [
     { href: "#features", label: "Features" },
-    { href: "https://www.youtube.com/watch?v=t8k6-XgiBig?utm_medium=website_how-it-works", target="_blank", rel="noopener noreferrer", label: "How It Works" },
+    { 
+      href: "https://www.youtube.com/watch?v=t8k6-XgiBig&utm_medium=website_how-it-works", 
+      target: "_blank", 
+      rel: "noopener noreferrer", 
+      label: "How It Works" 
+    },
     { href: "#pricing", label: "Pricing" },
     { href: "#faq", label: "FAQ" },
   ]
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
