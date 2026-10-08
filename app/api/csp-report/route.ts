@@ -8,6 +8,13 @@
 // stripped of control characters, URLs lose their query string and fragment
 // (they can carry tokens), and each server instance logs at most 60 requests
 // per IP per minute. Nothing is written to the database.
+//
+// Slack (optional): Vercel's Hobby plan keeps runtime logs for about an hour,
+// so reports would disappear before anyone reads them. If
+// CSP_SLACK_WEBHOOK_URL is set, each distinct violation is also posted to
+// Slack: at most once per hour per server instance (keyed on directive,
+// blocked URL and page path), at most 10 messages per minute per instance,
+// and never for browser-extension sources.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { clientIpFrom } from '@/lib/rate-limit';
@@ -18,6 +25,66 @@ const PER_IP_PER_MINUTE = 60;
 
 // Best effort only: serverless instances don't share memory.
 const recentByIp = new Map<string, { windowStart: number; count: number }>();
+
+const SLACK_WEBHOOK_URL = process.env.CSP_SLACK_WEBHOOK_URL || '';
+const SLACK_DEDUPE_MS = 60 * 60 * 1000;
+const SLACK_MAX_PER_MINUTE = 10;
+const slackSentAt = new Map<string, number>();
+let slackWindowStart = 0;
+let slackWindowCount = 0;
+
+const EXTENSION_SCHEME = /^(chrome|moz|safari-web|ms-browser)-extension:/i;
+
+function isExtensionNoise(r: Normalized): boolean {
+  return EXTENSION_SCHEME.test(r.blocked) || EXTENSION_SCHEME.test(r.source);
+}
+
+// Slack treats <, > and & as markup (links, @channel mentions).
+function slackEscape(value: string): string {
+  return value.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] as string));
+}
+
+function takeSlackSlot(key: string): boolean {
+  const now = Date.now();
+
+  const last = slackSentAt.get(key);
+  if (last && now - last < SLACK_DEDUPE_MS) return false;
+
+  if (now - slackWindowStart >= 60_000) {
+    slackWindowStart = now;
+    slackWindowCount = 0;
+  }
+  if (slackWindowCount >= SLACK_MAX_PER_MINUTE) return false;
+
+  slackWindowCount += 1;
+  if (slackSentAt.size > 1_000) slackSentAt.clear();
+  slackSentAt.set(key, now);
+  return true;
+}
+
+function pagePath(page: string): string {
+  try {
+    return new URL(page).pathname;
+  } catch {
+    return page;
+  }
+}
+
+async function notifySlack(lines: string[]): Promise<void> {
+  if (!SLACK_WEBHOOK_URL || lines.length === 0) return;
+  try {
+    // Awaited (with a short timeout) because a serverless function can be
+    // frozen as soon as the response is sent.
+    await fetch(SLACK_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text: lines.join('\n') }),
+      signal: AbortSignal.timeout(3_000),
+    });
+  } catch (error) {
+    console.error('[CSP] Slack notification failed:', error instanceof Error ? error.message : error);
+  }
+}
 
 function allowLog(ip: string): boolean {
   const now = Date.now();
@@ -42,7 +109,9 @@ function cleanUrl(value: unknown): string {
   const raw = String(value ?? '');
   try {
     const url = new URL(raw);
-    return clean(url.origin + url.pathname);
+    // Extension URLs (chrome-extension://…) have an opaque "null" origin.
+    const base = url.origin !== 'null' ? url.origin : `${url.protocol}//${url.host}`;
+    return clean(base + url.pathname);
   } catch {
     return clean(raw.split(/[?#]/)[0]); // keywords like "inline", "eval", "data"
   }
@@ -107,12 +176,20 @@ export async function POST(req: NextRequest) {
   }
 
   if (allowLog(clientIpFrom(req) || 'unknown')) {
+    const slackLines: string[] = [];
+
     for (const r of normalize(payload)) {
-      console.warn(
+      const line =
         `[CSP] ${r.disposition || 'report'} | directive:${r.directive} | blocked:${r.blocked} | page:${r.page}` +
-          (r.source ? ` | source:${r.source}:${r.line}` : '')
-      );
+        (r.source ? ` | source:${r.source}:${r.line}` : '');
+      console.warn(line);
+
+      if (!isExtensionNoise(r) && takeSlackSlot(`${r.directive}|${r.blocked}|${pagePath(r.page)}`)) {
+        slackLines.push(slackEscape(line));
+      }
     }
+
+    await notifySlack(slackLines);
   }
 
   // 204 either way, so the browser doesn't retry.
