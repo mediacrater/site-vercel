@@ -182,7 +182,7 @@ export function Hero() {
                 <a
                   href={SIGNUP_LINK}
                 >
-                  Log in
+                  Log in as an existing client
                 </a>
               </Button>
             </div>
