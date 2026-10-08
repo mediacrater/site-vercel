@@ -177,10 +177,10 @@ export function Hero() {
                 asChild
                 variant="outline"
                 size="lg"
-                className="h-12 rounded-xl bg-background px-6 text-base"
+                className="h-12 rounded-xl bg-background px-6 text-base text-foreground hover:bg-accent hover:text-accent-foreground dark:hover:bg-muted dark:hover:text-foreground"
               >
                 <a
-                  href={SIGNUP_LINK}
+                  href={SIGNIN_LINK}
                 >
                   Log in as an existing client
                 </a>
