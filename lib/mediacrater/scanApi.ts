@@ -15,6 +15,7 @@
 
 import type { ExtractedFrame, ScanType } from './dissector';
 import { supabase } from './supabaseClient';
+import { isGatewayTimeout, isLostConnection, waitForSavedScan } from './scanRecovery';
 
 const VPS_URL = process.env.NEXT_PUBLIC_VPS_API_URL || '';
 
@@ -91,7 +92,19 @@ export async function scanVideo(
 ): Promise<ScanResponse> {
   const token = await requireAccessToken();
 
-  const response = await fetch(`${VPS_URL}/scan-video`, {
+  // Deep scans can outlast Cloudflare's 100-second limit. If the connection
+  // is lost, the server still finishes and saves the scan under scanId, so we
+  // wait for it instead of reporting "Failed to fetch" (see scanRecovery.ts).
+  const recover = async (error: unknown): Promise<ScanResponse> => {
+    if (scanId && !signal?.aborted) {
+      return waitForSavedScan(scanId, signal);
+    }
+    throw error;
+  };
+
+  let response: Response;
+  try {
+    response = await fetch(`${VPS_URL}/scan-video`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -117,7 +130,11 @@ export async function scanVideo(
         batchMeta?.batchPosition ?? null,
     }),
     signal,
-  });
+    });
+  } catch (error) {
+    if (isLostConnection(error)) return recover(error);
+    throw error;
+  }
 
   if (response.status === 202) {
     const data = await response.json();
@@ -125,10 +142,18 @@ export async function scanVideo(
   }
 
   if (!response.ok) {
+    if (isGatewayTimeout(response.status)) {
+      return recover(new Error(`Failed to scan video (${response.status})`));
+    }
     throw new Error(await readErrorMessage(response, `Failed to scan video (${response.status})`));
   }
 
-  return response.json();
+  try {
+    return await response.json();
+  } catch (error) {
+    // The connection dropped while the result was arriving.
+    return recover(error);
+  }
 }
 
 export async function scanImage(
