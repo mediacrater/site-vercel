@@ -1,6 +1,12 @@
 //scanApiUrl.ts
+//
+// CHANGES (deep scan): URL scans pass their scanId to postJson, so a scan
+// whose response is cut off (Cloudflare's 100-second limit, while a deep scan
+// is still thinking) is recovered from the saved scan instead of failing with
+// "Failed to fetch". See scanRecovery.ts.
 
 import { supabase } from '@/lib/mediacrater/supabaseClient';
+import { isGatewayTimeout, isLostConnection, waitForSavedScan } from './scanRecovery';
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_VPS_API_URL || '';
@@ -58,12 +64,22 @@ async function getAuthHeader() {
 async function postJson<T>(
   path: string,
   body: unknown,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  recoverScanId?: string | null
 ): Promise<T> {
   const headers =
     await getAuthHeader();
 
-  const response =
+  const recover = async (error: unknown): Promise<T> => {
+    if (recoverScanId && !signal?.aborted) {
+      return (await waitForSavedScan(recoverScanId, signal)) as unknown as T;
+    }
+    throw error;
+  };
+
+  let response: Response;
+  try {
+    response =
     await fetch(
       `${API_BASE_URL}${path}`,
       {
@@ -80,11 +96,24 @@ async function postJson<T>(
         signal,
       }
     );
+  } catch (error) {
+    if (isLostConnection(error)) return recover(error);
+    throw error;
+  }
+
+  if (!response.ok && isGatewayTimeout(response.status)) {
+    return recover(new Error('URL scan failed. Please try again.'));
+  }
 
   const payload =
     await response.json().catch(
       () => null
     );
+
+  // The connection dropped while the result was arriving.
+  if (response.ok && payload === null) {
+    return recover(new Error('URL scan failed. Please try again.'));
+  }
 
   if (!response.ok) {
     throw new Error(
@@ -132,7 +161,8 @@ export async function scanVideoUrl(
         Boolean(analyzeAudio),
       ...batchMeta,
     },
-    signal
+    signal,
+    scanId
   );
 }
 
@@ -157,6 +187,7 @@ export async function scanImageUrl(
       fileName,
       ...batchMeta,
     },
-    signal
+    signal,
+    scanId
   );
 }
