@@ -1,7 +1,15 @@
 // app/api/signin/route.ts
+//
+// CHANGES (password policy): a successful sign-in now also returns
+// weakPassword: true when the password doesn't meet the current rules
+// (lib/password-policy.ts), e.g. accounts created under the old 6-character
+// minimum. Sign-in still succeeds; the page shows a gentle "please update"
+// prompt. Supabase's own weak-password flag counts too (it can also include
+// reasons such as a leaked password, if that protection is enabled).
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { checkAndLogRateLimit, clientIpFrom } from "@/lib/rate-limit"
+import { isPasswordValid } from "@/lib/password-policy"
 
 const supabaseAnon = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -83,10 +91,13 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const supabaseFlaggedWeak = Boolean((data as { weakPassword?: unknown }).weakPassword)
+
   return NextResponse.json(
     {
       success: true,
       session: data.session,
+      weakPassword: supabaseFlaggedWeak || !isPasswordValid(password),
     },
     { headers: rateLimitHeaders }
   )
