@@ -20,9 +20,13 @@ export interface ExtractedAudio {
 
 export type ScanType = 'regular' | 'deep';
 
+// Deep scans use the same frames as Regular scans (a frame every 0.5 s).
+// What makes them "deep" is the server turning on the model's thinking mode.
+// The old deep interval (0.125 s) produced ~968 frames for a 2-minute video,
+// over QwenCloud's limit of 250 images per request.
 const SCAN_CONFIG: Record<ScanType, { interval: number }> = {
   regular: { interval: 0.5 },
-  deep: { interval: 0.125 },
+  deep: { interval: 0.5 },
 };
 
 const TARGET_LONG_EDGE = 900;
