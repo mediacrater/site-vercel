@@ -338,6 +338,8 @@ export function Pricing() {
           </svg>
           Secure checkout via Stripe
           <span className="text-border">·</span>
+          Prices are listed in USD
+          <span className="text-border">·</span>
           Cancel anytime
           <span className="text-border">·</span>
           No hidden fees
