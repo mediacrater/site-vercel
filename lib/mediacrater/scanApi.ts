@@ -15,7 +15,7 @@
 
 import type { ExtractedFrame, ScanType } from './dissector';
 import { supabase } from './supabaseClient';
-import { isGatewayTimeout, isLostConnection, waitForSavedScan } from './scanRecovery';
+import { isGatewayTimeout, isLostConnection, SCAN_LOST_MESSAGE, waitForSavedScan } from './scanRecovery';
 
 const VPS_URL = process.env.NEXT_PUBLIC_VPS_API_URL || '';
 
@@ -96,10 +96,9 @@ export async function scanVideo(
   // is lost, the server still finishes and saves the scan under scanId, so we
   // wait for it instead of reporting "Failed to fetch" (see scanRecovery.ts).
   const recover = async (error: unknown): Promise<ScanResponse> => {
-    if (scanId && !signal?.aborted) {
-      return waitForSavedScan(scanId, signal);
-    }
-    throw error;
+    if (signal?.aborted) throw error;
+    if (scanId) return waitForSavedScan(scanId, signal);
+    throw new Error(SCAN_LOST_MESSAGE);
   };
 
   let response: Response;
@@ -168,7 +167,17 @@ export async function scanImage(
 ): Promise<ScanResponse> {
   const token = await requireAccessToken();
 
-  const response = await fetch(`${VPS_URL}/scan-image`, {
+  // Same recovery as scanVideo: if the connection is lost, wait for the saved
+  // scan instead of showing "Failed to fetch".
+  const recover = async (error: unknown): Promise<ScanResponse> => {
+    if (signal?.aborted) throw error;
+    if (scanId) return waitForSavedScan(scanId, signal);
+    throw new Error(SCAN_LOST_MESSAGE);
+  };
+
+  let response: Response;
+  try {
+    response = await fetch(`${VPS_URL}/scan-image`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -191,7 +200,11 @@ export async function scanImage(
         batchMeta?.batchPosition ?? null,
     }),
     signal,
-  });
+    });
+  } catch (error) {
+    if (isLostConnection(error)) return recover(error);
+    throw error;
+  }
 
   if (response.status === 202) {
     const data = await response.json();
@@ -199,10 +212,18 @@ export async function scanImage(
   }
 
   if (!response.ok) {
+    if (isGatewayTimeout(response.status)) {
+      return recover(new Error(`Failed to scan image (${response.status})`));
+    }
     throw new Error(await readErrorMessage(response, `Failed to scan image (${response.status})`));
   }
 
-  return response.json();
+  try {
+    return await response.json();
+  } catch (error) {
+    // The connection dropped while the result was arriving.
+    return recover(error);
+  }
 }
 
 export async function getQueueStatus(
