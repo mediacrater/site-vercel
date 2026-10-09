@@ -1,7 +1,15 @@
 'use client';
+// components/verification-dialogue.tsx
+// CHANGES (password policy): the reset form uses the shared rules in
+// lib/password-policy.ts (10+ characters, lowercase, uppercase, number,
+// symbol) with the same live checklist as sign-up. "Reset Password" stays
+// disabled until every rule passes and both passwords match. Supabase
+// enforces the same rules when the password is saved.
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { isPasswordValid } from '@/lib/password-policy';
+import { PasswordChecklist } from '@/components/password-checklist';
 
 type DialogType = 'email-verified' | 'password-reset' | 'error' | null;
 
@@ -84,8 +92,8 @@ function VerificationDialogContent() {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password.length < 6) {
-      setErrorMessage('Password must be at least 6 characters long.');
+    if (!isPasswordValid(password)) {
+      setErrorMessage('Please choose a password that meets all the requirements below.');
       return;
     }
 
@@ -229,9 +237,15 @@ function VerificationDialogContent() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                autoComplete="new-password"
+                aria-describedby="reset-password-requirements"
                 className="w-full px-4 py-2 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
-                placeholder="Minimum 6 characters"
+                placeholder="At least 10 characters"
+              />
+              <PasswordChecklist
+                id="reset-password-requirements"
+                password={password}
+                confirmPassword={confirmPassword}
               />
             </div>
 
@@ -245,7 +259,7 @@ function VerificationDialogContent() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                minLength={6}
+                autoComplete="new-password"
                 className="w-full px-4 py-2 bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
                 placeholder="Re-enter your password"
               />
@@ -259,7 +273,7 @@ function VerificationDialogContent() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !isPasswordValid(password) || password !== confirmPassword}
               className="w-full bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
               {loading ? 'Resetting...' : 'Reset Password'}
