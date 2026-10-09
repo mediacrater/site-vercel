@@ -1,7 +1,13 @@
 // app/api/signup/route.ts
+//
+// CHANGES (email typo prevention): after the rate-limit check, the email's
+// domain must be able to receive mail (lib/email-domain.ts). Typo domains like
+// "gmail.copm" are rejected with a clear message instead of creating an
+// account whose confirmation email bounces. DNS problems never block sign-up.
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { checkAndLogRateLimit } from "@/lib/rate-limit";
+import { checkEmailDomain } from '@/lib/email-domain';
 import {
   attachDeviceCookie,
   clientIpFrom,
@@ -90,6 +96,14 @@ export async function POST(req: NextRequest) {
         "X-RateLimit-Limit": String(MAX_SIGNUPS_PER_WINDOW),
         "X-RateLimit-Remaining": "0",
       }
+    );
+  }
+
+  if (typeof email !== 'string' || (await checkEmailDomain(email)) === 'no_mail') {
+    return jsonWithDevice(
+      { error: "That email address can't receive mail. Please check it for typos." },
+      400,
+      deviceId
     );
   }
 
