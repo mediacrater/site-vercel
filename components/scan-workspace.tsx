@@ -3257,7 +3257,7 @@ const activeResultOption =
                             </span>
 
                             <span className="block text-xs text-muted-foreground">
-                              Slower, but designed for fast-paced "UGC-style" ads or montages where violations might be hidden in fast cuts
+                              Costs 2 scans and takes longer. We analyze your ad more carefully, step by step, to catch subtler issues a Regular scan can miss.
                             </span>
                           </span>
                         </label>
