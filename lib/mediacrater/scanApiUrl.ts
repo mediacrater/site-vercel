@@ -6,7 +6,13 @@
 // "Failed to fetch". See scanRecovery.ts.
 
 import { supabase } from '@/lib/mediacrater/supabaseClient';
-import { isGatewayTimeout, isLostConnection, waitForSavedScan } from './scanRecovery';
+import {
+  CONNECTION_LOST_MESSAGE,
+  isGatewayTimeout,
+  isLostConnection,
+  SCAN_LOST_MESSAGE,
+  waitForSavedScan,
+} from './scanRecovery';
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_VPS_API_URL || '';
@@ -70,11 +76,15 @@ async function postJson<T>(
   const headers =
     await getAuthHeader();
 
+  // Scans (with a scanId) wait for the saved result; other requests, like
+  // checking a pasted URL, just get a clear message instead of "Failed to fetch".
+  const isScan = path.startsWith('/scan-');
   const recover = async (error: unknown): Promise<T> => {
-    if (recoverScanId && !signal?.aborted) {
+    if (signal?.aborted) throw error;
+    if (recoverScanId) {
       return (await waitForSavedScan(recoverScanId, signal)) as unknown as T;
     }
-    throw error;
+    throw new Error(isScan ? SCAN_LOST_MESSAGE : CONNECTION_LOST_MESSAGE);
   };
 
   let response: Response;
