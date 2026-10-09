@@ -17,7 +17,18 @@
 import { supabase } from './supabaseClient';
 
 const POLL_INTERVAL_MS = 5_000;
-const RECOVERY_TIMEOUT_MS = 6 * 60 * 1000; // the server gives up after 280 s
+const RECOVERY_TIMEOUT_MS = 6 * 60 * 1000; // the server gives up after 360 s
+
+// Shown when a scan's connection is lost and its result can't be recovered.
+// Scans are only charged after the analysis succeeds, so a deduction means a
+// result exists (Scan History shows it on paid plans).
+export const SCAN_LOST_MESSAGE =
+  "Something went wrong on our end. If scans were deducted, your result should be in your Scan History (paid plans). If it isn't there, or you need help, please contact support.";
+
+// Shown for non-scan requests (e.g. checking a pasted URL) that can't reach
+// the server. Nothing is charged for these.
+export const CONNECTION_LOST_MESSAGE =
+  "We couldn't reach our servers. Please check your connection and try again. If this keeps happening, please contact support.";
 
 // Statuses a proxy returns when it gave up waiting for the server.
 const GATEWAY_STATUSES = new Set([502, 503, 504, 520, 522, 524]);
@@ -105,6 +116,6 @@ export async function waitForSavedScan(scanId: string, signal?: AbortSignal): Pr
   }
 
   throw new Error(
-    'This scan is taking longer than expected. It will appear in your Scan History when it finishes, so please check there before scanning again.'
+    "This scan is taking longer than expected. If scans were deducted, your result should appear in your Scan History (paid plans) shortly, so please check there before scanning again. If it doesn't, or you need help, please contact support."
   );
 }
