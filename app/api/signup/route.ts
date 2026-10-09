@@ -4,10 +4,15 @@
 // domain must be able to receive mail (lib/email-domain.ts). Typo domains like
 // "gmail.copm" are rejected with a clear message instead of creating an
 // account whose confirmation email bounces. DNS problems never block sign-up.
+//
+// CHANGES (password policy): the password must meet lib/password-policy.ts
+// (the same rules as the page's checklist and the Supabase setting), checked
+// before any rate-limit slot is used.
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { checkAndLogRateLimit } from "@/lib/rate-limit";
 import { checkEmailDomain } from '@/lib/email-domain';
+import { isPasswordValid } from '@/lib/password-policy';
 import {
   attachDeviceCookie,
   clientIpFrom,
@@ -60,6 +65,17 @@ export async function POST(req: NextRequest) {
 
   if (!email || !password) {
     return jsonWithDevice({ error: 'Email and password are required.' }, 400, deviceId);
+  }
+
+  if (!isPasswordValid(password)) {
+    return jsonWithDevice(
+      {
+        error:
+          'Password must be at least 10 characters and include a lowercase letter, an uppercase letter, a number and a special character, with no space at the start or end.',
+      },
+      400,
+      deviceId
+    );
   }
 
   // Supabase verifies the token itself (it is single-use), so we only check it exists.
