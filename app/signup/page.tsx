@@ -1,6 +1,67 @@
 'use client';
 // app/signup/page.tsx
-
+//
+// Rebuilt against the real /api/signup route (previously I had this
+// calling supabase.auth.signUp() directly, which skipped the IP rate
+// limiting, profiles upsert, and consent-timestamp write that route
+// handles — that was the actual signup bug, now fixed by routing
+// through /api/signup properly).
+//
+// checkEmail is now driven by whether the API response includes a
+// session (auto-confirmed) vs. not (confirmation email required) —
+// the version this replaced always redirected to /dashboard
+// unconditionally and never set checkEmail at all.
+//
+// Device signals (timezone, browser, os, device_fp) are collected here
+// and posted to /api/signup. mc_device_id is HttpOnly and set by the
+// API — do not read or write it from this page. The Supabase session
+// in localStorage is unrelated and still dies on logout.
+//
+// Cloudflare Turnstile uses explicit render (required on a Next.js
+// client page). The script + widget div are the same two pieces as
+// the HTML snippet; we call turnstile.render() ourselves because
+// implicit scan-on-load misses a React-hydrated form.
+//
+// Resend verification now uses a server-driven countdown: /api/
+// resend-verification returns retryAfterSeconds (100 on success, or the
+// actual remaining wait on a 429), and resendCooldown counts that down
+// to 0 once per second. This replaced a flat client-side 60s timer that
+// had no relationship to the server's actual rate limit window and
+// didn't survive a page refresh. The resend call now also requires a
+// fresh Turnstile token, since /api/resend-verification enforces
+// verification server-side — the signup widget is reused for this by
+// re-rendering it in the checkEmail view.
+//
+// TODO (Phase C): referral attribution (reading the mc_referrer cookie)
+// still not built — hook point is wherever signup succeeds below.
+//
+// CHANGES (email verification fixes):
+// - "Already confirmed" state: once the email is confirmed, the resend button
+//   and Turnstile widget are hidden and a warning is shown instead. Detected
+//   two ways: (1) the confirmation link opened in another tab of this browser
+//   signs the user in, which Supabase broadcasts to this tab; (2) the resend
+//   API answers { alreadyConfirmed: true } for an account created from this
+//   browser (covers confirming on a different device).
+// - Resend errors without a countdown (e.g. Supabase refusing to send) used
+//   to be hidden, because the error only rendered while resendCooldown > 0.
+//   The button simply reappeared, so users clicked again and again. Errors
+//   now stay visible; only countdown errors disappear when the countdown ends.
+//
+// CHANGES (email typo prevention):
+// - "Create Account" now opens a "Double check if we got your email right"
+//   popup before anything is sent. "You got this wrong, change email" closes
+//   it and puts the cursor back in the email field; "That is my email" creates
+//   the account (which sends the confirmation email).
+// - If the domain looks like a misspelling of a common provider
+//   ("gmail.copm", "hotmial.com"), the popup offers "Did you mean …?"
+//   (lib/email-typo.ts). The server also rejects domains that can't receive
+//   mail (lib/email-domain.ts, in /api/signup).
+//
+// CHANGES (password policy): the 6-character minimum is replaced by the
+// shared rules in lib/password-policy.ts (10+ characters, lowercase,
+// uppercase, number, symbol). A live checklist under the password field turns
+// each rule green as it's met, and "Create Account" stays disabled until all
+// rules pass and both passwords match. Supabase enforces the same rules.
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
@@ -10,6 +71,8 @@ import { AuthShowcasePanel } from '@/components/auth-showcase-panel';
 import { collectDeviceClient } from '@/lib/collect-device-client';
 import { supabase } from "@/lib/mediacrater/supabaseClient"
 import { suggestEmailCorrection } from '@/lib/email-typo';
+import { isPasswordValid } from '@/lib/password-policy';
+import { PasswordChecklist } from '@/components/password-checklist';
 import {
   Dialog,
   DialogContent,
@@ -168,8 +231,8 @@ export default function SignUpPage() {
       setError('Passwords do not match.');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (!isPasswordValid(password)) {
+      setError('Please choose a password that meets all the requirements below the password field.');
       return;
     }
     if (!consentAccepted) {
@@ -381,9 +444,9 @@ export default function SignUpPage() {
                       }
                     }}
                   >
-                    <DialogHeader className="text-center">
+                    <DialogHeader>
                       {/* One line on tablet/desktop; may wrap on narrow phones. */}
-                      <DialogTitle className="text-center sm:whitespace-nowrap">
+                      <DialogTitle className="sm:whitespace-nowrap">
                         Double check if we got your email right
                       </DialogTitle>
                       <DialogDescription className="break-all pt-2 text-center text-base font-semibold text-foreground">
@@ -445,8 +508,15 @@ export default function SignUpPage() {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      aria-describedby="password-requirements"
+                      autoComplete="new-password"
                       className="w-full px-3.5 py-2.5 bg-card border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                      placeholder="At least 6 characters"
+                      placeholder="At least 10 characters"
+                    />
+                    <PasswordChecklist
+                      id="password-requirements"
+                      password={password}
+                      confirmPassword={confirmPassword}
                     />
                   </div>
                   <div>
@@ -456,6 +526,7 @@ export default function SignUpPage() {
                       required
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
+                      autoComplete="new-password"
                       className="w-full px-3.5 py-2.5 bg-card border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       placeholder="••••••••"
                     />
@@ -498,7 +569,12 @@ export default function SignUpPage() {
                   )}
                   <button
                     type="submit"
-                    disabled={loading || !turnstileToken}
+                    disabled={
+                      loading ||
+                      !turnstileToken ||
+                      !isPasswordValid(password) ||
+                      password !== confirmPassword
+                    }
                     className="w-full bg-primary text-primary-foreground py-2.5 rounded-lg font-semibold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
                   >
                     {loading ? 'Creating account...' : 'Create Account'}
