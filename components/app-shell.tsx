@@ -12,6 +12,10 @@
 // account in one hamburger panel — full parity, just consolidated for
 // the smaller screen instead of two separate desktop-style bars stacked
 // on top of each other.
+//
+// CHANGES (tab close guard): useScanLeaveGuard() lives here so the
+// "Leave site?" prompt protects an active scan on every app page, not just
+// the Dashboard (scans keep running while you browse Scan History/Settings).
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -24,6 +28,7 @@ import { KeyboardShortcuts } from '@/components/keyboard-shortcuts';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { supabase } from '@/lib/mediacrater/supabaseClient';
 import { ApiHostClearance } from './ApiHostClearance';
+import { useScanLeaveGuard } from '@/hooks/use-scan-leave-guard';
 
 const EXTENSION_LINK =
   'https://chromewebstore.google.com/detail/mediacrater-ad-compliance/fgekklkpomdcadiaekpigidkimnkjpnf?utm_medium=app_mobile_nav';
@@ -48,6 +53,8 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useScanLeaveGuard();
 
   async function handleSignOut() {
     await supabase.auth.signOut();
