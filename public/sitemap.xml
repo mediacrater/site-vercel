@@ -6,6 +6,11 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://mediacrater.com/dashboard</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://mediacrater.com/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -22,6 +27,21 @@
   </url>
   <url>
     <loc>https://mediacrater.com/refund</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://mediacrater.com/solutions</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  <url>
+    <loc>https://mediacrater.com/chrome-extension-privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://mediacrater.com/cookies</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
