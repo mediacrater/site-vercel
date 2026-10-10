@@ -33,7 +33,9 @@ const slackSentAt = new Map<string, number>();
 let slackWindowStart = 0;
 let slackWindowCount = 0;
 
-const EXTENSION_SCHEME = /^(chrome|moz|safari-web|ms-browser)-extension:/i;
+// Chrome often reports only the scheme ("chrome-extension", no "://id/…")
+// as the source of a violation caused by an extension, so the colon is optional.
+const EXTENSION_SCHEME = /^(chrome|moz|safari-web|ms-browser)-extension(:|$)/i;
 
 function isExtensionNoise(r: Normalized): boolean {
   return EXTENSION_SCHEME.test(r.blocked) || EXTENSION_SCHEME.test(r.source);
