@@ -8,6 +8,13 @@
 // CHANGES (password policy): the password must meet lib/password-policy.ts
 // (the same rules as the page's checklist and the Supabase setting), checked
 // before any rate-limit slot is used.
+//
+// CHANGES (existing account notice): an email that already belongs to a
+// confirmed account now gets a 409 with code ACCOUNT_EXISTS, so the page can
+// tell the user to log in. This is only checked AFTER Turnstile (verified by
+// Supabase inside signUp) and the per-IP rate limit, which keeps
+// email-enumeration through this route slow and expensive. No other account
+// details are returned, and the existing user's rows are never touched.
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { checkAndLogRateLimit } from "@/lib/rate-limit";
@@ -33,6 +40,9 @@ const supabaseAdmin = createClient(
 );
 
 const SIGNUP_RATE_LIMIT_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+const ACCOUNT_EXISTS_MESSAGE =
+  'An account with this email already exists. Please log in to continue.';
 const MAX_SIGNUPS_PER_WINDOW = 10;
 
 function jsonWithDevice(body: unknown, status: number, deviceId: string, extraHeaders?: HeadersInit) {
@@ -147,6 +157,17 @@ export async function POST(req: NextRequest) {
     if (/captcha/i.test(error.message)) {
       return jsonWithDevice({ error: 'Verification failed. Please try again.' }, 400, deviceId);
     }
+    // Returned instead of an obfuscated user when email confirmation is off.
+    if (
+      (error as { code?: string }).code === 'user_already_exists' ||
+      /already registered/i.test(error.message)
+    ) {
+      return jsonWithDevice(
+        { error: ACCOUNT_EXISTS_MESSAGE, code: 'ACCOUNT_EXISTS' },
+        409,
+        deviceId
+      );
+    }
     return jsonWithDevice({ error: error.message }, 400, deviceId);
   }
 
@@ -156,6 +177,14 @@ export async function POST(req: NextRequest) {
   // obfuscated user with an empty identities array. Don't touch that user's rows.
   const isObfuscatedExisting =
     Array.isArray(data.user?.identities) && data.user!.identities!.length === 0;
+
+  if (isObfuscatedExisting) {
+    return jsonWithDevice(
+      { error: ACCOUNT_EXISTS_MESSAGE, code: 'ACCOUNT_EXISTS' },
+      409,
+      deviceId
+    );
+  }
 
   let deviceRecorded = false;
   if (userId && !isObfuscatedExisting) {
