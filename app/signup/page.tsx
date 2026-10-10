@@ -468,9 +468,9 @@ export default function SignUpPage() {
                       }
                     }}
                   >
-                    <DialogHeader>
+                    <DialogHeader className="text-center">
                       {/* One line on tablet/desktop; may wrap on narrow phones. */}
-                      <DialogTitle className="sm:whitespace-nowrap">
+                      <DialogTitle className="text-center sm:whitespace-nowrap">
                         Double check if we got your email right
                       </DialogTitle>
                       <DialogDescription className="break-all pt-2 text-center text-base font-semibold text-foreground">
