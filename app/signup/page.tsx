@@ -63,6 +63,12 @@
 // each rule green as it's met, and "Create Account" stays disabled until all
 // rules pass and both passwords match. Supabase enforces the same rules.
 //
+// CHANGES (popup only for unknown domains): "Create Account" skips the
+// "Double check your email" popup when the address ends in a recognised
+// public provider domain (isKnownProviderDomain in lib/email-typo.ts) and
+// creates the account straight away. Anything else (typo domains like
+// "gmail.copm", company/custom domains) still gets the popup.
+//
 // CHANGES (existing account notice): when /api/signup answers 409
 // ACCOUNT_EXISTS, an alert tells the user the account already exists and
 // links to Sign in and Forgot password. It clears as soon as the email
@@ -76,7 +82,7 @@ import { useTheme } from 'next-themes';
 import { AuthShowcasePanel } from '@/components/auth-showcase-panel';
 import { collectDeviceClient } from '@/lib/collect-device-client';
 import { supabase } from "@/lib/mediacrater/supabaseClient"
-import { suggestEmailCorrection } from '@/lib/email-typo';
+import { isKnownProviderDomain, suggestEmailCorrection } from '@/lib/email-typo';
 import { isPasswordValid } from '@/lib/password-policy';
 import { PasswordChecklist } from '@/components/password-checklist';
 import {
@@ -250,7 +256,12 @@ export default function SignUpPage() {
       setError('Please complete the verification check.');
       return;
     }
-    // Ask the user to double-check the address before anything is sent.
+    // Recognised provider (gmail.com, outlook.com, …): no popup.
+    if (isKnownProviderDomain(email)) {
+      void createAccount();
+      return;
+    }
+    // Unknown or misspelled domain: ask the user to double-check first.
     setShowEmailConfirm(true);
   }
 
