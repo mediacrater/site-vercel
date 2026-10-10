@@ -1,6 +1,16 @@
 'use client';
 
 // lib/mediacrater/backgroundScanStore.ts
+//
+// CHANGES (URL creatives in batches):
+// - fileKind now accepts 'image_url' and 'video_url'. normalizeBatchItems()
+//   used to drop any item whose fileKind wasn't 'image' or 'video', and every
+//   read of the stored state (progress updates, batch item updates, tab focus)
+//   runs through it. URL creatives therefore vanished from batchItems right
+//   after the scan started: no pause icons in the sidebar, no result bubbles,
+//   and a wrong "x of x creatives completed" count.
+// - makeIdleState() now includes batchItems: [] (it was missing, so
+//   `state.batchItems.length` could throw on an idle state).
 
 import {
   useEffect,
@@ -20,6 +30,20 @@ export type BackgroundScanStatus =
   | 'completed'
   | 'error';
 
+export type BackgroundCreativeKind =
+  | 'image'
+  | 'video'
+  | 'image_url'
+  | 'video_url';
+
+const VALID_CREATIVE_KINDS:
+  BackgroundCreativeKind[] = [
+    'image',
+    'video',
+    'image_url',
+    'video_url',
+  ];
+
 export type BackgroundBatchItemStatus =
   | 'queued'
   | 'cooldown'
@@ -30,7 +54,7 @@ export type BackgroundBatchItemStatus =
 export interface BackgroundBatchItem {
   creativeId: string;
   fileName: string;
-  fileKind: 'image' | 'video';
+  fileKind: BackgroundCreativeKind;
   batchPosition: number;
   status: BackgroundBatchItemStatus;
   scanIds: string[];
@@ -40,7 +64,7 @@ export interface BackgroundBatchItem {
 export interface BackgroundScanResult {
   creativeId: string;
   fileName: string;
-  fileKind: 'image' | 'video';
+  fileKind: BackgroundCreativeKind;
   batchPosition: number | null;
   scanId: string;
   platform: string;
@@ -96,6 +120,7 @@ function makeIdleState(): BackgroundScanState {
     message: null,
     results: null,
     scanIds: [],
+    batchItems: [],
     error: null,
   };
 }
@@ -142,9 +167,8 @@ function normalizeBatchItems(
     if (
       typeof candidate.creativeId !== 'string' ||
       typeof candidate.fileName !== 'string' ||
-      (
-        candidate.fileKind !== 'image' &&
-        candidate.fileKind !== 'video'
+      !VALID_CREATIVE_KINDS.includes(
+        candidate.fileKind as BackgroundCreativeKind
       ) ||
       !Number.isInteger(candidate.batchPosition) ||
       !VALID_BATCH_ITEM_STATUSES.includes(
