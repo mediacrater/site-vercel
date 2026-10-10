@@ -62,6 +62,12 @@
 // uppercase, number, symbol). A live checklist under the password field turns
 // each rule green as it's met, and "Create Account" stays disabled until all
 // rules pass and both passwords match. Supabase enforces the same rules.
+//
+// CHANGES (existing account notice): when /api/signup answers 409
+// ACCOUNT_EXISTS, an alert tells the user the account already exists and
+// links to Sign in and Forgot password. It clears as soon as the email
+// is edited. The email is not put in the sign-in URL (keeps it out of
+// browser history and server logs).
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
@@ -108,6 +114,7 @@ export default function SignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [accountExists, setAccountExists] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
   const [consentAccepted, setConsentAccepted] = useState(false);
   const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle');
@@ -259,6 +266,7 @@ export default function SignUpPage() {
 
   async function createAccount() {
     setError(null);
+    setAccountExists(false);
     setLoading(true);
     try {
       const device = await collectDeviceClient();
@@ -278,6 +286,11 @@ export default function SignUpPage() {
         }),
       });
       const json = await res.json();
+      if (res.status === 409 && json.code === 'ACCOUNT_EXISTS') {
+        setAccountExists(true);
+        resetTurnstile(); // the token was used by this request
+        return;
+      }
       if (!res.ok) {
         throw new Error(json.error || 'Failed to create account.');
       }
@@ -496,7 +509,10 @@ export default function SignUpPage() {
                       type="email"
                       required
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setAccountExists(false);
+                      }}
                       className="w-full px-3.5 py-2.5 bg-card border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       placeholder="you@company.com"
                     />
@@ -561,6 +577,25 @@ export default function SignUpPage() {
                     <p className="text-xs text-red-600 dark:text-red-400">
                       Turnstile site key is missing. Set NEXT_PUBLIC_TURNSTILE_SITE_KEY and redeploy.
                     </p>
+                  )}
+                  {accountExists && (
+                    <div
+                      role="alert"
+                      className="p-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-sm text-amber-800 dark:text-amber-400"
+                    >
+                      <p className="font-semibold">An account with this email already exists.</p>
+                      <p className="mt-0.5">
+                        Please{' '}
+                        <Link href="/signin" className="font-medium underline">
+                          log in
+                        </Link>{' '}
+                        to continue. Forgot your password?{' '}
+                        <Link href="/forgot-password" className="font-medium underline">
+                          Reset it
+                        </Link>
+                        .
+                      </p>
+                    </div>
                   )}
                   {error && (
                     <div className="p-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-sm text-red-800 dark:text-red-400">
