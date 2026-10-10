@@ -1,4 +1,7 @@
 // app/dashboard/page.tsx
+//
+// CHANGES (browser warning): <BrowserSupportWarning /> mounts once the
+// dashboard has loaded, so it doesn't pop up over the loading state.
 
 'use client';
 
@@ -28,6 +31,10 @@ import {
 import {
   ScanFeedback,
 } from '@/components/scan-feedback';
+
+import {
+  BrowserSupportWarning,
+} from '@/components/browser-support-warning';
 
 import {
   supabase,
@@ -259,6 +266,8 @@ function DashboardContent() {
         null
       }
     >
+      <BrowserSupportWarning />
+
       {showCheckoutSuccess && (
         <div className="mb-6 flex items-center justify-between gap-4 px-4 py-3 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
           <p className="text-sm text-green-800 dark:text-green-400">
