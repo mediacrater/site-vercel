@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://mediacrater.com'),
 
   title: 'Video Ad Policy Checker — Scan Before You Upload | Mediacrater',
-  description: 'Scan video ads for potential Meta, TikTok and Google policy issues before you upload. Get timestamped findings and suggested fixes.',,
+  description: 'Scan video ads for potential Meta, TikTok and Google policy issues before you upload. Get timestamped findings and suggested fixes.',
   keywords: [
   'video ad policy checker',
   'scan ad before uploading',
