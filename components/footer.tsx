@@ -74,7 +74,6 @@ export function Footer() {
                   Custom solutions
                 </Link>
               </li>
-              </li>
                 <li>
                 <Link href="/tools" className="text-background/70 hover:text-background transition-colors">
                   Free tools
