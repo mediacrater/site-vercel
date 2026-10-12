@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Date** | 12 October 2026 (`12oct26`) |
-| **Conversation** | `<add this conversation's URL>` |
+| **Conversation** | https://claude.ai/chat/d4b23f41-e563-40d3-a5ba-165fd98c9a36 |
 | **Related prior work** | `auth-hardening-turnstile-supabase-origin-secret-05oct26.md` (5 Oct 2026, `lib/account-device.ts` and `account_devices`) |
 | **Related work (same conversation)** | `google-oauth-signin-12oct26.md` (the VPS port `routes/_shared/accountDevice.js` uses the same lookup) |
 | **Stack** | Vercel (`lib/account-device.ts`, used by `/api/signup` and `/api/signin`), VPS (`routes/_shared/accountDevice.js`, used by `/api/oauth/complete`), IPinfo |
