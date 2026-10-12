@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Date** | 12 October 2026 (`12oct26`) |
-| **Conversation** | `<add this conversation's URL>` |
+| **Conversation** | https://claude.ai/chat/d4b23f41-e563-40d3-a5ba-165fd98c9a36 |
 | **Related prior work** | `vps-hardening-cloudflare-lockdown-ssrf-fix-02oct26.md` (2 Oct 2026, nginx origin-auth snippet, Transform Rule)<br>`auth-hardening-turnstile-supabase-origin-secret-05oct26.md` (5 Oct 2026, device data, Turnstile, `/api/signup`)<br>6 Oct 2026 per-scan abuse check index (`abuse_lock_exempt`, `action_required`, `detect_duplicate_free_ips`) |
 | **Related work (same conversation)** | `server-verified-accounts-12oct26.md` (pending → active model that Google sign-in depends on)<br>`ipinfo-geolocation-12oct26.md`<br>`unverified-account-cleanup-job-12oct26.md` |
 | **Stack** | Next.js web app on Vercel (Google button, `/auth/callback`), VPS Node/Express 5 API behind nginx + PM2 (`routes/api/oauth/*`), Cloudflare (Worker, Transform Rule, Turnstile, Bot Fight Mode), Supabase Auth + Postgres (**separate projects for test and live**), Google Auth Platform |
