@@ -35,8 +35,8 @@ export function Footer() {
               className="h-16 w-auto"
             />
             <p className="mt-4 text-background/70 max-w-md leading-relaxed">
-              The first comprehensive Chrome extension designed to be the final gatekeeper for your ad creatives.
-              Scan before you upload. Protect your ad accounts.
+              Scan video and image ads for likely policy issues before you upload.
+              Protect your ad accounts.
             </p>
           </div>
 
