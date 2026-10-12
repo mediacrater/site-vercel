@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Date** | 12 October 2026 (`12oct26`) |
-| **Conversation** | `<add this conversation's URL>` |
+| **Conversation** | https://claude.ai/chat/d4b23f41-e563-40d3-a5ba-165fd98c9a36 |
 | **Related prior work** | `auth-hardening-turnstile-supabase-origin-secret-05oct26.md` (5 Oct 2026, `/api/signup` writes IP, device and consent with the service-role key)<br>6 Oct 2026 per-scan abuse check index (`ip_at_creation` used for duplicate-account clustering) |
 | **Related work (same conversation)** | `google-oauth-signin-12oct26.md` (the Google activation path)<br>`unverified-account-cleanup-job-12oct26.md` (cleanup of pending accounts, not applied) |
 | **Stack** | Supabase Postgres (`handle_new_user()`, `profiles`), Next.js `/api/signup` on Vercel, VPS `/api/oauth/complete` |
