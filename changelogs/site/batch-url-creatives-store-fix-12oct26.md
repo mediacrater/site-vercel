@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Date** | 12 October 2026 (`12oct26`) |
-| **Conversation** | `<add this conversation's URL>` |
+| **Conversation** | https://claude.ai/chat/d4b23f41-e563-40d3-a5ba-165fd98c9a36 |
 | **Related work (same conversation)** | `url-scan-thumbnails-server-side-12oct26.md` (the other URL-scan fix) |
 | **Stack** | Next.js web app on Vercel: `lib/mediacrater/backgroundScanStore.ts`, `components/app-sidebar.tsx`, `components/scan-workspace.tsx` |
 | **Starting trigger** | In batch scans, uploaded files showed a grey pause icon in the sidebar's Dashboard button, a result bubble, and were counted in "x of x creatives completed without errors". URL creatives (image and video URLs) showed none of these |
