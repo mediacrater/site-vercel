@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Date** | 12 October 2026 (`12oct26`) |
-| **Conversation** | `<add this conversation's URL>` |
+| **Conversation** | https://claude.ai/chat/d4b23f41-e563-40d3-a5ba-165fd98c9a36 |
 | **Related work (same conversation)** | `signup-existing-account-alert-12oct26.md`, `google-oauth-signin-12oct26.md` |
 | **Stack** | Next.js on Vercel: `lib/email-typo.ts`, `app/signup/page.tsx` |
 | **Starting trigger** | You wanted the "Did we get this email right?" popup to appear only when the email does **not** end in a known provider domain (e.g. `@gmail.copm` → popup, `@gmail.com` → none), using a research document listing global email providers and their domains |
