@@ -49,7 +49,7 @@ function buildCsp() {
     'default-src': ["'self'"],
     // 'unsafe-inline' is required for Next.js's inline scripts on static pages.
     // Replacing it with per-page hashes is the possible future upgrade.
-    'script-src': ["'self'", "'unsafe-inline'", TURNSTILE, CF_INSIGHTS_SCRIPT],
+   'script-src': ["'self'", "'unsafe-inline'", "'wasm-unsafe-eval'", TURNSTILE, CF_INSIGHTS_SCRIPT],
     // React style={} attributes and the chart component's <style> need this.
     'style-src': ["'self'", "'unsafe-inline'"],
     // data:/blob: = canvas and video thumbnails; Supabase = signed thumbnail URLs;
