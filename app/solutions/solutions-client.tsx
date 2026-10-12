@@ -28,7 +28,7 @@ declare global {
   }
 }
 
-export default function SolutionsPage() {
+export function SolutionsClient() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
