@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Date** | 12 October 2026 (`12oct26`) |
-| **Conversation** | `https://claude.ai/chat/d4b23f41-e563-40d3-a5ba-165fd98c9a36` |
+| **Conversation** | https://claude.ai/chat/d4b23f41-e563-40d3-a5ba-165fd98c9a36 |
 | **Related work (same conversation)** | `server-verified-accounts-12oct26.md` (creates the pending accounts this would clean up) |
 | **Stack** | Supabase Postgres, `pg_cron`, `auth.users`, `public.profiles` |
 | **Starting trigger** | Direct-API signups (with a solved captcha) still create accounts, even though they can't scan. You were concerned they could flood Supabase, and had thought about a cron job that deletes unverified accounts after some time |
