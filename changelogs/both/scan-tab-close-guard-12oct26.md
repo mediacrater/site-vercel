@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Date** | 12 October 2026 (`12oct26`) |
-| **Conversation** | `<add this conversation's URL>` |
+| **Conversation** | https://claude.ai/chat/d4b23f41-e563-40d3-a5ba-165fd98c9a36 |
 | **Related work (same conversation)** | `dashboard-browser-support-warning-12oct26.md`, `batch-url-creatives-store-fix-12oct26.md` |
 | **Stack** | Next.js on Vercel: new `hooks/use-scan-leave-guard.ts`, `components/app-shell.tsx`, `lib/mediacrater/backgroundScanStore.ts` |
 | **Starting trigger** | Closing or reloading the tab mid-scan loses the scan. You wanted a browser warning like "Are you sure you want to close this tab? Your scan results will be lost." |
