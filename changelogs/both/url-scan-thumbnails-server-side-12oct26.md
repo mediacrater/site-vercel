@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Date** | 12 October 2026 (`12oct26`) |
-| **Conversation** | `<add this conversation's URL>` |
+| **Conversation** | https://claude.ai/chat/d4b23f41-e563-40d3-a5ba-165fd98c9a36 |
 | **Related prior work** | `vps-hardening-cloudflare-lockdown-ssrf-fix-02oct26.md` (2 Oct 2026, SSRF-safe fetch and `assertPublicFetchUrl`) |
 | **Related work (same conversation)** | `batch-url-creatives-store-fix-12oct26.md` |
 | **Stack** | VPS Node API (`routes/scanVideoUrl.js`, `routes/scanImageUrl.js`, new `utils/urlThumbnail.js`), ffmpeg, Supabase Storage bucket `scan-thumbnails`, Scan History page (`app/scan-history/page.tsx`) |
