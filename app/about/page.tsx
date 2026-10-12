@@ -10,6 +10,7 @@ export const metadata = {
     title: 'About Mediacrater – From Bans to Better Ads',
     description: 'A former dropshipper turned builder. Tired of losing money to opaque ad rejections, I created a tool that actually helps avoid bans on Meta, TikTok, Google & more.',
     images: ['/images/about-og.png'], // add a 1200x630 image (you + dashboard screenshot recommended)
+	  alternates: { canonical: '/about' },
   },
 };
 
