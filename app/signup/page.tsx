@@ -63,6 +63,10 @@
 // each rule green as it's met, and "Create Account" stays disabled until all
 // rules pass and both passwords match. Supabase enforces the same rules.
 //
+// CHANGES (Google sign-up): "Sign up with Google" under the form. It uses the
+// same consent checkbox and Turnstile widget as the email form, and the
+// server-side checks run on the VPS (/api/oauth/start, /api/oauth/complete).
+//
 // CHANGES (popup only for unknown domains): "Create Account" skips the
 // "Double check your email" popup when the address ends in a recognised
 // public provider domain (isKnownProviderDomain in lib/email-typo.ts) and
@@ -85,6 +89,7 @@ import { supabase } from "@/lib/mediacrater/supabaseClient"
 import { isKnownProviderDomain, suggestEmailCorrection } from '@/lib/email-typo';
 import { isPasswordValid } from '@/lib/password-policy';
 import { PasswordChecklist } from '@/components/password-checklist';
+import { GoogleAuthButton } from '@/components/google-auth-button';
 import {
   Dialog,
   DialogContent,
@@ -468,9 +473,9 @@ export default function SignUpPage() {
                       }
                     }}
                   >
-                    <DialogHeader className="text-center">
+                    <DialogHeader>
                       {/* One line on tablet/desktop; may wrap on narrow phones. */}
-                      <DialogTitle className="text-center sm:whitespace-nowrap">
+                      <DialogTitle className="sm:whitespace-nowrap">
                         Double check if we got your email right
                       </DialogTitle>
                       <DialogDescription className="break-all pt-2 text-center text-base font-semibold text-foreground">
@@ -626,6 +631,19 @@ export default function SignUpPage() {
                     {loading ? 'Creating account...' : 'Create Account'}
                   </button>
                 </form>
+                <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+                  <span className="h-px flex-1 bg-border" />
+                  or
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+                <GoogleAuthButton
+                  mode="signup"
+                  turnstileToken={turnstileToken}
+                  consentAccepted={consentAccepted}
+                  disabled={loading}
+                  onError={setError}
+                  onTurnstileUsed={resetTurnstile}
+                />
               </>
             )}
           </div>
