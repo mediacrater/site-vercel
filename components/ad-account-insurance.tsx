@@ -6,7 +6,7 @@ const insurancePoints = [
       </svg>
     ),
     title: 'Platforms never explain',
-    body: "Meta, TikTok, and YouTube reject ads or ban accounts with zero details. You’re left guessing what went wrong. Mediacrater flags the exact issues in advance.",
+    body: "Meta, TikTok, and YouTube reject ads or ban accounts with zero details. You’re left guessing what went wrong. Mediacrater flags issues in advance before you upload.",
   },
   {
     icon: (
@@ -23,12 +23,12 @@ const insurancePoints = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
       </svg>
     ),
-    title: 'Build algorithm trust',
+    title: 'Every rejection and restriction stays on record. Catching problems before upload means fewer of them.',
     body: "Every compliant ad strengthens your account history. Faster approvals, better delivery, more leniency. One bad upload can undo months of progress.",
   },
 ]
 
-const EXTENSION_URL = 'https://chromewebstore.google.com/detail/fgekklkpomdcadiaekpigidkimnkjpnf?utm_medium=website_ad_account_insurance'
+const SIGNUP_URL = '/signup?src=home-insurance&utm_source=website&utm_medium=cta&utm_campaign=home-insurance'
 
 export function AdAccountInsurance() {
   return (
@@ -81,9 +81,7 @@ export function AdAccountInsurance() {
             This isn’t just about protecting one ad. It’s about building the account history that platforms reward. The kind most of your competitors don’t have.
           </p>
           <a
-            href={EXTENSION_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={SIGNUP_URL}
             className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity"
           >
             Try Mediacrater free
