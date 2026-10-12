@@ -9,6 +9,15 @@
 // (the same rules as the page's checklist and the Supabase setting), checked
 // before any rate-limit slot is used.
 //
+// CHANGES (server-verified accounts): handle_new_user() now creates every
+// profile as account_status = 'pending_verification' and no longer copies
+// browser_id / ip_at_creation / consent from user metadata (which anyone can
+// set by calling Supabase's signup endpoint directly with the public anon key).
+// This route writes those values from what the SERVER observed, then
+// activates the account. A failed write now returns an error instead of
+// reporting success. Activation only moves pending -> active, so it can never
+// lift an abuse lock ('action_required').
+//
 // CHANGES (existing account notice): an email that already belongs to a
 // confirmed account now gets a 409 with code ACCOUNT_EXISTS, so the page can
 // tell the user to log in. This is only checked AFTER Turnstile (verified by
@@ -205,6 +214,26 @@ export async function POST(req: NextRequest) {
       );
     if (upsertError) {
       console.error('[SIGNUP] Failed to write profile data:', upsertError.message);
+      return jsonWithDevice(
+        { error: 'Your account could not be set up. Please try again.' },
+        500,
+        deviceId
+      );
+    }
+
+    const { error: activateError } = await supabaseAdmin
+      .from('profiles')
+      .update({ account_status: 'active' })
+      .eq('id', userId)
+      .eq('account_status', 'pending_verification');
+
+    if (activateError) {
+      console.error('[SIGNUP] Failed to activate profile:', activateError.message);
+      return jsonWithDevice(
+        { error: 'Your account could not be set up. Please try again.' },
+        500,
+        deviceId
+      );
     }
 
     const intel = await lookupIpIntel(req, ip);
