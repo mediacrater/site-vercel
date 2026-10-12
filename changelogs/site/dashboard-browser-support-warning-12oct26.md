@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Date** | 12 October 2026 (`12oct26`) |
-| **Conversation** | `<add this conversation's URL>` |
+| **Conversation** | https://claude.ai/chat/d4b23f41-e563-40d3-a5ba-165fd98c9a36 |
 | **Related work (same conversation)** | `scan-tab-close-guard-12oct26.md` |
 | **Stack** | Next.js on Vercel: new `components/browser-support-warning.tsx`, `app/dashboard/page.tsx`, existing `components/ui/dialog.tsx` |
 | **Starting trigger** | Scans run in the browser (Canvas frame extraction, Web Audio). You wanted to warn dashboard users on browsers outside a known-good list, or missing those APIs, and show logos of recommended browsers |
