@@ -1,4 +1,10 @@
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /db/
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /scan-history
+Disallow: /auth/
 
 Sitemap: https://mediacrater.com/sitemap.xml
