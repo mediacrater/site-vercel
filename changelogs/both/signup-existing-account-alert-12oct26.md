@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Date** | 12 October 2026 (`12oct26`) |
-| **Conversation** | `<add this conversation's URL>` |
+| **Conversation** | https://claude.ai/chat/d4b23f41-e563-40d3-a5ba-165fd98c9a36 |
 | **Related prior work** | `auth-hardening-turnstile-supabase-origin-secret-05oct26.md` (5 Oct 2026, Turnstile and the signup rate limit this relies on) |
 | **Related work (same conversation)** | `server-verified-accounts-12oct26.md` (later edits to the same `/api/signup` route) |
 | **Stack** | Next.js on Vercel: `app/api/signup/route.ts`, `app/signup/page.tsx`. Supabase Auth |
