@@ -369,6 +369,12 @@ export default function ExtensionPrivacyPolicy() {
           transmission or storage is completely secure, but we use administrative, technical, and
           organizational safeguards appropriate to the information processed.
         </p>
+        <p>
+          The Mediacrater Chrome extension works 100% in your browser with zero connection to 
+          our servers. As a standalone extension, you are responsible for its usage on the Facebook
+          Ads library and staying compliant with Meta's policies. Meta may have policies or systems 
+          in place that prevent excessive scraping or abuse. Please use responsibly.
+        </p>
       </section>
 
       <section className="mb-10">
