@@ -9,6 +9,11 @@ import { FAQ } from "@/components/faq"
 import { CTA } from "@/components/cta"
 import { Footer } from "@/components/footer"
 import { VerificationDialog } from "@/components/verification-dialog"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+}
 
 export default function Home() {
   return (
