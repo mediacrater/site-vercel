@@ -186,6 +186,7 @@ export default function PrivacyPolicy() {
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">How We Use Your Data</h2>
         <ul className="list-disc list-inside space-y-2">
+          <li>To let you sign up and sign in with your Google account</li>
           <li>To authenticate you and maintain your account session</li>
           <li>To scan your ad content and return a policy compliance report</li>
           <li>To manage your token balance accurately across purchases and scans</li>
@@ -233,6 +234,9 @@ export default function PrivacyPolicy() {
             network intelligence service to derive approximate location (country and city) and
             connection type (for example, residential or data center). Used only for free-plan
             enforcement. We do not receive a street address.
+          </li>
+          <li>
+            <strong>Google</strong> — optional sign-in with your Google account.
           </li>
         </ul>
         <p className="mt-4">
