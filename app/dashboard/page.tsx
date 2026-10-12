@@ -1,8 +1,6 @@
 // app/dashboard/page.tsx
 //
-// CHANGES (browser warning): <BrowserSupportWarning /> mounts once the
-// dashboard has loaded, so it doesn't pop up over the loading state.
-
+// CHANGES (browser warning): <BrowserSupportWarning
 'use client';
 
 import {
