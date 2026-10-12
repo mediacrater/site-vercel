@@ -29,6 +29,10 @@ import { supabase } from '@/lib/mediacrater/supabaseClient';
 import { AuthShowcasePanel } from '@/components/auth-showcase-panel';
 import { isPasswordValid } from '@/lib/password-policy';
 import { PasswordChecklist } from '@/components/password-checklist';
+// CHANGES (Google sign-in): "Sign in with Google" under the form, sharing the
+// page's Turnstile widget. New users who start here are asked for consent on
+// /auth/callback before their account is activated.
+import { GoogleAuthButton } from '@/components/google-auth-button';
 import {
   Dialog,
   DialogContent,
@@ -340,6 +344,18 @@ export default function SignInPage() {
                 {loading ? 'Signing in...' : 'Sign In'}
               </button>
             </form>
+            <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              or
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <GoogleAuthButton
+              mode="signin"
+              turnstileToken={turnstileToken}
+              disabled={loading}
+              onError={setError}
+              onTurnstileUsed={resetTurnstile}
+            />
           </div>
         </div>
       </div>
