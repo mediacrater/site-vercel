@@ -45,12 +45,12 @@ export function Footer() {
             <h3 className="font-semibold text-background mb-4">Quick Links</h3>
             <ul className="space-y-3">
               <li>
-                <Link href="#features" className="text-background/70 hover:text-background transition-colors">
+                <Link href="/#features" className="text-background/70 hover:text-background transition-colors">
                   Features
                 </Link>
               </li>
               <li>
-                <Link href="#how-it-works" className="text-background/70 hover:text-background transition-colors">
+                <Link href="/#how-it-works" className="text-background/70 hover:text-background transition-colors">
                   How It Works
                 </Link>
               </li>
@@ -60,7 +60,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="#faq" className="text-background/70 hover:text-background transition-colors">
+                <Link href="/#faq" className="text-background/70 hover:text-background transition-colors">
                   FAQ
                 </Link>
               </li>
@@ -72,6 +72,12 @@ export function Footer() {
                 <li>
                 <Link href="/solutions" className="text-background/70 hover:text-background transition-colors">
                   Custom solutions
+                </Link>
+              </li>
+              </li>
+                <li>
+                <Link href="/tools" className="text-background/70 hover:text-background transition-colors">
+                  Free tools
                 </Link>
               </li>
             </ul>
