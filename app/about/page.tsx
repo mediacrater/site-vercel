@@ -95,7 +95,7 @@ export default function AboutPage() {
 
             <div className="mt-16 text-center">
               <Link
-                href="https://chromewebstore.google.com/detail/mediacrater-ad-compliance/fgekklkpomdcadiaekpigidkimnkjpnf?utm_medium=about"
+                href="/signup"
                 className="inline-flex items-center px-8 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition"
               >
                 Start today - Get 3 Free Monthly Tokens
