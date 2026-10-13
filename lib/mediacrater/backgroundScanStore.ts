@@ -71,6 +71,9 @@ export interface BackgroundScanResult {
   riskLevel: string;
   riskClass: string;
   processedViolations: unknown[];
+  // CONTENT FILTER: shown above the result when a deep scan fell back to a
+  // standard analysis (set by the VPS as result.scanNote).
+  scanNote?: string;
 }
 
 export interface BackgroundScanState {
