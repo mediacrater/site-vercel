@@ -364,12 +364,6 @@ export default function ExtensionPrivacyPolicy() {
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">Security</h2>
         <p>
-          We use HTTPS and modern encrypted connections when the extension communicates with
-          Supabase, Mediacrater services, Stripe, and supported third-party providers. No method of
-          transmission or storage is completely secure, but we use administrative, technical, and
-          organizational safeguards appropriate to the information processed.
-        </p>
-        <p>
           The Mediacrater Chrome extension works 100% in your browser with zero connection to 
           our servers. As a standalone extension, you are responsible for its usage on the Facebook
           Ads library and staying compliant with Meta's policies. Meta may have policies or systems 
