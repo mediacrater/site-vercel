@@ -6,7 +6,17 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://mediacrater.com/tools</loc>
+    <loc>https://mediacrater.com/tools/video-metadata-remover</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://mediacrater.com/tools/break-even-roas-calculator</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mediacrater.com/tools/facebook-ad-rejected-no-reason</loc>
     <changefreq>yearly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -44,5 +54,10 @@
     <loc>https://mediacrater.com/cookies</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://mediacrater.com/tools</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
   </url>
 </urlset>
