@@ -19,7 +19,7 @@ export default function ToolsHub() {
   return (
     <>
       <Header />
-      <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+       <main className="mx-auto max-w-5xl px-4 pt-28 pb-12 sm:px-6">
         <h1 className="font-[family-name:var(--font-display)] text-4xl font-bold tracking-[-0.035em]">Free tools for media buyers</h1>
         <p className="mt-3 max-w-2xl text-muted-foreground">No signup. Your files and text stay on your device.</p>
         <ul className="mt-10 grid gap-4 sm:grid-cols-2">
