@@ -13,6 +13,12 @@
 //
 // Reads go through the user's own session and RLS ("Users can view own
 // scans"), so this can only ever find the user's own scan.
+//
+// CONTENT FILTER: a failed row with error_code = 'CONTENT_FLAGGED' (written by
+// the VPS errorHandler.js) now shows CONTENT_FLAGGED_MESSAGE instead of the
+// generic "Please try again", which invited paid retries of a scan that would
+// fail the same way. If the error_code column doesn't exist yet, the query
+// falls back to the old columns.
 
 import { supabase } from './supabaseClient';
 
@@ -24,6 +30,11 @@ const RECOVERY_TIMEOUT_MS = 6 * 60 * 1000; // the server gives up after 360 s
 // result exists (Scan History shows it on paid plans).
 export const SCAN_LOST_MESSAGE =
   "Something went wrong on our end. If scans were deducted, your result should be in your Scan History (paid plans). If it isn't there, or you need help, please contact support.";
+
+// Shown when the AI provider's content safety filter refused the scan. Must
+// match CONTENT_FLAGGED_MESSAGE in the VPS errorHandler.js.
+export const CONTENT_FLAGGED_MESSAGE =
+  "We couldn't complete this scan. A content safety filter stopped the analysis, which usually means part of this creative contains sensitive material (such as nudity, sexual content, drugs or graphic violence). You haven't been charged. If you think this is a mistake, please contact support.";
 
 // Shown for non-scan requests (e.g. checking a pasted URL) that can't reach
 // the server. Nothing is charged for these.
@@ -77,13 +88,20 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
  */
 export async function waitForSavedScan(scanId: string, signal?: AbortSignal): Promise<RecoveredScan> {
   const deadline = Date.now() + RECOVERY_TIMEOUT_MS;
+  let withErrorCode = true;
 
   while (Date.now() < deadline) {
-    const { data: scan, error } = await supabase
+    let { data: scan, error } = await supabase
       .from('scans')
-      .select('status, generated_data, tokens_remaining')
+      .select(withErrorCode ? 'status, generated_data, tokens_remaining, error_code' : 'status, generated_data, tokens_remaining')
       .eq('id', scanId)
       .maybeSingle();
+
+    // error_code column not added yet: retry without it from now on.
+    if (error && withErrorCode && /error_code/i.test(error.message || '')) {
+      withErrorCode = false;
+      continue;
+    }
 
     if (!error && scan) {
       if (scan.status === 'completed' && scan.generated_data) {
@@ -107,6 +125,10 @@ export async function waitForSavedScan(scanId: string, signal?: AbortSignal): Pr
           plan: profile?.plan ?? 'free',
           recovered: true,
         };
+      }
+
+      if ((scan as { error_code?: string | null }).error_code === 'CONTENT_FLAGGED') {
+        throw new Error(CONTENT_FLAGGED_MESSAGE);
       }
 
       throw new Error('Your scan could not be completed. Please try again.');
