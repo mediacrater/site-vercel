@@ -128,6 +128,9 @@ interface PlatformResult {
   riskLevel: string;
   riskClass: string;
   processedViolations: Violation[];
+  // CONTENT FILTER: note from the VPS when a deep scan fell back to a
+  // standard analysis (result.scanNote), shown above the result.
+  scanNote?: string;
 }
 
 interface Banner {
@@ -2194,6 +2197,10 @@ for (
               riskLevel,
               riskClass,
               processedViolations,
+              scanNote:
+                typeof (completed.result as { scanNote?: unknown }).scanNote === 'string'
+                  ? ((completed.result as { scanNote?: string }).scanNote)
+                  : undefined,
             });
 
             creativeScanIds.push(
@@ -3521,6 +3528,12 @@ const activeResultOption =
                       {r.riskLevel}
                     </span>
                   </div>
+
+                  {r.scanNote && (
+                    <div className="mb-3 p-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-sm text-amber-800 dark:text-amber-400">
+                      {r.scanNote}
+                    </div>
+                  )}
 
                   {r.processedViolations.length === 0 ? (
                     <div className="flex items-center gap-2 text-green-700 dark:text-green-400 text-sm font-medium">
