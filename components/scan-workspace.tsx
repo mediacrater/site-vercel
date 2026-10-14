@@ -35,6 +35,14 @@ import {
 import { supabase } from '@/lib/mediacrater/supabaseClient';
 import { uploadScanThumbnail } from '@/lib/mediacrater/thumbnails';
 
+import { ViolationFrames } from '@/components/violation-frames';
+import {
+  pickEvidenceFrames,
+  type EvidenceFrames,
+} from '@/lib/mediacrater/evidenceFrames';
+import { loadEvidence, saveEvidence } from '@/lib/mediacrater/evidenceStore';
+import { VideoTimeline, violationDomId } from '@/components/video-timeline';
+
 const PLATFORMS = [
   { value: 'youtube', label: 'YouTube', icon: '/images/platform-icons/youtube.png' },
   { value: 'meta', label: 'Meta (FB/IG)', icon: '/images/platform-icons/meta.png' },
@@ -161,6 +169,30 @@ function isImageCreative(
     creative.kind === 'image' ||
     creative.kind === 'image_url'
   );
+}
+
+// What the results-page video player plays. Uploads play from the local
+// file's preview URL. URL scans play straight from the source (browsers can
+// play cross-origin video without CORS; CORS only matters for reading
+// pixels). The server only accepts https URLs, so anything else is refused
+// here too.
+function playbackSrcFor(creative: BatchCreative | null): string | null {
+  if (!creative) return null;
+
+  if (creative.kind === 'video') {
+    return creative.previewUrl || null;
+  }
+
+  if (creative.kind === 'video_url') {
+    try {
+      const parsed = new URL(creative.sourceUrl);
+      return parsed.protocol === 'https:' ? parsed.href : null;
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
 }
 
 function orderCreativesForExecution(
@@ -392,6 +424,21 @@ export function ScanWorkspace({
   const currentJobIdRef = useRef<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  // scanId -> { timestamp -> frame data URL }. Kept in a ref, not in
+  // PlatformResult, so frames never go through the background scan store.
+  const evidenceRef = useRef<Map<string, EvidenceFrames>>(new Map());
+    // Which violation card to flash after a timeline bubble is clicked
+  // ("scanId:violationIndex").
+  const [highlightedViolation, setHighlightedViolation] = useState<string | null>(null);
+  const highlightTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimerRef.current !== null) {
+        window.clearTimeout(highlightTimerRef.current);
+      }
+    };
+  }, []);
 
   const previewUrlsRef =
   useRef<Set<string>>(
@@ -606,6 +653,7 @@ export function ScanWorkspace({
 
       const restoredResults =
         backgroundScan.results as PlatformResult[];
+            evidenceRef.current = loadEvidence();
 
       setResults(
         restoredResults
@@ -1643,6 +1691,7 @@ export function ScanWorkspace({
     }
 
     setCreatives([]);
+    evidenceRef.current.clear();
     setPlatformCreativeId(
       null
     );
@@ -1730,6 +1779,7 @@ export function ScanWorkspace({
     executionCreatives:
       BatchCreative[]
   ) {
+    evidenceRef.current.clear();
     const isBatch =
       executionCreatives.length >
       1;
@@ -2181,7 +2231,14 @@ for (
                 completed.result
                   .violations as Violation[]
               );
-
+            
+            if (creative.kind === 'video') {
+              const evidence = pickEvidenceFrames(frames, processedViolations);
+              if (Object.keys(evidence).length > 0) {
+                evidenceRef.current.set(scanId, evidence);
+              }
+            }
+            
             creativeResults.push({
               creativeId:
                 creative.id,
@@ -2352,7 +2409,7 @@ for (
 
     const operationId =
       backgroundOperationIdRef.current;
-
+    saveEvidence(evidenceRef.current);
     if (operationId) {
       completeBackgroundScan(
         operationId,
@@ -2385,6 +2442,23 @@ for (
 
       await onScanComplete();
     }
+  }
+  
+  function focusViolation(scanId: string, violationIndex: number) {
+    document
+      .getElementById(violationDomId(scanId, violationIndex))
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    setHighlightedViolation(`${scanId}:${violationIndex}`);
+
+    if (highlightTimerRef.current !== null) {
+      window.clearTimeout(highlightTimerRef.current);
+    }
+
+    highlightTimerRef.current = window.setTimeout(() => {
+      setHighlightedViolation(null);
+      highlightTimerRef.current = null;
+    }, 2000);
   }
 
   async function handleAnalyze() {
@@ -2786,6 +2860,15 @@ const visibleResults =
       activeResultCreativeId
   );
 
+const activeVideoCreative =
+  creatives.find(
+    (creative) =>
+      creative.id === activeResultCreativeId &&
+      (creative.kind === 'video' || creative.kind === 'video_url')
+  ) ?? null;
+
+const activePlaybackSrc = playbackSrcFor(activeVideoCreative);
+  
 const activeResultOption =
   resultCreativeOptions.find(
     (item) =>
@@ -3508,6 +3591,16 @@ const activeResultOption =
               </div>
             )}
             
+            {activePlaybackSrc && visibleResults[0] && (
+              <VideoTimeline
+                key={visibleResults[0].scanId}
+                src={activePlaybackSrc}
+                violations={visibleResults[0].processedViolations}
+                onSelectViolation={(violationIndex) =>
+                  focusViolation(visibleResults[0].scanId, violationIndex)
+                }
+              />
+            )}
             {visibleResults.map((r) => {
               const grouped = groupViolationsByType(r.processedViolations);
               const riskColorClass =
@@ -3550,11 +3643,20 @@ const activeResultOption =
                               const location = v.timestamps?.length
                                 ? `⏱ ${v.timestamps.join(', ')}`
                                 : v.frames?.length
-                                ? `🎞️ Frames: ${v.frames.join(', ')}`
+                                ? `Frames: ${v.frames.join(', ')}`
                                 : null;
                               return (
-                                <div key={idx} className={`bg-muted/30 border border-border ${severityBorderClass(v.severity)} rounded-lg p-3 text-sm`}>
+                                  <div
+                                    key={idx}
+                                     id={violationDomId(r.scanId, r.processedViolations.indexOf(v))}
+                                      className={`bg-muted/30 border border-border ${severityBorderClass(v.severity)} rounded-lg p-3 text-sm transition-shadow ${
+                                         highlightedViolation === `${r.scanId}:${r.processedViolations.indexOf(v)}`
+                                         ? 'ring-2 ring-primary'
+                                         : ''
+                                     }`}
+                                  >                               
                                   {location && <div className="text-xs text-muted-foreground mb-1">{location}</div>}
+                                  <ViolationFrames violation={v} evidence={evidenceRef.current.get(r.scanId)} />
                                   <div className="mb-2">{v.reason}</div>
                                   {v.suggestedFix && (
                                     <div className="text-xs bg-primary/5 border border-primary/20 rounded-md p-2">
