@@ -16,6 +16,7 @@ import {
   useEffect,
   useState,
 } from 'react';
+import { clearEvidence } from './evidenceStore';
 
 const STORAGE_KEY =
   'mediacrater_background_scan_v1';
@@ -587,6 +588,7 @@ export function failBackgroundScan(
 }
 
 export function clearBackgroundScanState() {
+    clearEvidence();
   memoryState =
     makeIdleState();
 
