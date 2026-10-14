@@ -1,9 +1,11 @@
+//app/page.tsx
 import { Header } from "@/components/header"
 import { Hero } from "@/components/hero"
 import { AdAccountInsurance } from "@/components/ad-account-insurance"
 import { SocialProof } from "@/components/social-proof"
 import { Features } from "@/components/features"
 import { HowItWorks } from "@/components/how-it-works"
+import { OwnYourAccounts } from "@/components/own-your-accounts"
 import { Pricing } from "@/components/pricing"
 import { FAQ } from "@/components/faq"
 import { CTA } from "@/components/cta"
@@ -25,6 +27,7 @@ export default function Home() {
       <SocialProof />
       <Features />
       <HowItWorks />
+      <OwnYourAccounts />
       <Pricing />
       <FAQ />
       <CTA />
