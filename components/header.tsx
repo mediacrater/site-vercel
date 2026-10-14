@@ -61,15 +61,15 @@ export function Header() {
     ? "/images/header-logo-dark.png" 
     : "/images/header-logo.png"
   const navLinks = [
-    { href: "#features", label: "Features" },
+    { href: "/#features", label: "Features" },
     { 
       href: "https://www.youtube.com/watch?v=t8k6-XgiBig&utm_medium=website_how-it-works", 
       target: "_blank", 
       rel: "noopener noreferrer", 
       label: "How It Works" 
     },
-    { href: "#pricing", label: "Pricing" },
-    { href: "#faq", label: "FAQ" },
+    { href: "/#pricing", label: "Pricing" },
+    { href: "/#faq", label: "FAQ" },
   ]
 
   return (
@@ -95,6 +95,8 @@ export function Header() {
               <Link
                 key={link.href}
                 href={link.href}
+                target={link.target}
+                rel={link.rel}
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 {link.label}
@@ -182,6 +184,8 @@ export function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  target={link.target}
+                  rel={link.rel}
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
