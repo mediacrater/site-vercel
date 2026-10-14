@@ -79,6 +79,11 @@ export function Footer() {
                   Free tools
                 </Link>
               </li>
+              <li>
+                <Link href="/blog" className="text-background/70 hover:text-background transition-colors">
+                  Blog
+                </Link>
+              </li>
             </ul>
           </div>
 
