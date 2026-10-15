@@ -75,7 +75,7 @@ export function SettingsPanel({
   const [managePlanLoading, setManagePlanLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const accountLocked = useAccountLocked();  
+  const accountLocked = useAccountLocked();
   const isPaid = (profile.plan || 'free') !== 'free';
 
   async function handleManagePlan() {
@@ -125,15 +125,15 @@ export function SettingsPanel({
           <div className="flex justify-between items-center py-2.5 border-b border-border">
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-medium">Scans remaining</span>
-                {accountLocked ? (
-                  <span className="text-xs font-semibold text-red-700 dark:text-red-400">
-                    Action required
-                  </span>
-                ) : (
-                  <span className="text-xs text-muted-foreground">
-                    {profile.scans_remaining ?? 0} scans
-                  </span>
-                )}
+              {accountLocked ? (
+                <span className="text-xs font-semibold text-red-700 dark:text-red-400">
+                  Action required
+                </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">
+                  {profile.scans_remaining ?? 0} scans
+                </span>
+              )}
             </div>
             <a
               href={upgradeUrl}
