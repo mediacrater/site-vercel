@@ -29,6 +29,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { supabase } from '@/lib/mediacrater/supabaseClient';
 import { ApiHostClearance } from './ApiHostClearance';
 import { useScanLeaveGuard } from '@/hooks/use-scan-leave-guard';
+import { useAccountLocked } from '@/lib/mediacrater/useAccountLocked';
 
 const EXTENSION_LINK =
   'https://chromewebstore.google.com/detail/mediacrater-ad-compliance/fgekklkpomdcadiaekpigidkimnkjpnf?utm_medium=app_mobile_nav';
@@ -55,7 +56,8 @@ export function AppShell({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useScanLeaveGuard();
-
+  const accountLocked = useAccountLocked();
+  
   async function handleSignOut() {
     await supabase.auth.signOut();
     router.push('/signin');
