@@ -43,13 +43,11 @@ export function AppShell({
   userEmail,
   plan = null,
   scansRemaining = null,
-  accountLocked = false,
   children,
 }: {
   userEmail: string | null;
   plan?: string | null;
   scansRemaining?: number | null;
-  accountLocked?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
