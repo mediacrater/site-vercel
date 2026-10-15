@@ -65,6 +65,7 @@ export interface WorkspaceProfile {
   audio_analysis?: boolean;
   scan_history?: boolean;
   last_notified_at?: string | null;
+  account_status?: string;
 }
 
 type CreativeKind =
@@ -420,6 +421,7 @@ export function ScanWorkspace({
   const [results, setResults] = useState<PlatformResult[] | null>(null);
   const [banner, setBanner] = useState<Banner | null>(null);
   const [sharedQuotaBlocked, setSharedQuotaBlocked] = useState(false);
+  const [flaggedThisSession, setFlaggedThisSession] = useState(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentJobIdRef = useRef<string | null>(null);
@@ -471,6 +473,9 @@ export function ScanWorkspace({
   const scansRemaining =
     profile?.scans_remaining ?? 0;
 
+  const accountBlocked =
+    profile?.account_status === 'action_required' || flaggedThisSession;
+  
   const videoCreatives =
     creatives.filter(
       (
@@ -2684,6 +2689,7 @@ for (
           onAction: () => window.location.assign('/buy-scans'),
         });
       } else if (isAccountFlaggedError) {
+        setFlaggedThisSession(true);
         const notifiedDate = profile?.last_notified_at
           ? new Date(profile.last_notified_at).toLocaleDateString(undefined, {
               month: 'long',
@@ -3455,11 +3461,20 @@ const activeResultOption =
                     </strong>
                   </span>
 
-                  <span className="text-muted-foreground">
-                    {sharedQuotaBlocked
-                      ? '0 remaining (shared with another account on this device or network)'
-                      : `${scansRemaining} remaining`}
-                  </span>
+                  {accountBlocked ? (
+                    <span className="font-semibold text-red-700 dark:text-red-400">
+                      Action required
+                    </span>
+                  ) : sharedQuotaBlocked ? (
+                    <span className="font-semibold text-red-700 dark:text-red-400">
+                      0 remaining (shared on this device or network)
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      {scansRemaining}{' '}
+                      remaining
+                    </span>
+                  )}
                 </div>
 
                 <button
