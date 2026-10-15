@@ -419,6 +419,7 @@ export function ScanWorkspace({
 
   const [results, setResults] = useState<PlatformResult[] | null>(null);
   const [banner, setBanner] = useState<Banner | null>(null);
+  const [sharedQuotaBlocked, setSharedQuotaBlocked] = useState(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentJobIdRef = useRef<string | null>(null);
@@ -2674,6 +2675,7 @@ for (
           message: 'You already have a scan in progress. Please wait for it to finish before starting another.',
         });
       } else if (isSharedQuotaError) {
+        setSharedQuotaBlocked(true);
         recordFailure({
           tone: 'warning',
           title: 'Free scans already used on this device or network',
@@ -2795,7 +2797,8 @@ for (
   const analyzeDisabled =
   creatives.length === 0 ||
   !allCreativesConfigured ||
-  isAnalyzing;
+  isAnalyzing ||
+  sharedQuotaBlocked;
 
 const isBatchResult =
   (backgroundScan.batchItems?.length ?? 0) > 1;
@@ -3453,8 +3456,9 @@ const activeResultOption =
                   </span>
 
                   <span className="text-muted-foreground">
-                    {scansRemaining}{' '}
-                    remaining
+                    {sharedQuotaBlocked
+                      ? '0 remaining (shared with another account on this device or network)'
+                      : `${scansRemaining} remaining`}
                   </span>
                 </div>
 
