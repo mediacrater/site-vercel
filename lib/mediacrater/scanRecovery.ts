@@ -93,7 +93,8 @@ export async function waitForSavedScan(scanId: string, signal?: AbortSignal): Pr
   while (Date.now() < deadline) {
     let { data: scan, error } = await supabase
       .from('scans')
-      .select(withErrorCode ? 'status, generated_data, tokens_remaining, error_code' : 'status, generated_data, tokens_remaining')
+      // Type-only cast: the runtime string still depends on withErrorCode.
+      .select((withErrorCode ? 'status, generated_data, tokens_remaining, error_code' : 'status, generated_data, tokens_remaining') as 'status, generated_data, tokens_remaining, error_code')
       .eq('id', scanId)
       .maybeSingle();
 

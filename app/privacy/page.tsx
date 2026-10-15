@@ -110,7 +110,7 @@ export default function PrivacyPolicy() {
             <strong>Device cookie</strong> — a first-party identifier stored in your browser so we
             can tell when several free accounts are created from the same device. It is not your
             login session and is not cleared when you sign out. See our{' '}
-            <a href="https://mediacrater.com/cookie-policy" className="underline">
+            <a href="/cookies" className="underline">
               Cookie Policy
             </a>.
           </li>
@@ -152,6 +152,16 @@ export default function PrivacyPolicy() {
             scan, and is not generated or retained at all if your plan does not include Scan
             History. We do not use your creative assets, or any thumbnail derived from them, for
             any purpose beyond what is outlined in this Privacy Policy.
+          </li>
+          <li>
+            <strong>Results page video player and frames</strong> — the video player and the
+            frame images shown beside each violation on your results page are built from the
+            file on your own device, inside your browser. They are not stored on our servers.
+            The frame images are kept only in your browser&apos;s memory and temporary session
+            storage, and are removed when you click &quot;New Scan&quot;, start another scan, or
+            close the tab. Refreshing the page ends video playback, because the file is no
+            longer held in your browser. For video URLs, the player plays the video straight
+            from its source link in your browser.
           </li>
         </ul>
       </section>
@@ -307,7 +317,7 @@ export default function PrivacyPolicy() {
           Our Chrome extension uses only essential local storage required for authentication and
           session management, via Chrome's secure storage API — no advertising, tracking, or
           analytical cookies. Our web app uses a small number of cookies described in our{' '}
-          <a href="https://mediacrater.com/cookie-policy" className="underline">
+          <a href="/cookies" className="underline">
             Cookie Policy
           </a>
           , including a required device cookie used to enforce the free plan, and one optional

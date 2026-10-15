@@ -37,7 +37,7 @@ export async function checkAndLogRateLimit(
   windowSeconds: number
 ): Promise<RateLimitResult> {
   try {
-    const { data, error } = await supabaseAdmin
+    const { data: rpcData, error } = await supabaseAdmin
       .rpc("check_and_log_rate_limit", {
         p_action: action,
         p_ip: ip,
@@ -59,6 +59,9 @@ export async function checkAndLogRateLimit(
         error: error.message,
       }
     }
+
+    // The RPC is untyped here; the checks below validate the shape at runtime.
+    const data = rpcData as { allowed: boolean; retry_after_seconds: number } | null
 
     if (
       !data ||

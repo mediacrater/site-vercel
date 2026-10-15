@@ -185,7 +185,7 @@ function normalizeBatchItems(
     return [{
       creativeId: candidate.creativeId,
       fileName: candidate.fileName,
-      fileKind: candidate.fileKind,
+      fileKind: candidate.fileKind as BackgroundCreativeKind,
       batchPosition:
         candidate.batchPosition as number,
       status:

@@ -474,7 +474,7 @@ export function ScanWorkspace({
     profile?.scans_remaining ?? 0;
 
   const accountBlocked = useAccountLocked();
-
+  
   const videoCreatives =
     creatives.filter(
       (
@@ -697,10 +697,10 @@ export function ScanWorkspace({
         current ?? {
           tone: 'error',
           title: backgroundScan.error?.title || 'Analysis failed',
-          message:
+           message:
             backgroundScan.error?.message ||
-            'Something went wrong. Please try again.',
-        }
+             'Something went wrong. Please try again.',
+         }
       );
 
       onResultsChange?.(
