@@ -118,7 +118,8 @@ export default function PromotionPage() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-background text-foreground">
       {/* Minimal header: logo + sign in only, so ad traffic isn't pulled away. */}
-      <header className="border-b border-border">
+      <script>!function(w,d,s,u,n,a,b){if(w[n])return;a=w[n]={q:[],t:+new Date,s:[],o:u,track:function(){a.q.push([+new Date].concat([].slice.call(arguments)))},setScope:function(){a.s=[].slice.call(arguments).filter(function(x){return typeof x==="string"});a.q.push([+new Date,"setScope"].concat(a.s))},scope:function(){var c=[].slice.call(arguments);return{track:function(){a.q.push([+new Date].concat([].slice.call(arguments)).concat([{__scope:c}]))}}}};b=d.createElement(s);b.async=1;b.src=u+"/s.js";d.getElementsByTagName(s)[0].parentNode.insertBefore(b,d.getElementsByTagName(s)[0])}(window,document,"script","https://t.whop.tw","whop");whop.setScope("biz_vA9rrReKRX6hRu");whop.track("page");</script>
+      <header className="border-b border-border" >
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <span className="flex items-center gap-2">
             <img src="/images/header-logo.png" alt="" width={36} height={36} className="h-9 w-9 dark:hidden" />
@@ -265,12 +266,12 @@ export default function PromotionPage() {
             </h2>
             <div className="mt-8 space-y-6 text-lg leading-relaxed text-muted-foreground">
               <p>
-                I lost five ad accounts and many more business managers. The money I&apos;d put into them, and I never got a clear answer about
+                I lost five ad accounts and the money I&apos;d put into them, and I never got a clear answer about
                 why. Some of those bans may have had nothing to do with my creatives. But creative mistakes were a
                 risk I could control, and I had no way to check for them before publishing.
               </p>
               <p>
-                What I wanted was simple. Something, ANYTHING that checks my creative against the
+                What I wanted was simple. Before I hit publish, something that checks my creative against the
                 platforms&apos; published ad policies, tells me what&apos;s likely to get flagged and why, and lets me
                 fix it while it&apos;s still cheap to fix.
               </p>
