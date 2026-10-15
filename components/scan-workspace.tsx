@@ -474,7 +474,7 @@ export function ScanWorkspace({
     profile?.scans_remaining ?? 0;
 
   const accountBlocked = useAccountLocked();
-  
+
   const videoCreatives =
     creatives.filter(
       (
@@ -697,10 +697,10 @@ export function ScanWorkspace({
         current ?? {
           tone: 'error',
           title: backgroundScan.error?.title || 'Analysis failed',
-           message:
+          message:
             backgroundScan.error?.message ||
-             'Something went wrong. Please try again.',
-         }
+            'Something went wrong. Please try again.',
+        }
       );
 
       onResultsChange?.(
@@ -1208,7 +1208,7 @@ export function ScanWorkspace({
           'Upgrade plan',
         onAction: () =>
           window.location.assign(
-            '/buy-tokens'
+            '/buy-scans'
           ),
       });
 
@@ -1363,7 +1363,7 @@ export function ScanWorkspace({
           'Upgrade plan',
         onAction: () =>
           window.location.assign(
-            '/buy-tokens'
+            '/buy-scans'
           ),
       });
 
@@ -2487,7 +2487,7 @@ for (
           'Upgrade plan',
         onAction: () =>
           window.location.assign(
-            '/buy-tokens'
+            '/buy-scans'
           ),
       });
 
@@ -2524,7 +2524,7 @@ for (
           'Upgrade plan',
         onAction: () =>
           window.location.assign(
-            '/buy-tokens'
+            '/buy-scans'
           ),
       });
 
@@ -2687,6 +2687,14 @@ for (
           actionLabel: 'Upgrade plan',
           onAction: () => window.location.assign('/buy-scans'),
         });
+      } else if (isRateLimitError) {
+        recordFailure({
+          tone: 'warning',
+          title: 'Scan limit reached',
+          message,
+          actionLabel: 'Buy tokens',
+          onAction: () => window.location.assign('/buy-scans'),
+        });
       } else if (isAccountFlaggedError) {
         markAccountLocked();
         const notifiedDate = profile?.last_notified_at
@@ -2705,7 +2713,7 @@ for (
               : 'Check your email for details.'
           }`,
           actionLabel: 'Upgrade plan',
-          onAction: () => window.location.assign('/buy-tokens'),
+          onAction: () => window.location.assign('/buy-scans'),
         });
       } else if (isAuthError) {
         recordFailure({
@@ -2719,7 +2727,7 @@ for (
           title: 'Out of tokens',
           message: 'You have no tokens remaining. Purchase more to continue scanning.',
           actionLabel: 'Buy tokens',
-          onAction: () => window.location.assign('/buy-tokens'),
+          onAction: () => window.location.assign('/buy-scans'),
         });
       } else if (isCorruptionError) {
         recordFailure({
@@ -2741,7 +2749,7 @@ for (
           title: 'Paid plan required',
           message: 'Audio analysis is available on paid plans only. Upgrade to analyze spoken claims in your ads.',
           actionLabel: 'Upgrade plan',
-          onAction: () => window.location.assign('/buy-tokens'),
+          onAction: () => window.location.assign('/buy-scans'),
         });
       } else if (
         isBatchLockedError
@@ -2756,7 +2764,7 @@ for (
             'Upgrade plan',
           onAction: () =>
             window.location.assign(
-              '/buy-tokens'
+              '/buy-scans'
             ),
         });
       } else if (
