@@ -61,18 +61,18 @@ export function AppTopBar({
         </div>
       )}
 
-        {scansRemaining !== null && (
-          accountLocked ? (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
-              <span className="text-xs font-semibold">Action required</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary">
-              <span className="font-mono text-xs tabular-nums font-semibold">{scansRemaining}</span>
-              <span className="text-xs text-primary/80">scans left</span>
-            </div>
-          )
-        )}
+      {scansRemaining !== null && (
+        accountLocked ? (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+            <span className="text-xs font-semibold">Action required</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary">
+            <span className="font-mono text-xs tabular-nums font-semibold">{scansRemaining}</span>
+            <span className="text-xs text-primary/80">scans left</span>
+          </div>
+        )
+      )}
 
       <ThemeToggle />
 
