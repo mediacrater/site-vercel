@@ -2637,6 +2637,7 @@ for (
       const isDuplicateScanError =
         message.includes('Scan already in progress') || message.includes('already have a scan in progress');
       const isRateLimitError = message.includes('Rate limit exceeded') || message.includes('Free tier limit');
+      const isSharedQuotaError = message.includes('free scans for this device or network');
       const isAccountFlaggedError =
         message.includes('ACCOUNT_FLAGGED') || message.includes('locked pending resolution');
       const isAudioLockedError =
@@ -2675,10 +2676,10 @@ for (
       } else if (isRateLimitError) {
         recordFailure({
           tone: 'warning',
-          title: 'Scan limit reached',
-          message,
-          actionLabel: 'Buy tokens',
-          onAction: () => window.location.assign('/buy-tokens'),
+          title: 'Free scans already used on this device or network',
+          message: 'The free scans for this device or network have been used up. Upgrade to keep scanning.',
+          actionLabel: 'Upgrade plan',
+          onAction: () => window.location.assign('/buy-scans'),
         });
       } else if (isAccountFlaggedError) {
         const notifiedDate = profile?.last_notified_at
