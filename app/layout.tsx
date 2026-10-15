@@ -2,6 +2,8 @@ import React from "react"
 import type { Metadata } from 'next'
 import { Inter, Plus_Jakarta_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { WhopPixel } from '@/components/whop-pixel'
+import { WhopRouteTracker } from '@/components/whop-route-tracker'
 import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 import { JetBrains_Mono } from 'next/font/google'
@@ -108,6 +110,8 @@ export default function RootLayout({
           {children}
         </ThemeProvider>
         <Analytics />
+       <WhopPixel />
+       <WhopRouteTracker />
       </body>
     </html>
   )
