@@ -265,12 +265,12 @@ export default function PromotionPage() {
             </h2>
             <div className="mt-8 space-y-6 text-lg leading-relaxed text-muted-foreground">
               <p>
-                I lost five ad accounts and the money I&apos;d put into them, and I never got a clear answer about
+                I lost five ad accounts and many more business managers. The money I&apos;d put into them, and I never got a clear answer about
                 why. Some of those bans may have had nothing to do with my creatives. But creative mistakes were a
                 risk I could control, and I had no way to check for them before publishing.
               </p>
               <p>
-                What I wanted was simple. Before I hit publish, something that checks my creative against the
+                What I wanted was simple. Something, ANYTHING that checks my creative against the
                 platforms&apos; published ad policies, tells me what&apos;s likely to get flagged and why, and lets me
                 fix it while it&apos;s still cheap to fix.
               </p>
