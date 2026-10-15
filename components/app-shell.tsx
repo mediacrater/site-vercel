@@ -23,13 +23,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X, LayoutDashboard, History, Settings as SettingsIcon } from 'lucide-react';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppTopBar } from '@/components/app-topbar';
+import { useAccountLocked } from '@/lib/mediacrater/useAccountLocked';
 import { CommandPalette } from '@/components/command-palette';
 import { KeyboardShortcuts } from '@/components/keyboard-shortcuts';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { supabase } from '@/lib/mediacrater/supabaseClient';
 import { ApiHostClearance } from './ApiHostClearance';
 import { useScanLeaveGuard } from '@/hooks/use-scan-leave-guard';
-import { useAccountLocked } from '@/lib/mediacrater/useAccountLocked';
 
 const EXTENSION_LINK =
   'https://chromewebstore.google.com/detail/mediacrater-ad-compliance/fgekklkpomdcadiaekpigidkimnkjpnf?utm_medium=app_mobile_nav';
@@ -57,7 +57,7 @@ export function AppShell({
 
   useScanLeaveGuard();
   const accountLocked = useAccountLocked();
-  
+
   async function handleSignOut() {
     await supabase.auth.signOut();
     router.push('/signin');
@@ -87,17 +87,17 @@ export function AppShell({
                 {plan}
               </span>
             )}
-             {scansRemaining !== null && (
-                accountLocked ? (
-                  <span className="text-xs font-semibold px-2 py-1 rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
-                    Action required
-                  </span>
-                ) : (
-                  <span className="font-mono text-xs tabular-nums px-2 py-1 rounded-full bg-primary/10 text-primary">
-                    {scansRemaining} left
-                  </span>
-                )
-              )}
+            {scansRemaining !== null && (
+              accountLocked ? (
+                <span className="text-xs font-semibold px-2 py-1 rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                  Action required
+                </span>
+              ) : (
+                <span className="font-mono text-xs tabular-nums px-2 py-1 rounded-full bg-primary/10 text-primary">
+                  {scansRemaining} left
+                </span>
+              )
+            )}
             <button
               type="button"
               onClick={() => setMobileNavOpen(!mobileNavOpen)}
