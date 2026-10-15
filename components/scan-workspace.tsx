@@ -2673,7 +2673,7 @@ for (
           title: 'One scan at a time',
           message: 'You already have a scan in progress. Please wait for it to finish before starting another.',
         });
-      } else if (isRateLimitError) {
+      } else if (isSharedQuotaError) {
         recordFailure({
           tone: 'warning',
           title: 'Free scans already used on this device or network',
