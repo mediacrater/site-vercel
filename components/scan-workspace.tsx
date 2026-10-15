@@ -42,6 +42,7 @@ import {
 } from '@/lib/mediacrater/evidenceFrames';
 import { loadEvidence, saveEvidence } from '@/lib/mediacrater/evidenceStore';
 import { VideoTimeline, violationDomId } from '@/components/video-timeline';
+import { markAccountLocked, useAccountLocked } from '@/lib/mediacrater/useAccountLocked';
 
 const PLATFORMS = [
   { value: 'youtube', label: 'YouTube', icon: '/images/platform-icons/youtube.png' },
@@ -421,7 +422,6 @@ export function ScanWorkspace({
   const [results, setResults] = useState<PlatformResult[] | null>(null);
   const [banner, setBanner] = useState<Banner | null>(null);
   const [sharedQuotaBlocked, setSharedQuotaBlocked] = useState(false);
-  const [flaggedThisSession, setFlaggedThisSession] = useState(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentJobIdRef = useRef<string | null>(null);
@@ -473,8 +473,7 @@ export function ScanWorkspace({
   const scansRemaining =
     profile?.scans_remaining ?? 0;
 
-  const accountBlocked =
-    profile?.account_status === 'action_required' || flaggedThisSession;
+  const accountBlocked = useAccountLocked();
   
   const videoCreatives =
     creatives.filter(
@@ -2689,7 +2688,7 @@ for (
           onAction: () => window.location.assign('/buy-scans'),
         });
       } else if (isAccountFlaggedError) {
-        setFlaggedThisSession(true);
+        markAccountLocked();
         const notifiedDate = profile?.last_notified_at
           ? new Date(profile.last_notified_at).toLocaleDateString(undefined, {
               month: 'long',
