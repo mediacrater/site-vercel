@@ -114,7 +114,7 @@ const nextConfig = {
   // PHASE 2: stop advertising "X-Powered-By: Next.js".
   poweredByHeader: false,
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   images: {
     unoptimized: true,
