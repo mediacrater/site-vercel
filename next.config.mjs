@@ -43,6 +43,8 @@ const TURNSTILE = 'https://challenges.cloudflare.com';
 // data to cloudflareinsights.com.
 const CF_INSIGHTS_SCRIPT = 'https://static.cloudflareinsights.com';
 const CF_INSIGHTS_CONNECT = 'https://cloudflareinsights.com';
+// Whop Pixel: loads s.js from this origin and sends events back to it.
+const WHOP_PIXEL = 'https://t.whop.tw';
 
 function buildCsp() {
   const directives = {
