@@ -43,11 +43,13 @@ export function AppShell({
   userEmail,
   plan = null,
   scansRemaining = null,
+  accountLocked = false,
   children,
 }: {
   userEmail: string | null;
   plan?: string | null;
   scansRemaining?: number | null;
+  accountLocked?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -69,7 +71,7 @@ export function AppShell({
       <ApiHostClearance />
 
       <div className="flex-1 min-w-0">
-        <AppTopBar userEmail={userEmail} plan={plan} scansRemaining={scansRemaining} />
+        <AppTopBar userEmail={userEmail} plan={plan} scansRemaining={scansRemaining} accountLocked={accountLocked} />
 
         {/* Mobile top bar — sidebar + desktop top bar are both lg:-only */}
           <div className="bg-amber-100 dark:bg-transparent text-amber-700 dark:text-[#fbbf24] text-center py-2 px-5 text-xs font-semibold border-b border-[#fde68a] dark:border-[#4d2900] tracking-[0.2px]">
@@ -85,11 +87,17 @@ export function AppShell({
                 {plan}
               </span>
             )}
-            {scansRemaining !== null && (
-              <span className="font-mono text-xs tabular-nums px-2 py-1 rounded-full bg-primary/10 text-primary">
-                {scansRemaining} left
-              </span>
-            )}
+             {scansRemaining !== null && (
+                accountLocked ? (
+                  <span className="text-xs font-semibold px-2 py-1 rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                    Action required
+                  </span>
+                ) : (
+                  <span className="font-mono text-xs tabular-nums px-2 py-1 rounded-full bg-primary/10 text-primary">
+                    {scansRemaining} left
+                  </span>
+                )
+              )}
             <button
               type="button"
               onClick={() => setMobileNavOpen(!mobileNavOpen)}
