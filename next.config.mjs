@@ -135,6 +135,11 @@ const nextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      { source: '/buy-tokens', destination: '/buy-scans', permanent: false },
+    ];
+  },
 }
 
 export default nextConfig
