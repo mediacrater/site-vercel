@@ -263,6 +263,9 @@ function DashboardContent() {
           ?.scans_remaining ??
         null
       }
+      accountLocked={
+        profile?.account_status === 'action_required'
+      }
     >
       <BrowserSupportWarning />
 
