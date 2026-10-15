@@ -100,6 +100,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <WhopPixel />
+      </head>
       <body className={`${inter.variable} ${plusJakarta.variable} font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
@@ -110,7 +113,6 @@ export default function RootLayout({
           {children}
         </ThemeProvider>
         <Analytics />
-       <WhopPixel />
        <WhopRouteTracker />
       </body>
     </html>
