@@ -688,19 +688,15 @@ export function ScanWorkspace({
       setCanCancel(false);
       setResults(null);
 
-      setBanner({
-        tone: 'error',
-
-        title:
-          backgroundScan.error
-            ?.title ||
-          'Analysis failed',
-
-        message:
-          backgroundScan.error
-            ?.message ||
-          'Something went wrong. Please try again.',
-      });
+      setBanner((current) =>
+        current ?? {
+          tone: 'error',
+          title: backgroundScan.error?.title || 'Analysis failed',
+           message:
+            backgroundScan.error?.message ||
+             'Something went wrong. Please try again.',
+         }
+      );
 
       onResultsChange?.(
         null
