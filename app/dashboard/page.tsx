@@ -8,6 +8,7 @@
 import {
   Suspense,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 
@@ -39,6 +40,8 @@ import {
 import {
   supabase,
 } from '@/lib/mediacrater/supabaseClient';
+
+import { trackPurchaseConversion } from '@/lib/ads-conversion';
 
 interface UserProfile
   extends WorkspaceProfile {
@@ -237,6 +240,31 @@ function DashboardContent() {
         );
       }
     };
+
+  const conversionSent = useRef(false);
+
+  // Stripe's webhook can land a moment after the redirect, so the profile may
+  // still say "free". Re-check up to 5 times, 2 seconds apart.
+  useEffect(() => {
+    if (!showCheckoutSuccess || !user) return;
+    if (profile?.plan && profile.plan !== 'free') return;
+
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
+      fetchUserData(user.id);
+      if (tries >= 5) clearInterval(timer);
+    }, 2000);
+
+    return () => clearInterval(timer);
+  }, [showCheckoutSuccess, user, profile?.plan]);
+
+  // Google Ads purchase conversion: once, and only after the profile confirms a paid plan.
+  useEffect(() => {
+    if (!showCheckoutSuccess || conversionSent.current) return;
+    if (!profile?.plan || profile.plan === 'free') return;
+    if (trackPurchaseConversion(profile.plan)) conversionSent.current = true;
+  }, [showCheckoutSuccess, profile]);  
 
   if (loading) {
     return (
