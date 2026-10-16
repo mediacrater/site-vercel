@@ -61,18 +61,18 @@ export default function AboutPage() {
             <ul className="list-disc pl-6 space-y-3">
               <li>Upload video or image creatives</li>
               <li>Select the platform (Meta, TikTok, Google Ads, YouTube, etc.)</li>
-              <li>Get an instant list of policy violations (if any) + a confidence score</li>
+              <li>Get an instant list of policy violations</li>
               <li>Fix issues before wasting budget on rejected ads</li>
             </ul>
 
             <p className="mt-6">
-              No AI hype. No black-box magic. Just clear, actionable feedback so you stop guessing and start scaling.
+              Clear, actionable feedback so you stop guessing and start scaling.
             </p>
 
             <h3 className="text-2xl font-bold mt-12 mb-4">Why Privacy-First Matters to Me</h3>
             
             <p>
-              I hated how much data ad platforms already collect. I didn’t want to build something that made the problem worse. That’s why everything runs locally on your device. We don’t store your creatives for extended periods of time, and even then, it’s anonymized and deleted immediately.
+              I hated how much data ad platforms already collect. I didn’t want to build something that made the problem worse. We don’t store your creatives for extended periods of time, and even then, it’s deleted immediately.
             </p>
 
             <h3 className="text-2xl font-bold mt-12 mb-4">Who This Is For</h3>
