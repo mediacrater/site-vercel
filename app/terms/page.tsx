@@ -60,7 +60,7 @@ export default function TermsOfService() {
           <li>Submit content that is illegal, harmful, or violates third-party rights</li>
           <li>Attempt to manipulate, scrape, or abuse the scanning infrastructure</li>
           <li>Resell or redistribute scan results without permission</li>
-          <li>Create multiple free accounts to get around the free-plan allowance</li>
+          <li>Attempts to bypass the free-plan allowance</li>
         </ul>
       </section>
 
@@ -102,13 +102,12 @@ export default function TermsOfService() {
         </p>
         <p>
           <strong>Scan History (paid plans):</strong> if your plan includes Scan History, we retain a
-          small, heavily compressed, low-resolution thumbnail (generated from the first frame of your
-          video, or your image) so you can visually identify past scans in your history list. This
+          small, heavily compressed, low-resolution thumbnail from the first frame of your
+          video, or your image so you can visually identify past scans in your history list. This
           thumbnail is intentionally too low-quality for any practical reuse of your creative — it
-          exists solely for your own reference. It is deleted if you delete the associated scan, and
-          is not retained if your plan does not include Scan History. Full scan results (the text
-          analysis, not the creative itself) are retained as part of your Scan History for as long as
-          your plan includes that feature.
+          exists solely for your own reference. It is not collected for scans not made as a paying client. 
+          Full scan results (the text analysis, not the creative itself) are retained as part of your 
+          Scan History for as long as your plan includes that feature.
         </p>
       </section>
       <section className="mb-10">
