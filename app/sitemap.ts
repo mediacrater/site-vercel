@@ -18,7 +18,6 @@ const STATIC_PATHS = [
   "/terms",
   "/refund",
   "/cookies",
-  "/blog/how-i-minimized-meta-ad-account-bans",
 ]
 
 export default function sitemap(): MetadataRoute.Sitemap {
