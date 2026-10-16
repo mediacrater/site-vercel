@@ -24,27 +24,15 @@ export const metadata: Metadata = {
   // ✅ Add metadataBase so Next.js can resolve absolute URLs
   metadataBase: new URL('https://mediacrater.com'),
 
-  title: 'Video Ad Policy Checker — Scan Before You Upload | Mediacrater',
+  title: 'Video Ad Policy Checker for Meta & TikTok | Mediacrater',
   description: 'Scan video ads for potential Meta, TikTok and Google policy issues before you upload. Get timestamped findings and suggested fixes.',
-  keywords: [
-  'video ad policy checker',
-  'scan ad before uploading',
-  'ad rejection checker',
-  'pre-upload ad compliance',
-  'meta ad policy violation checker',
-  'tiktok ad rejected fix',
-  'google ads disapproved video',
-  'ad creative compliance tool',
-  'facebook ad rejected no reason',
-  'ad account ban prevention',
-  ],
   authors: [{ name: 'Mediacrater' }],
   creator: 'Mediacrater',
 
 
   openGraph: {
     title: 'Video Ad Policy Checker — Scan Before You Upload | Mediacrater',
-    description: 'Scan video ads for policy violations before uploading. Get AI confidence scores and actionable fixes instantly.',
+    description: 'Scan video ads for policy violations before uploading. Get actionable fixes instantly.',
     type: 'website',
     locale: 'en_US',
     siteName: 'Mediacrater',
@@ -62,8 +50,8 @@ export const metadata: Metadata = {
 
   twitter: {
     card: 'summary_large_image',
-    title: 'Mediacrater - AI Video Ad Policy Compliance Checker',
-    description: 'Scan video ads for policy violations before uploading. Get AI confidence scores and actionable fixes instantly.',
+    title: 'Mediacrater - Video Ad Policy Compliance Checker',
+    description: 'Scan video ads for policy violations before uploading. Get actionable fixes instantly.',
 
     images: ['/images/og-image.png'],
   },
