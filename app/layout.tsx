@@ -2,8 +2,7 @@ import React from "react"
 import type { Metadata } from 'next'
 import { Inter, Plus_Jakarta_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
-import { WhopPixel } from '@/components/whop-pixel'
-import { WhopRouteTracker } from '@/components/whop-route-tracker'
+import { GoogleTag } from '@/components/google-tag'
 import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 import { JetBrains_Mono } from 'next/font/google'
@@ -100,9 +99,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <WhopPixel />
-      </head>
       <body className={`${inter.variable} ${plusJakarta.variable} font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
@@ -113,7 +109,7 @@ export default function RootLayout({
           {children}
         </ThemeProvider>
         <Analytics />
-       <WhopRouteTracker />
+       <GoogleTag />
       </body>
     </html>
   )
