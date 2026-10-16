@@ -43,15 +43,25 @@ const TURNSTILE = 'https://challenges.cloudflare.com';
 // data to cloudflareinsights.com.
 const CF_INSIGHTS_SCRIPT = 'https://static.cloudflareinsights.com';
 const CF_INSIGHTS_CONNECT = 'https://cloudflareinsights.com';
-// Whop Pixel: loads s.js from this origin and sends events back to it.
-const WHOP_PIXEL = 'https://t.whop.tw';
+
+// Google tag (Google Ads, AW-16650524214): origins from Google's CSP guidance
+// for gtag.js and Ads. Narrow these once CSP reports show what is really used.
+const GOOGLE_TAG_SCRIPT = 'https://www.googletagmanager.com';
+const GOOGLE_TAG_CONNECT = [
+  'https://www.googletagmanager.com',
+  'https://*.google-analytics.com',
+  'https://*.analytics.google.com',
+  'https://*.g.doubleclick.net',
+  'https://*.google.com',
+];
+const GOOGLE_TAG_FRAME = 'https://td.doubleclick.net';
 
 function buildCsp() {
   const directives = {
     'default-src': ["'self'"],
     // 'unsafe-inline' is required for Next.js's inline scripts on static pages.
     // Replacing it with per-page hashes is the possible future upgrade.
-   'script-src': ["'self'", "'unsafe-inline'", "'wasm-unsafe-eval'", TURNSTILE, CF_INSIGHTS_SCRIPT],
+   'script-src': ["'self'", "'unsafe-inline'", "'wasm-unsafe-eval'", TURNSTILE, CF_INSIGHTS_SCRIPT, GOOGLE_TAG_SCRIPT],
     // React style={} attributes and the chart component's <style> need this.
     'style-src': ["'self'", "'unsafe-inline'"],
     // data:/blob: = canvas and video thumbnails; Supabase = signed thumbnail URLs;
@@ -59,9 +69,9 @@ function buildCsp() {
     // on any host (e.g. fbcdn.net). Images can't run code.
     'img-src': ["'self'", 'data:', 'blob:', supabaseOrigin, 'https:'],
     'font-src': ["'self'", 'data:'],
-    'connect-src': ["'self'", supabaseOrigin, vpsOrigin, TURNSTILE, CF_INSIGHTS_CONNECT],
+    'connect-src': ["'self'", supabaseOrigin, vpsOrigin, TURNSTILE, CF_INSIGHTS_CONNECT, GOOGLE_TAG_CONNECT],
     // Turnstile widget + the VPS cf-ok clearance iframe (ApiHostClearance.tsx).
-    'frame-src': [TURNSTILE, vpsOrigin],
+    'frame-src': [TURNSTILE, vpsOrigin, GOOGLE_TAG_FRAME],
     // Audio extraction worker; blob: covers bundlers that start workers from blob URLs.
     'worker-src': ["'self'", 'blob:'],
     // https: = createVideoUrlThumbnail() loads pasted video URLs to grab a frame.
