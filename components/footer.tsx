@@ -131,9 +131,6 @@ export function Footer() {
           </p>
         </div>
         <div className="mt-12 pt-8 border-t border-background/20">
-          <p className="text-xs text-background/50 leading-relaxed max-w-4xl">
-            *The "Get instant confidence scores and actionable fixes in 60 seconds" claim varies based on the length of your video and scan type.
-          </p>
         </div>  
         {/* Copyright */}
         <div className="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
