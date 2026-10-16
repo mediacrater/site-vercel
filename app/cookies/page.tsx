@@ -62,7 +62,7 @@ export default function CookiePolicy() {
         </div>
       </section>
       <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-3">Cookies that require your choice</h2>
+        <h2 className="text-xl font-semibold mb-3">Third-party analytics trackers</h2>
         <div className="overflow-x-auto mb-4">
           <table className="w-full text-left text-sm border-collapse">
             <thead>
@@ -76,29 +76,47 @@ export default function CookiePolicy() {
             <tbody className="divide-y divide-border">
               <tr>
                 <td className="py-3 pr-4 align-top font-mono text-xs">
-                  <code className="bg-muted px-1.5 py-0.5 rounded">mc_referrer</code>
+                  <code className="bg-muted px-1.5 py-0.5 rounded">Cloudflare</code>
                 </td>
                 <td className="py-3 px-4 align-top">
-                  Records which affiliate you came from, if you arrived via one of their links, so we
-                  can credit them if you sign up
+                  Blocks automated scripts and collects analytics anonymously
                 </td>
                 <td className="py-3 px-4 align-top">Until you close your browser</td>
-                <td className="py-3 pl-4 align-top">No — first-party only, never shared</td>
+                <td className="py-3 pl-4 align-top">Yes</td>
+              </tr>
+            </tbody>
+            <tbody className="divide-y divide-border">
+              <tr>
+                <td className="py-3 pr-4 align-top font-mono text-xs">
+                  <code className="bg-muted px-1.5 py-0.5 rounded">Google ads tag</code>
+                </td>
+                <td className="py-3 px-4 align-top">
+                  Google's required tag for ad campaigns
+                </td>
+                <td className="py-3 px-4 align-top">Until you leave our website</td>
+                <td className="py-3 pl-4 align-top">Yes</td>
+              </tr>
+            </tbody>
+            <tbody className="divide-y divide-border">
+              <tr>
+                <td className="py-3 pr-4 align-top font-mono text-xs">
+                  <code className="bg-muted px-1.5 py-0.5 rounded">Vercel Analytics</code>
+                </td>
+                <td className="py-3 px-4 align-top">
+                  Collects analytics anonymously and autonomously
+                </td>
+                <td className="py-3 px-4 align-top">Until you leave our website</td>
+                <td className="py-3 pl-4 align-top">Yes</td>
               </tr>
             </tbody>
           </table>
         </div>
         <p>
-          If you decline, this cookie is simply never set. Nothing about the site's functionality
-          changes — the only effect is that the affiliate won't get credit for that visit. The
-          device cookie above is not part of this choice.
         </p>
       </section>
       <section className="mb-10">
         <h2 className="text-xl font-semibold mb-3">What we don't do</h2>
         <ul className="list-disc list-inside space-y-2">
-          <li>We don't use advertising or retargeting cookies.</li>
-          <li>We don't use third-party analytics trackers.</li>
           <li>We don't sell or share cookie data with third parties.</li>
           <li>We don't track you across other websites.</li>
         </ul>
